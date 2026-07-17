@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.2";
+const CARD_VERSION = "1.6.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1235,6 +1235,7 @@ class AreaTopologyCard extends HTMLElement {
             : "",
           temperatureBand: this.temperatureBand(stateObj, domain, deviceClass),
           temperatureColor: this.temperatureColor(stateObj, domain, deviceClass, status.name, device.name),
+          temperaturePercentage: this.kettleTemperaturePercentage(stateObj, domain, deviceClass, status.name, device.name),
           adjustable: percentage != null && ["light", "media_player"].includes(domain),
           toggleable: percentage == null && ["light", "switch", "fan", "input_boolean"].includes(domain),
         });
@@ -1261,7 +1262,9 @@ class AreaTopologyCard extends HTMLElement {
 
   renderLcarsStatus(status) {
     const meterVariables = [
-      status.percentage == null ? "" : `--level:${status.percentage}%`,
+      status.temperaturePercentage != null
+        ? `--level:${status.temperaturePercentage}%`
+        : status.percentage == null ? "" : `--level:${status.percentage}%`,
       status.temperatureColor ? `--meter-fill:${status.temperatureColor}` : "",
     ].filter(Boolean).join(";");
     const meterStyle = meterVariables ? ` style="${meterVariables}"` : "";
@@ -1300,9 +1303,20 @@ class AreaTopologyCard extends HTMLElement {
     if (!Number.isFinite(temperature)) return "";
     const unit = domain === "climate" ? this._hass?.config?.unit_system?.temperature : stateObj.attributes.unit_of_measurement;
     if (String(unit || "").toUpperCase().includes("F")) temperature = (temperature - 32) * 5 / 9;
-    const ratio = Math.max(0, Math.min(1, (temperature - 26) / 74));
+    const ratio = Math.max(0, Math.min(1, (temperature - 25) / 75));
     const hue = Math.round((1 - ratio) * 220);
     return `hsl(${hue} 78% 38%)`;
+  }
+
+  kettleTemperaturePercentage(stateObj, domain, deviceClass, entityName, deviceName) {
+    if (deviceClass !== "temperature" && domain !== "climate") return null;
+    if (!/\bkettle\b/i.test(`${entityName || ""} ${deviceName || ""}`)) return null;
+    const rawValue = domain === "climate" ? stateObj.attributes.current_temperature : stateObj.state;
+    let temperature = Number.parseFloat(rawValue);
+    if (!Number.isFinite(temperature)) return null;
+    const unit = domain === "climate" ? this._hass?.config?.unit_system?.temperature : stateObj.attributes.unit_of_measurement;
+    if (String(unit || "").toUpperCase().includes("F")) temperature = (temperature - 32) * 5 / 9;
+    return Math.round(Math.max(0, Math.min(1, (temperature - 25) / 75)) * 1000) / 10;
   }
 
   nodeStyle(point, canvas) {
