@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.19.0";
-const BUILD_COMMIT = "8ef2a06";
+const CARD_VERSION = "1.19.1";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1526,10 +1526,55 @@ class AreaTopologyCard extends HTMLElement {
       });
       card.hass = this._hass;
       host.append(card);
+      this.styleLcarsCalendar(card, safeColor(config.color, "#c090b8"));
     } catch (error) {
       console.error("Could not load LCARS Captain's Log calendar", error);
       if (host.isConnected) host.innerHTML = '<div class="lcars-engineering-error">CALENDAR DATA UNAVAILABLE</div>';
     }
+  }
+
+  styleLcarsCalendar(card, color) {
+    const contrast = contrastColor(color);
+    const css = `
+      :host { --primary-color:${color}; --accent-color:${color}; --state-icon-color:${color}; --mdc-theme-primary:${color}; font-family:Impact,"Arial Narrow",sans-serif!important; }
+      ha-card,.card-content,.fc { color:#f5f1ff!important; background:#050507!important; font-family:Impact,"Arial Narrow",sans-serif!important; letter-spacing:.025em; }
+      .fc .fc-toolbar { gap:14px; padding:14px 16px; background:#0b0b10; }
+      .fc .fc-toolbar-title { color:#f5f1ff; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:30px!important; font-weight:400!important; letter-spacing:.045em; text-transform:uppercase; }
+      .fc .fc-button,.fc .fc-button-primary,.fc .fc-today-button,button,mwc-button,ha-button { min-height:38px; border:0!important; border-radius:20px!important; color:${contrast}!important; background:${color}!important; box-shadow:none!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px!important; font-weight:400!important; letter-spacing:.05em!important; text-transform:uppercase; }
+      .fc .fc-button:hover,.fc .fc-button:focus,.fc .fc-button-active { filter:brightness(1.14); }
+      .fc .fc-button-group { gap:4px; }
+      .fc .fc-button-group>.fc-button { border-radius:0!important; }
+      .fc .fc-button-group>.fc-button:first-child { border-radius:20px 0 0 20px!important; }
+      .fc .fc-button-group>.fc-button:last-child { border-radius:0 20px 20px 0!important; }
+      .fc .fc-scrollgrid { overflow:hidden; border:2px solid ${color}!important; border-radius:0 22px 22px 0; }
+      .fc-theme-standard td,.fc-theme-standard th { border-color:color-mix(in srgb,${color} 38%,#27222e)!important; }
+      .fc .fc-col-header-cell { color:${contrast}; background:${color}; }
+      .fc .fc-col-header-cell-cushion { padding:9px 6px!important; color:${contrast}!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px; font-weight:400; letter-spacing:.05em; text-transform:uppercase; }
+      .fc .fc-daygrid-day-number,.fc .fc-list-day-text,.fc .fc-list-day-side-text,.fc .fc-timegrid-slot-label { color:#f5f1ff!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px; letter-spacing:.035em; }
+      .fc .fc-day-today { background:color-mix(in srgb,${color} 18%,#09090d)!important; }
+      .fc .fc-day-today .fc-daygrid-day-number { display:inline-grid; place-items:center; min-width:32px; min-height:32px; border-radius:50%; color:${contrast}!important; background:${color}; }
+      .fc .fc-event { padding:4px 8px!important; border:0!important; border-radius:14px!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:14px!important; font-weight:400!important; letter-spacing:.025em; }
+      .fc .fc-list { border:2px solid ${color}!important; border-radius:0 22px 22px 0; overflow:hidden; }
+      .fc .fc-list-day-cushion { color:${contrast}; background:${color}!important; }
+      .fc .fc-list-event:hover td { background:color-mix(in srgb,${color} 18%,#111118)!important; }
+    `;
+    const apply = (root) => {
+      if (!root || root.querySelector?.("style[data-lcars-calendar-theme]")) return;
+      const style = document.createElement("style");
+      style.dataset.lcarsCalendarTheme = "";
+      style.textContent = css;
+      root.append(style);
+      for (const element of root.querySelectorAll?.("*") || []) if (element.shadowRoot) apply(element.shadowRoot);
+      if (!root.__lcarsCalendarObserver) {
+        root.__lcarsCalendarObserver = new MutationObserver(() => {
+          for (const element of root.querySelectorAll?.("*") || []) if (element.shadowRoot) apply(element.shadowRoot);
+        });
+        root.__lcarsCalendarObserver.observe(root, { childList: true, subtree: true });
+      }
+    };
+    apply(card.shadowRoot);
+    requestAnimationFrame(() => apply(card.shadowRoot));
+    window.setTimeout(() => apply(card.shadowRoot), 500);
   }
 
   renderLcarsCustomMenu(menu) {
