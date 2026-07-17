@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.6";
+const CARD_VERSION = "1.7.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -702,7 +702,7 @@ class AreaTopologyCard extends HTMLElement {
       <button class="label-filter all ${allSelected ? "selected" : ""}" data-topology-action="all-labels" aria-pressed="${allSelected}">All</button>
       ${this._labels.map((label) => {
         const selected = this._selectedLabels?.has(label.label_id);
-        const color = safeColor(label.color);
+        const color = this.configuredLabelColor(label);
         return `<button class="label-filter ${selected ? "selected" : ""}" data-label-toggle="${escapeHtml(label.label_id)}" aria-pressed="${selected}" style="--label-color:${color};--label-contrast:${contrastColor(color)}">
           ${label.icon ? `<ha-icon icon="${escapeHtml(label.icon)}"></ha-icon>` : ""}<span>${escapeHtml(label.name)}</span>
         </button>`;
@@ -845,7 +845,7 @@ class AreaTopologyCard extends HTMLElement {
         <span class="tree-node-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
         <span class="tree-copy"><strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</span>
         ${device.labels.length ? `<span class="tree-labels">${device.labels.map((label) => {
-          const labelColor = safeColor(label.color, color);
+          const labelColor = this.configuredLabelColor(label, color);
           return `<span style="--label-color:${labelColor};--label-contrast:${contrastColor(labelColor)}">${escapeHtml(label.name)}</span>`;
         }).join("")}</span>` : ""}
       </div>
@@ -1108,7 +1108,7 @@ class AreaTopologyCard extends HTMLElement {
       <button data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings">
         <strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}
         ${device.labels.length ? `<span class="panel-labels">${device.labels.map((label) => {
-          const labelColor = safeColor(label.color, color);
+          const labelColor = this.configuredLabelColor(label, color);
           return `<span style="--label-color:${labelColor};--label-contrast:${contrastColor(labelColor)}">${escapeHtml(label.name)}</span>`;
         }).join("")}</span>` : ""}
       </button>
@@ -1139,10 +1139,14 @@ class AreaTopologyCard extends HTMLElement {
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
-      ${visibleGroups.length ? visibleGroups.map((group, index) => `<section class="lcars-floor lcars-tone-${index % 4}">
-        <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
-        <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
-      </section>`).join("") : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
+      ${visibleGroups.length ? visibleGroups.map((group, index) => {
+        const floorColor = this.configuredItemColor("floor_colors", group.id, group.name);
+        const floorStyle = floorColor ? ` style="--lcars-tone:${floorColor};--lcars-tone-contrast:${contrastColor(floorColor)}"` : "";
+        return `<section class="lcars-floor lcars-tone-${index % 4}"${floorStyle}>
+          <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
+          <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
+        </section>`;
+      }).join("") : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
       <div class="lcars-footer"><span></span><b>AREA TOPOLOGY // LCARS ${CARD_VERSION}</b><i></i></div>
     </div>`;
   }
@@ -1150,9 +1154,11 @@ class AreaTopologyCard extends HTMLElement {
   renderLcarsArea(area) {
     const deviceGroups = this.lcarsDeviceGroups(area.displayDevices);
     const temperature = this.lcarsConfiguredAreaTemperature(area);
-    return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}">
+    const areaColor = this.configuredItemColor("area_colors", area.id, area.name);
+    const areaStyle = areaColor ? ` style="--lcars-area-tone:${areaColor};--lcars-area-contrast:${contrastColor(areaColor)}"` : "";
+    return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}"${areaStyle}>
       <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button>${temperature ? `<button class="lcars-area-reading temp-${temperature.band}" data-entity="${escapeHtml(temperature.entityId)}" title="Open ${escapeHtml(temperature.name)} history"><ha-icon icon="mdi:thermometer"></ha-icon><b>${escapeHtml(temperature.value)}</b></button>` : ""}</header>
-      <div class="lcars-devices">${deviceGroups.length ? deviceGroups.map((group) => `<section class="lcars-device-group">${group.devices.map((device) => this.renderLcarsDevice(device)).join("")}</section>`).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
+      <div class="lcars-devices">${deviceGroups.length ? deviceGroups.map((group) => `<section class="lcars-device-group">${group.devices.map((device) => this.renderLcarsDevice(device, group.color)).join("")}</section>`).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
     </article>`;
   }
 
@@ -1165,7 +1171,7 @@ class AreaTopologyCard extends HTMLElement {
         id,
         name: label?.name || "Other systems",
         icon: label?.icon || "mdi:dots-grid",
-        color: safeColor(label?.color, device.color ? safeColor(device.color) : "#9999ff"),
+        color: this.configuredLabelColor(label, device.color ? safeColor(device.color) : "#9999ff"),
         devices: [],
       });
       groups.get(id).devices.push(device);
@@ -1195,6 +1201,21 @@ class AreaTopologyCard extends HTMLElement {
     return values.has(String(id || "").toLowerCase()) || values.has(String(name || "").toLowerCase());
   }
 
+  configuredItemColor(configKey, id, name, fallback = "") {
+    const overrides = this._config?.[configKey];
+    if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) return fallback;
+    const match = Object.entries(overrides).find(([key]) => {
+      const normalized = String(key).trim().toLowerCase();
+      return normalized === String(id || "").toLowerCase() || normalized === String(name || "").toLowerCase();
+    });
+    return match ? safeColor(match[1], fallback) : fallback;
+  }
+
+  configuredLabelColor(label, fallback = "var(--primary-color,#03a9f4)") {
+    const defaultColor = safeColor(label?.color, fallback);
+    return label ? this.configuredItemColor("label_colors", label.label_id, label.name, defaultColor) : defaultColor;
+  }
+
   orderConfiguredItems(configKey, items, getId, getName) {
     const configured = this._config?.[configKey];
     if (!Array.isArray(configured)) return items;
@@ -1206,8 +1227,8 @@ class AreaTopologyCard extends HTMLElement {
     return [...items].sort((a, b) => rank(a) - rank(b));
   }
 
-  renderLcarsDevice(device) {
-    const color = safeColor(device.color, "#ff9c5b");
+  renderLcarsDevice(device, groupColor) {
+    const color = safeColor(groupColor, safeColor(device.color, "#ff9c5b"));
     const statuses = [];
     const isMobile = device.labels.some((label) => /^mobiles?$/i.test(label.name));
     const hasGeocodedLocation = device.entities.some((entity) => {
@@ -1267,7 +1288,7 @@ class AreaTopologyCard extends HTMLElement {
     }
     statuses.sort((a, b) => a.priority - b.priority);
     const visibleStatuses = this.dedupeLcarsStatuses(statuses);
-    return `<div class="lcars-device" style="--lcars-device:${color}">
+    return `<div class="lcars-device" style="--lcars-device:${color};--lcars-device-contrast:${contrastColor(color)}">
       <button class="lcars-device-name" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
       <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby ${offline ? "offline" : ""}">${offline ? "OFFLINE" : "SYSTEM READY"}</span>`}</div>
     </div>`;
@@ -1406,7 +1427,7 @@ class AreaTopologyCard extends HTMLElement {
         <ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.value)}</span>
       </button>`).join("")}</div>` : ""}
       ${device.labels.length ? `<div class="labels">${device.labels.map((label) => {
-        const color = safeColor(label.color, deviceColor);
+        const color = this.configuredLabelColor(label, deviceColor);
         return `<span style="--label-color:${color};--label-contrast:${contrastColor(color)}">${escapeHtml(label.name)}</span>`;
       }).join("")}</div>` : ""}
       ${entityRows}
@@ -1665,20 +1686,20 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:#ff9900; background:#050507; font-size:25px; font-weight:900; line-height:1; white-space:nowrap; }
     .lcars-clock { padding-left:16px; }.lcars-date { padding-right:16px; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
-    .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
+    .lcars-floor { --lcars-tone:#cc99cc; --lcars-tone-contrast:#08080a; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
-    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
+    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
-    .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
+    .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-size:12px; text-align:right; }
+    .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-contrast:var(--lcars-tone-contrast,#08080a); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
     .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:0; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-area-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:52px; padding-bottom:4px; background:var(--lcars-area-tone); }
-    .lcars-area>header>button[data-area-config] { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .lcars-area>header>button[data-area-config] { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:var(--lcars-area-contrast); background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button[data-area-config]>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
     .lcars-area-reading { flex:0 0 auto; align-self:center; width:max-content; min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; margin:0 8px 0 6px; padding:5px 11px; border:0; border-radius:999px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { color:#fff; --mdc-icon-size:16px; }.lcars-area-reading b { color:#fff; font-size:14px; white-space:nowrap; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; }
-    .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
+    .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:var(--lcars-device-contrast); background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-meter { --meter-fill:#ff9900; position:relative; min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:42px; padding:6px 12px; border:0; border-radius:0 21px 21px 0; color:#d9d2e9; background:linear-gradient(90deg,var(--meter-fill) 0 var(--level,0%),#1b1722 var(--level,0%) 100%); font:inherit; font-size:13px; text-align:left; cursor:pointer; overflow:hidden; }
     .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.adjustable.percentage { --meter-fill:#5858b8; }.lcars-meter.battery-low { --meter-fill:#c62828; }.lcars-meter.battery-medium { --meter-fill:#ef6c00; }.lcars-meter.battery-high { --meter-fill:#2e7d32; }.lcars-meter.temperature { --level:100%; color:#fff; font-weight:700; text-shadow:0 1px 3px #000; }.lcars-meter.temp-cold { --meter-fill:#1565c0; }.lcars-meter.temp-normal { --meter-fill:#2e7d32; }.lcars-meter.temp-hot { --meter-fill:#c62828; }.lcars-meter.percentage ha-icon,.lcars-meter.temperature ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { max-width:48%; overflow:hidden; font-size:14px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #aaaaff; outline-offset:-2px; }

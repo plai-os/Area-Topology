@@ -101,6 +101,7 @@ The same JavaScript resource also provides `custom:lcars-home-card`. This indepe
 
 Omit `labels`, `floors`, or `areas` to include all entries of that type. When supplied, each option is a YAML list and accepts either the visible Home Assistant name or registry ID.
 The order of each YAML list is also the display order: floors follow `floors`, area panels follow `areas`, and LCARS device groups follow `labels`.
+Use `label_colors`, `floor_colors`, and `area_colors` to override colours by visible name or registry ID. Any item without an override retains its current Home Assistant or LCARS colour.
 
 ```yaml
 type: custom:lcars-home-card
@@ -116,6 +117,14 @@ areas:
   - Lounge
   - Kitchen
   - Bedroom
+label_colors:
+  Alexa: "#B8A46A"
+  Lamps: "#C98F65"
+floor_colors:
+  Ground Floor: "#B987A9"
+area_colors:
+  Lounge: "#8F8FC4"
+  Kitchen: "#A77F9F"
 ```
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
