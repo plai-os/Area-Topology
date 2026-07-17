@@ -1,5 +1,5 @@
 const CARD_VERSION = "1.25.1";
-const BUILD_COMMIT = "pending";
+const BUILD_COMMIT = "e4f1fd6";
 const CARD_BASE_URL = new URL(".", import.meta.url).href;
 
 const DEFAULTS = {
