@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.19.1";
-const BUILD_COMMIT = "d4860c6";
+const CARD_VERSION = "1.19.2";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1323,7 +1323,7 @@ class AreaTopologyCard extends HTMLElement {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTOR${group.areas.length === 1 ? "" : "S"}</b></header>
-          <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
+          <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}${this.renderLcarsFloorCameras(group, securityConfig)}</div>
         </section>`;
       }).join("")}<div class="lcars-footer" style="--lcars-footer-tone:${footerColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div>${this._standaloneLcars ? "</main></div>" : ""}` : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
     </div>`;
@@ -1429,6 +1429,22 @@ class AreaTopologyCard extends HTMLElement {
         return `<article class="lcars-camera-panel"><header><ha-icon icon="${escapeHtml(stateObj?.attributes?.icon || "mdi:cctv")}"></ha-icon><strong>${escapeHtml(name)}</strong>${camera.show_state === false ? "" : `<b data-camera-state="${escapeHtml(camera.entity)}">${escapeHtml(stateObj?.state || "unavailable")}</b>`}</header><div class="lcars-camera-card" data-lcars-camera="${escapeHtml(camera.entity)}"></div></article>`;
       }).join("")}</div></div>
     </section>`;
+  }
+
+  renderLcarsFloorCameras(group, securityConfig) {
+    if (!securityConfig?.cameras?.length) return "";
+    const matchesFloor = (camera) => {
+      const target = String(camera.show_on_floor || "").trim().toLowerCase();
+      return target && [group.id, group.name].some((value) => String(value || "").trim().toLowerCase() === target);
+    };
+    return securityConfig.cameras.filter(matchesFloor).map((camera) => {
+      const stateObj = this._hass?.states?.[camera.entity];
+      const name = camera.name || stateObj?.attributes?.friendly_name || camera.entity;
+      return `<article class="lcars-area lcars-floor-camera">
+        <header><button><ha-icon icon="${escapeHtml(stateObj?.attributes?.icon || "mdi:cctv")}"></ha-icon><strong>${escapeHtml(name)}</strong></button>${camera.show_state === false ? "" : `<b class="lcars-floor-camera-state" data-camera-state="${escapeHtml(camera.entity)}">${escapeHtml(stateObj?.state || "unavailable")}</b>`}</header>
+        <div class="lcars-floor-camera-card lcars-camera-card" data-lcars-camera="${escapeHtml(camera.entity)}"></div>
+      </article>`;
+    }).join("");
   }
 
   async configureLcarsCameraCards() {
@@ -2172,6 +2188,11 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area>header>button[data-area-config] { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:var(--lcars-area-contrast); background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-family:Impact,"Arial Narrow",sans-serif; font-size:20px; font-weight:400; letter-spacing:.025em; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button[data-area-config]>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
     .lcars-area-reading { flex:0 0 auto; align-self:center; width:max-content; min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; margin:0 8px 0 6px; padding:5px 11px; border:0; border-radius:999px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { color:#fff; --mdc-icon-size:16px; }.lcars-area-reading b { color:#fff; font-size:14px; white-space:nowrap; }
+    .lcars-floor-camera>header>button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:var(--lcars-area-contrast); background:none; font:inherit; text-align:left; }
+    .lcars-floor-camera>header>button ha-icon { flex:0 0 20px; --mdc-icon-size:20px; }
+    .lcars-floor-camera-state { align-self:center; margin-right:10px; padding:6px 11px; border-radius:999px; color:var(--lcars-area-contrast); background:color-mix(in srgb,var(--lcars-area-contrast) 13%,transparent); font-family:Impact,"Arial Narrow",sans-serif; font-size:14px; font-weight:400; text-transform:uppercase; }
+    .lcars-floor-camera-card { min-height:330px; background:#050507; }
+    .lcars-floor-camera-card>* { display:block; --ha-card-border-width:0; --ha-card-border-radius:0; --ha-card-box-shadow:none; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; }
     .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:var(--lcars-device-contrast); background:var(--lcars-device); font-family:Impact,"Arial Narrow",sans-serif; font-size:16px; font-weight:400; letter-spacing:.02em; text-align:left; cursor:pointer; }
     .lcars-device-name.multi-status { align-items:flex-start; padding-top:14px; }

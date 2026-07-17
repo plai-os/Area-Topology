@@ -152,6 +152,7 @@ security:
     - entity: camera.c110_mainstream
       camera_image: camera.c110_mainstream
       name: Car
+      show_on_floor: Living Area
       show_state: true
       camera_view: auto
       fit_mode: cover
@@ -253,7 +254,7 @@ menus:
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
-Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
+Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header. Set `show_on_floor` to a floor name or ID to display a second copy of that feed on the selected floor while retaining it in Security.
 Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel. The three `chart_*_color` settings control the embedded graph series palette.
 Adding `captains_log.entities` creates a numbered `CAPTAIN'S LOG` destination with a full-width `CALENDAR` sector. Its colour and initial calendar view can be configured with `color` and `initial_view`.
 Each entry in `menus` creates another numbered floor-style destination. Devices are discovered automatically when any configured label or entity property matches, then grouped into the existing LCARS area panels.
