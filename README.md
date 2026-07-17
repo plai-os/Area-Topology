@@ -50,12 +50,17 @@ Then open `http://localhost:8000/demo.html`. The demo uses sample data and does 
 type: custom:area-topology-card
 title: My home
 show_unassigned: false
-show_entities: false
+show_only_labeled: true
+layout: web
+web_zoom: 1
+tree_font_scale: 1
+web_show_properties: false
+tree_show_properties: true
+floors_expanded: true
+areas_expanded: true
+tree_devices_expanded: false
 show_status: true
 max_statuses: 3
-topology_zoom: 1
-layout: web
-show_only_labeled: true
 map_height: auto
 ```
 
@@ -67,13 +72,20 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | --- | --- | --- |
 | `title` | `Home topology` | Card heading |
 | `show_unassigned` | `false` | Include devices that are not assigned to an area initially |
-| `show_entities` | `false` | List each device's entities and current states |
+| `show_only_labeled` | `true` | Initially show only devices that have labels |
+| `layout` | `web` | Initial layout: `web` or `tree`; the header switch remembers later changes |
+| `web_zoom` | `1` | Initial Web-view zoom from `0.65` to `1.8` |
+| `tree_font_scale` | `1` | Initial Tree-view font scale from `0.65` to `1.8` |
+| `web_show_properties` | `false` | Show entity/property rows on Web device cards |
+| `tree_show_properties` | `true` | Allow entity/property rows beneath Tree devices |
+| `floors_expanded` | `true` | Initially expand floor nodes |
+| `areas_expanded` | `true` | Initially expand area nodes |
+| `tree_devices_expanded` | `false` | Initially expand Tree devices to show their properties |
 | `show_status` | `true` | Show compact live-status chips on device nodes |
 | `max_statuses` | `3` | Maximum number of status chips shown per device |
-| `topology_zoom` | `1` | Initial topology zoom from `0.65` to `1.8` |
-| `layout` | `web` | Initial layout: `web` or `tree`; the header switch remembers later changes |
-| `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
+
+`topology_zoom` and `show_entities` remain supported as legacy aliases for `web_zoom` and `web_show_properties`.
 
 The card reads Home Assistant's floor, area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
 

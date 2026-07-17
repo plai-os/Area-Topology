@@ -1,14 +1,21 @@
-const CARD_VERSION = "1.0.6";
+const CARD_VERSION = "1.1.0";
 
 const DEFAULTS = {
   title: "Home topology",
   show_unassigned: false,
   show_only_labeled: true,
   show_entities: false,
+  web_show_properties: undefined,
+  tree_show_properties: true,
   show_status: true,
   max_statuses: 3,
   topology_zoom: 1,
+  web_zoom: undefined,
+  tree_font_scale: 1,
   layout: "web",
+  floors_expanded: true,
+  areas_expanded: true,
+  tree_devices_expanded: false,
   map_height: "auto",
 };
 
@@ -109,6 +116,7 @@ class AreaTopologyCard extends HTMLElement {
 
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
+    this._config.web_show_properties = config.web_show_properties ?? config.show_entities ?? false;
     const preferenceKey = `area-topology-card:${window.location.pathname}:${this._config.title}`;
     if (this._preferenceKey !== preferenceKey) {
       this._preferenceKey = preferenceKey;
@@ -119,7 +127,8 @@ class AreaTopologyCard extends HTMLElement {
       this._unassignedSearch = preferences.unassignedSearch ?? "";
       this._layoutMode = preferences.layoutMode === "tree" || (!preferences.layoutMode && this._config.layout === "tree") ? "tree" : "web";
     }
-    if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
+    if (this._webZoom === undefined) this._webZoom = Math.max(0.65, Math.min(1.8, Number(config.web_zoom ?? config.topology_zoom) || 1));
+    if (this._treeScale === undefined) this._treeScale = Math.max(0.65, Math.min(1.8, Number(this._config.tree_font_scale) || 1));
     this.render();
   }
 
@@ -173,6 +182,14 @@ class AreaTopologyCard extends HTMLElement {
       this._floors = floors;
       if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
+      if (!this._hierarchyDefaultsInitialized) {
+        if (!this._config.areas_expanded) this._collapsedAreas = new Set(this._data.filter((area) => area.id !== "__unassigned__").map((area) => area.id));
+        if (!this._config.floors_expanded && this.hasFloorLevel()) this._collapsedFloors = new Set(this.floorGroups().map((floor) => floor.id));
+        if (this._config.tree_devices_expanded && this._config.tree_show_properties) {
+          this._expandedTreeDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
+        }
+        this._hierarchyDefaultsInitialized = true;
+      }
     } catch (error) {
       this._error = error?.message || String(error);
     } finally {
@@ -230,15 +247,17 @@ class AreaTopologyCard extends HTMLElement {
         return;
       }
       if (action === "zoom-in") {
-        this.setZoom(this._zoom + 0.1);
+        this.setZoom(this.currentScale() + 0.1);
         return;
       }
       if (action === "zoom-out") {
-        this.setZoom(this._zoom - 0.1);
+        this.setZoom(this.currentScale() - 0.1);
         return;
       }
       if (action === "zoom-reset") {
-        this.setZoom(Number(this._config.topology_zoom) || 1);
+        this.setZoom(this._layoutMode === "tree"
+          ? Number(this._config.tree_font_scale) || 1
+          : Number(this._config.web_zoom ?? this._config.topology_zoom) || 1);
         return;
       }
       if (action === "unassigned") {
@@ -424,10 +443,15 @@ class AreaTopologyCard extends HTMLElement {
 
   setZoom(value, clientX, clientY) {
     const nextZoom = Math.round(Math.max(0.65, Math.min(1.8, value)) * 10) / 10;
-    if (nextZoom === this._zoom) return;
-    this.captureViewportFocus(clientX, clientY);
-    this._zoom = nextZoom;
+    if (nextZoom === this.currentScale()) return;
+    if (this._layoutMode === "web") this.captureViewportFocus(clientX, clientY);
+    if (this._layoutMode === "tree") this._treeScale = nextZoom;
+    else this._webZoom = nextZoom;
     this.render();
+  }
+
+  currentScale() {
+    return this._layoutMode === "tree" ? this._treeScale : this._webZoom;
   }
 
   captureViewportFocus(clientX, clientY) {
@@ -476,7 +500,7 @@ class AreaTopologyCard extends HTMLElement {
               <button data-topology-action="collapse" title="Collapse to the first hierarchy level"><span>−</span> Collapse all</button>
               <div class="zoom-controls" aria-label="${this._layoutMode === "tree" ? "Tree text size" : "Topology zoom"}">
                 <button data-topology-action="zoom-out" title="${this._layoutMode === "tree" ? "Decrease text size" : "Zoom out"}">−</button>
-                <button class="zoom-level" data-topology-action="zoom-reset" title="${this._layoutMode === "tree" ? "Reset text size" : "Reset zoom"}">${Math.round(this._zoom * 100)}%</button>
+                <button class="zoom-level" data-topology-action="zoom-reset" title="${this._layoutMode === "tree" ? "Reset text size" : "Reset zoom"}">${Math.round(this.currentScale() * 100)}%</button>
                 <button data-topology-action="zoom-in" title="${this._layoutMode === "tree" ? "Increase text size" : "Zoom in"}">＋</button>
               </div>
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
@@ -607,7 +631,7 @@ class AreaTopologyCard extends HTMLElement {
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
       : "clamp(420px, calc(100vh - 230px), 1200px)";
-    const treeScale = this._zoom;
+    const treeScale = this._treeScale;
     return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree" style="--tree-font:${14 * treeScale}px;--tree-small:${11 * treeScale}px;--tree-label:${10 * treeScale}px;--tree-property:${12 * treeScale}px;--tree-id:${10 * treeScale}px">
       <div class="tree-row tree-home">
         <span class="tree-node-icon"><ha-icon icon="mdi:home"></ha-icon></span>
@@ -653,7 +677,8 @@ class AreaTopologyCard extends HTMLElement {
     const collapsed = !this._expandedTreeDevices.has(device.id);
     const color = safeColor(device.color);
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
-    const properties = device.entities.map((entity) => {
+    const propertyEntities = this._config.tree_show_properties ? device.entities : [];
+    const properties = propertyEntities.map((entity) => {
       const stateObj = this._hass?.states?.[entity.entity_id];
       const name = stateObj?.attributes?.friendly_name || entity.name || entity.original_name || entity.entity_id;
       const value = stateObj ? (this._hass?.formatEntityState?.(stateObj) || stateObj.state) : "unavailable";
@@ -664,7 +689,7 @@ class AreaTopologyCard extends HTMLElement {
     }).join("");
     return `<div class="tree-branch tree-device-branch" style="--device-color:${color}">
       <div class="tree-row tree-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}">
-        <button class="tree-toggle ${device.entities.length ? "" : "empty"}" ${device.entities.length ? `data-device-toggle="${escapeHtml(device.id)}"` : "disabled"} title="${collapsed ? "Expand" : "Collapse"} properties">${device.entities.length ? (collapsed ? "+" : "−") : ""}</button>
+        <button class="tree-toggle ${propertyEntities.length ? "" : "empty"}" ${propertyEntities.length ? `data-device-toggle="${escapeHtml(device.id)}"` : "disabled"} title="${collapsed ? "Expand" : "Collapse"} properties">${propertyEntities.length ? (collapsed ? "+" : "−") : ""}</button>
         <span class="tree-node-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
         <span class="tree-copy"><strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</span>
         ${device.labels.length ? `<span class="tree-labels">${device.labels.map((label) => {
@@ -876,9 +901,9 @@ class AreaTopologyCard extends HTMLElement {
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
       : "clamp(420px, calc(100vh - 230px), 1200px)";
-    const scaledWidth = Math.round(canvas.width * this._zoom);
-    const scaledHeight = Math.round(canvas.height * this._zoom);
-    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="topology-scroll"><div class="topology-canvas" style="width:${scaledWidth}px;height:${scaledHeight}px"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px;--zoom:${this._zoom}">
+    const scaledWidth = Math.round(canvas.width * this._webZoom);
+    const scaledHeight = Math.round(canvas.height * this._webZoom);
+    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="topology-scroll"><div class="topology-canvas" style="width:${scaledWidth}px;height:${scaledHeight}px"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px;--zoom:${this._webZoom}">
       <svg class="web" viewBox="0 0 ${canvas.width} ${canvas.height}" preserveAspectRatio="none" aria-hidden="true">
         ${lines.join("")}
       </svg>
@@ -948,7 +973,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderDevice(device, point, canvas) {
-    const entityRows = this._config.show_entities && device.entities.length
+    const entityRows = this._config.web_show_properties && device.entities.length
       ? `<div class="entities">${device.entities.map((entity) => {
           const state = this._hass?.states?.[entity.entity_id];
           return `<button data-entity="${escapeHtml(entity.entity_id)}"><span>${escapeHtml(state?.attributes?.friendly_name || entity.name || entity.original_name || entity.entity_id)}</span><b>${escapeHtml(state?.state || "unavailable")}</b></button>`;
