@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.3";
+const CARD_VERSION = "1.6.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1613,7 +1613,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:52px; padding-bottom:4px; background:var(--lcars-area-tone); }
     .lcars-area>header>button[data-area-config] { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button[data-area-config]>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
-    .lcars-area-reading { flex:0 0 auto; align-self:center; width:max-content; min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; margin-left:6px; padding:5px 11px; border:0; border-radius:20px 0 0 20px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { color:#fff; --mdc-icon-size:16px; }.lcars-area-reading b { color:#fff; font-size:14px; white-space:nowrap; }
+    .lcars-area-reading { flex:0 0 auto; align-self:center; width:max-content; min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; margin:0 8px 0 6px; padding:5px 11px; border:0; border-radius:999px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { color:#fff; --mdc-icon-size:16px; }.lcars-area-reading b { color:#fff; font-size:14px; white-space:nowrap; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; }
     .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
