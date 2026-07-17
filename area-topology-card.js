@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.4";
+const CARD_VERSION = "0.9.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -276,6 +276,11 @@ class AreaTopologyCard extends HTMLElement {
       const areaConfigId = event.target.closest("[data-area-config]")?.dataset.areaConfig;
       if (areaConfigId) {
         this.navigate(`/config/areas/area/${encodeURIComponent(areaConfigId)}`);
+        return;
+      }
+      const floorConfigId = event.target.closest("[data-floor-config]")?.dataset.floorConfig;
+      if (floorConfigId) {
+        this.navigate(`/config/areas/floor/${encodeURIComponent(floorConfigId)}`);
         return;
       }
       const target = event.target.closest("[data-entity]");
@@ -671,8 +676,11 @@ class AreaTopologyCard extends HTMLElement {
       const floorPoint = { x: center.x + Math.cos(angle) * floorRadius, y: center.y + Math.sin(angle) * floorRadius };
       const floorCollapsed = this._collapsedFloors.has(floor.id);
       lines.push(this.renderLine(center, floorPoint, "floor-line"));
+      const floorMainAction = floor.id === "__no_floor__"
+        ? `data-floor-toggle="${escapeHtml(floor.id)}" title="${floorCollapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}"`
+        : `data-floor-config="${escapeHtml(floor.id)}" title="Open ${escapeHtml(floor.name)} settings"`;
       floorNodes.push(`<div class="floor node ${floorCollapsed ? "collapsed" : ""}" aria-expanded="${!floorCollapsed}" style="${this.nodeStyle(floorPoint, canvas)}">
-        <button class="floor-main" data-floor-toggle="${escapeHtml(floor.id)}" title="${floorCollapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">
+        <button class="floor-main" ${floorMainAction}>
           <span class="floor-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
           <div><h2>${escapeHtml(floor.name)}</h2><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"}</small></div>
         </button>
