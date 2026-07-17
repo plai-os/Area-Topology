@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.6";
+const CARD_VERSION = "1.2.7";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1066,10 +1066,7 @@ class AreaTopologyCard extends HTMLElement {
     const deviceGroups = this.lcarsDeviceGroups(area.displayDevices);
     return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}">
       <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button>${temperatures.length ? `<div class="lcars-area-temperature">${temperatures.slice(0, 2).map((temperature) => `<button data-entity="${escapeHtml(temperature.entityId)}" title="${escapeHtml(temperature.name)}"><ha-icon icon="mdi:thermometer"></ha-icon><b>${escapeHtml(temperature.value)}</b></button>`).join("")}</div>` : ""}<span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
-      <div class="lcars-devices">${deviceGroups.length ? deviceGroups.map((group) => `<section class="lcars-device-group" style="--lcars-group:${group.color};--lcars-group-contrast:${contrastColor(group.color)}">
-        <div class="lcars-group-title">${group.icon ? `<ha-icon icon="${escapeHtml(group.icon)}"></ha-icon>` : ""}<strong>${escapeHtml(group.name)}</strong><span>${group.devices.length.toString().padStart(2, "0")}</span></div>
-        <div>${group.devices.map((device) => this.renderLcarsDevice(device)).join("")}</div>
-      </section>`).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
+      <div class="lcars-devices">${deviceGroups.length ? deviceGroups.map((group) => `<section class="lcars-device-group">${group.devices.map((device) => this.renderLcarsDevice(device)).join("")}</section>`).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
     </article>`;
   }
 
@@ -1414,9 +1411,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:22px; }
     .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
-    .lcars-devices { padding:9px 12px 12px; }.lcars-device-group { margin-top:8px; }.lcars-device-group:first-child { margin-top:0; }
-    .lcars-group-title { display:grid; grid-template-columns:22px 1fr auto; align-items:center; gap:8px; min-height:32px; padding:5px 10px; border-radius:16px 16px 0 0; color:var(--lcars-group-contrast); background:var(--lcars-group); text-transform:uppercase; }.lcars-group-title ha-icon { --mdc-icon-size:18px; }.lcars-group-title strong { font-size:12px; letter-spacing:.06em; }.lcars-group-title span { display:grid; place-items:center; min-width:28px; height:20px; border-radius:11px; color:var(--lcars-group); background:#08080a; font-size:10px; font-weight:900; }
-    .lcars-device-group>div:last-child { padding:0; border:1px solid color-mix(in srgb,var(--lcars-group) 60%,transparent); border-top:0; border-radius:0 0 14px 14px; overflow:hidden; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
+    .lcars-devices { padding:9px 12px 12px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
     .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:13px; text-align:left; cursor:pointer; }
