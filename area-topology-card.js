@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.5.0";
+const CARD_VERSION = "1.5.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1565,7 +1565,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { --lcars-area-tone:#9999ff; --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
+    .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
     .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:0; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-area-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-area-tone); }
