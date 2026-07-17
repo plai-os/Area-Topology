@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -557,7 +557,7 @@ class AreaTopologyCard extends HTMLElement {
     return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree">
       <div class="tree-row tree-home">
         <span class="tree-node-icon"><ha-icon icon="mdi:home"></ha-icon></span>
-        <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong><small>${this.summary()}</small></div>
+        <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong></div>
       </div>
       <div class="tree-children">${branches}</div>
     </div></div>${this.renderUnassignedPanel()}</div>`;
@@ -833,7 +833,6 @@ class AreaTopologyCard extends HTMLElement {
           <svg viewBox="0 0 24 24"><path d="M12 3 2.5 11.1l1.3 1.5L5 11.5V21h5v-6h4v6h5v-9.5l1.2 1.1 1.3-1.5L12 3Zm5 16h-1v-6H8v6H7v-9.2l5-4.3 5 4.3V19Z"/></svg>
         </span>
         <strong>${escapeHtml(this._config.title)}</strong>
-        <small>${this.summary()}</small>
       </div>
       ${floorNodes.join("")}
       ${areaNodes.join("")}
@@ -1065,11 +1064,10 @@ class AreaTopologyCard extends HTMLElement {
     .area-line { stroke:var(--at-accent); stroke-width:3; opacity:.5; }
     .device-line { stroke:color-mix(in srgb,var(--line-color,var(--at-accent)) 72%,transparent); stroke-width:1.5; stroke-dasharray:5 5; }
     .node { position:absolute; left:var(--x); top:var(--y); transform:translate(-50%,-50%); z-index:1; }
-    .home { width:156px; height:104px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px solid var(--at-accent); border-radius:50%; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); box-shadow:0 0 0 8px color-mix(in srgb,var(--at-accent) 9%,transparent),0 8px 28px rgba(0,0,0,.16); z-index:3; }
+    .home { width:156px; height:92px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px solid var(--at-accent); border-radius:50%; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); box-shadow:0 0 0 8px color-mix(in srgb,var(--at-accent) 9%,transparent),0 8px 28px rgba(0,0,0,.16); z-index:3; }
     .home>span { display:grid; place-items:center; width:38px; height:38px; margin-top:-3px; border-radius:50%; color:white; background:var(--at-accent); }
     .home-icon svg { width:24px; height:24px; fill:currentColor; }
     .home strong { margin-top:5px; font-size:16px; }
-    .home small { margin-top:1px; font-size:9px; }
     .floor { width:190px; min-height:78px; display:flex; align-items:center; padding:5px; border:2px solid var(--at-floor); border-radius:18px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--at-floor) 10%,var(--card-background-color,#fff)); box-shadow:0 6px 18px rgba(0,0,0,.14); z-index:2; }
     .floor.collapsed { background:color-mix(in srgb,var(--at-floor) 20%,var(--card-background-color,#fff)); }
     .floor-main { min-width:0; flex:1; display:flex; align-items:flex-start; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
