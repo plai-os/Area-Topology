@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.2.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1100,11 +1100,25 @@ class AreaTopologyCard extends HTMLElement {
       const domain = entity.entity_id.split(".")[0];
       const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
       const status = this.statusForEntity(entity, stateObj, domain, deviceClass, isPlug);
-      if (status) statuses.push(status);
+      if (status) {
+        const group = domain === "light" || domain === "switch"
+          ? "power"
+          : domain === "binary_sensor" && ["door", "garage_door", "opening", "window"].includes(deviceClass)
+            ? "opening"
+            : domain === "sensor" && deviceClass
+              ? `sensor:${deviceClass}`
+              : domain;
+        statuses.push({ ...status, group });
+      }
     }
-    statuses.sort((a, b) => a.priority - b.priority);
+    const representativeStatuses = [...statuses.reduce((groups, status) => {
+      const existing = groups.get(status.group);
+      if (!existing || (status.active && !existing.active)) groups.set(status.group, status);
+      return groups;
+    }, new Map()).values()];
+    representativeStatuses.sort((a, b) => a.priority - b.priority);
     const limit = Math.max(1, Math.min(8, Number(this._config.max_statuses) || 3));
-    return statuses.slice(0, limit);
+    return representativeStatuses.slice(0, limit);
   }
 
   statusForEntity(entity, stateObj, domain, deviceClass, isPlug = false) {
