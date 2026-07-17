@@ -149,10 +149,28 @@ security:
       show_state: true
       camera_view: auto
       fit_mode: cover
+engineering:
+  color: "#FF9966"
+  panels:
+    - title: Energy Consumption
+      icon: mdi:lightning-bolt
+      type: statistics-graph
+      grid_options:
+        columns: 12
+        rows: auto
+      entities:
+        - sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+      days_to_show: 7
+      period: day
+      chart_type: bar
+      stat_types:
+        - max
+      hide_legend: true
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
 Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
+Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
