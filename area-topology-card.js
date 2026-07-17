@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.1";
+const CARD_VERSION = "1.2.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -75,6 +75,7 @@ export function buildTopology(areas, devices, entities, labels, showUnassigned =
     icon: area.icon || "mdi:floor-plan",
     floorId: area.floor_id || null,
     devices: [],
+    entities: [],
   }));
   const areaById = new Map(nodes.map((area) => [area.id, area]));
   const unassigned = { id: "__unassigned__", name: "Unassigned", icon: "mdi:help-circle-outline", devices: [] };
@@ -97,6 +98,11 @@ export function buildTopology(areas, devices, entities, labels, showUnassigned =
       labels: deviceLabels,
       entities: deviceEntities,
     });
+  }
+
+  for (const entity of entities) {
+    if (!entity.area_id || entity.device_id) continue;
+    areaById.get(entity.area_id)?.entities.push(entity);
   }
 
   for (const area of nodes) area.devices.sort((a, b) => a.name.localeCompare(b.name));
@@ -1016,10 +1022,9 @@ class AreaTopologyCard extends HTMLElement {
       : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
     const visibleGroups = groups.map((group) => ({
       ...group,
-      areas: group.areas.map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
-        .filter((area) => area.displayDevices.length),
-    })).filter((group) => group.areas.length);
-    const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.displayDevices.length, 0), 0);
+      areas: group.areas.map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) })),
+    }));
+    const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.devices.length, 0), 0);
     return `<div class="lcars-dashboard">
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><span>HOME CONTROL</span><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
@@ -1033,10 +1038,33 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderLcarsArea(area) {
+    const temperatures = this.lcarsAreaTemperatures(area);
     return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}">
-      <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button><span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
-      <div class="lcars-devices">${area.displayDevices.map((device) => this.renderLcarsDevice(device)).join("")}</div>
+      <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button>${temperatures.length ? `<div class="lcars-area-temperature">${temperatures.slice(0, 2).map((temperature) => `<button data-entity="${escapeHtml(temperature.entityId)}" title="${escapeHtml(temperature.name)}"><ha-icon icon="mdi:thermometer"></ha-icon><b>${escapeHtml(temperature.value)}</b></button>`).join("")}</div>` : ""}<span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
+      <div class="lcars-devices">${area.displayDevices.length ? area.displayDevices.map((device) => this.renderLcarsDevice(device)).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
     </article>`;
+  }
+
+  lcarsAreaTemperatures(area) {
+    const entities = [...(area.entities || []), ...area.devices.flatMap((device) => device.entities)];
+    const seen = new Set();
+    return entities.flatMap((entity) => {
+      if (seen.has(entity.entity_id)) return [];
+      seen.add(entity.entity_id);
+      const stateObj = this._hass?.states?.[entity.entity_id];
+      const deviceClass = stateObj?.attributes?.device_class || entity.device_class || entity.original_device_class;
+      const domain = entity.entity_id.split(".")[0];
+      if (!stateObj || ["unknown", "unavailable"].includes(stateObj.state)) return [];
+      const climateTemperature = domain === "climate" ? stateObj.attributes.current_temperature : null;
+      if (deviceClass !== "temperature" && climateTemperature == null) return [];
+      return [{
+        entityId: entity.entity_id,
+        name: stateObj.attributes.friendly_name || entity.name || entity.original_name || entity.entity_id,
+        value: climateTemperature == null
+          ? (this._hass?.formatEntityState?.(stateObj) || `${stateObj.state}${stateObj.attributes.unit_of_measurement || "°"}`)
+          : `${climateTemperature}${this._hass?.config?.unit_system?.temperature || "°"}`,
+      }];
+    });
   }
 
   renderLcarsDevice(device) {
@@ -1338,6 +1366,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
+    .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:7px 10px 10px; }.lcars-device { display:grid; grid-template-columns:minmax(125px,.8fr) minmax(175px,1.2fr); gap:6px; padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
     .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:7px; padding:7px 10px; border:0; border-radius:16px 0 0 16px; color:#070709; background:var(--lcars-device); font:inherit; font-size:12px; font-weight:800; text-align:left; cursor:pointer; }
@@ -1345,6 +1374,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:4px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:16px minmax(70px,1fr) auto; align-items:center; gap:6px; padding:4px 9px; border:0; border-radius:0 12px 12px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:10px; text-align:left; cursor:pointer; }
     .lcars-values button.active { color:#08080a; background:#ff9900; }.lcars-values button ha-icon { --mdc-icon-size:14px; }.lcars-values button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-values button b { font-size:11px; text-transform:uppercase; white-space:nowrap; }
     .lcars-standby { padding:6px 10px; border-radius:0 13px 13px 0; color:#08080a; background:#9999ff; font-size:10px; font-weight:900; text-align:right; }
+    .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
     .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px 90px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
