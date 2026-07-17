@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.7.0";
+const CARD_VERSION = "0.8.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -7,6 +7,7 @@ const DEFAULTS = {
   show_entities: false,
   show_status: true,
   max_statuses: 3,
+  topology_zoom: 1,
   map_height: "auto",
 };
 
@@ -102,6 +103,7 @@ class AreaTopologyCard extends HTMLElement {
     this._config = { ...DEFAULTS, ...config };
     if (this._showUnassigned === undefined) this._showUnassigned = this._config.show_unassigned;
     if (this._labelsOnly === undefined) this._labelsOnly = this._config.show_only_labeled;
+    if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
     this.render();
   }
 
@@ -151,6 +153,18 @@ class AreaTopologyCard extends HTMLElement {
       if (action === "collapse") {
         this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
         this.render();
+        return;
+      }
+      if (action === "zoom-in") {
+        this.setZoom(this._zoom + 0.1);
+        return;
+      }
+      if (action === "zoom-out") {
+        this.setZoom(this._zoom - 0.1);
+        return;
+      }
+      if (action === "zoom-reset") {
+        this.setZoom(Number(this._config.topology_zoom) || 1);
         return;
       }
       if (action === "unassigned") {
@@ -232,6 +246,12 @@ class AreaTopologyCard extends HTMLElement {
       const deviceId = event.dataTransfer.getData("text/plain");
       if (deviceId) this.assignDeviceToArea(deviceId, area.dataset.areaDrop);
     });
+    this.shadowRoot.addEventListener("wheel", (event) => {
+      const scroller = event.target.closest(".topology-scroll");
+      if (!scroller || Math.abs(event.deltaY) < 2) return;
+      event.preventDefault();
+      this.setZoom(this._zoom + (event.deltaY < 0 ? 0.1 : -0.1), event.clientX, event.clientY);
+    }, { passive: false });
     this.render();
   }
 
@@ -264,6 +284,25 @@ class AreaTopologyCard extends HTMLElement {
     }
   }
 
+  setZoom(value, clientX, clientY) {
+    const nextZoom = Math.round(Math.max(0.65, Math.min(1.8, value)) * 10) / 10;
+    if (nextZoom === this._zoom) return;
+    const scroller = this.shadowRoot.querySelector(".topology-scroll");
+    if (scroller) {
+      const rect = scroller.getBoundingClientRect();
+      const focusX = clientX == null ? scroller.clientWidth / 2 : clientX - rect.left;
+      const focusY = clientY == null ? scroller.clientHeight / 2 : clientY - rect.top;
+      this._zoomFocus = {
+        x: (scroller.scrollLeft + focusX) / scroller.scrollWidth,
+        y: (scroller.scrollTop + focusY) / scroller.scrollHeight,
+        focusX,
+        focusY,
+      };
+    }
+    this._zoom = nextZoom;
+    this.render();
+  }
+
   render() {
     if (!this.shadowRoot || !this._config) return;
     const oldScroller = this.shadowRoot.querySelector(".topology-scroll");
@@ -285,6 +324,11 @@ class AreaTopologyCard extends HTMLElement {
             ${this._data ? `<div class="header-actions">
               <button data-topology-action="expand" title="Expand all areas"><span>＋</span> Expand all</button>
               <button data-topology-action="collapse" title="Collapse to areas"><span>−</span> Collapse all</button>
+              <div class="zoom-controls" aria-label="Topology zoom">
+                <button data-topology-action="zoom-out" title="Zoom out">−</button>
+                <button class="zoom-level" data-topology-action="zoom-reset" title="Reset zoom">${Math.round(this._zoom * 100)}%</button>
+                <button data-topology-action="zoom-in" title="Zoom in">＋</button>
+              </div>
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
               <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
@@ -295,7 +339,11 @@ class AreaTopologyCard extends HTMLElement {
       </ha-card>`;
     const newScroller = this.shadowRoot.querySelector(".topology-scroll");
     if (newScroller) requestAnimationFrame(() => {
-      if (previousScroll) {
+      if (this._zoomFocus) {
+        newScroller.scrollLeft = this._zoomFocus.x * newScroller.scrollWidth - this._zoomFocus.focusX;
+        newScroller.scrollTop = this._zoomFocus.y * newScroller.scrollHeight - this._zoomFocus.focusY;
+        this._zoomFocus = null;
+      } else if (previousScroll) {
         newScroller.scrollLeft = previousScroll.left;
         newScroller.scrollTop = previousScroll.top;
       } else {
@@ -401,7 +449,9 @@ class AreaTopologyCard extends HTMLElement {
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
       : "clamp(420px, calc(100vh - 230px), 1200px)";
-    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="topology-scroll"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px">
+    const scaledWidth = Math.round(canvas.width * this._zoom);
+    const scaledHeight = Math.round(canvas.height * this._zoom);
+    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="topology-scroll"><div class="topology-canvas" style="width:${scaledWidth}px;height:${scaledHeight}px"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px;--zoom:${this._zoom}">
       <svg class="web" viewBox="0 0 ${canvas.width} ${canvas.height}" preserveAspectRatio="none" aria-hidden="true">
         ${lines.join("")}
       </svg>
@@ -414,7 +464,7 @@ class AreaTopologyCard extends HTMLElement {
       </div>
       ${areaNodes.join("")}
       ${deviceNodes.join("")}
-    </div></div>${this.renderUnassignedPanel()}</div>`;
+    </div></div></div>${this.renderUnassignedPanel()}</div>`;
   }
 
   renderUnassignedPanel() {
@@ -548,6 +598,12 @@ class AreaTopologyCard extends HTMLElement {
     .header-actions button { display:flex; align-items:center; gap:5px; padding:7px 10px; border:1px solid var(--divider-color,#ddd); border-radius:9px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#f1f1f1); font:inherit; font-size:12px; cursor:pointer; }
     .header-actions button:hover { border-color:var(--at-accent); color:var(--at-accent); }
     .header-actions span { font-size:17px; line-height:10px; }
+    .zoom-controls { display:flex; align-items:stretch; }
+    .header-actions .zoom-controls button { min-width:30px; padding:5px 8px; border-radius:0; font-size:15px; font-weight:600; justify-content:center; }
+    .header-actions .zoom-controls button:first-child { border-radius:9px 0 0 9px; }
+    .header-actions .zoom-controls button+button { margin-left:-1px; }
+    .header-actions .zoom-controls button:last-child { border-radius:0 9px 9px 0; }
+    .header-actions .zoom-controls .zoom-level { min-width:48px; font-size:10px; font-weight:500; }
     .header-actions .toggle-control { padding-left:8px; }
     .toggle-control .switch { position:relative; width:30px; height:17px; border-radius:999px; background:var(--disabled-color,#9e9e9e); transition:background .18s ease; }
     .toggle-control .switch i { position:absolute; top:3px; left:3px; width:11px; height:11px; border-radius:50%; background:white; transition:transform .18s ease; }
@@ -558,12 +614,13 @@ class AreaTopologyCard extends HTMLElement {
     .label-filter { display:inline-flex; align-items:center; gap:5px; min-height:28px; padding:4px 10px; border:2px solid var(--label-color,var(--at-accent)); border-radius:999px; color:var(--label-color,var(--primary-text-color,#222)); background:transparent; font:inherit; font-size:11px; font-weight:600; cursor:pointer; opacity:.72; }
     .label-filter:hover { opacity:1; }
     .label-filter.selected { color:var(--label-contrast,#fff); background:var(--label-color,var(--at-accent)); opacity:1; box-shadow:0 1px 5px color-mix(in srgb,var(--label-color,var(--at-accent)) 38%,transparent); }
-    .label-filter.all { --label-color:var(--at-accent); --label-contrast:#fff; }
+    .label-filter.all { --label-color:#000; --label-contrast:#fff; color:#fff; background:#000; border-color:#000; box-shadow:0 0 0 1px rgba(255,255,255,.35); }
     .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
     .workspace { display:flex; width:100%; min-width:0; }
     .topology-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
-    .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; }
+    .topology-canvas { position:relative; flex:none; }
+    .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; transform:scale(var(--zoom)); transform-origin:0 0; }
     .web { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .web line { vector-effect:non-scaling-stroke; stroke-linecap:round; }
     .area-line { stroke:var(--at-accent); stroke-width:3; opacity:.5; }

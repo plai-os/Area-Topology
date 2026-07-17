@@ -14,6 +14,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Live device status for lights, doors, windows, locks, covers, temperature, illuminance, humidity and climate
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
+- Header and mouse-wheel zoom controls
 
 ## Install with HACS
 
@@ -49,6 +50,7 @@ show_unassigned: false
 show_entities: false
 show_status: true
 max_statuses: 3
+topology_zoom: 1
 show_only_labeled: true
 map_height: auto
 ```
@@ -64,6 +66,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `show_entities` | `false` | List each device's entities and current states |
 | `show_status` | `true` | Show compact live-status chips on device nodes |
 | `max_statuses` | `3` | Maximum number of status chips shown per device |
+| `topology_zoom` | `1` | Initial topology zoom from `0.65` to `1.8` |
 | `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 
