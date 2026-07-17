@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.4.0";
+const CARD_VERSION = "0.5.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -103,6 +103,8 @@ class AreaTopologyCard extends HTMLElement {
         call("config/entity_registry/list"),
         call("config/label_registry/list"),
       ]);
+      this._labels = labels;
+      if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
       this._data = buildTopology(areas, devices, entities, labels, true);
     } catch (error) {
       this._error = error?.message || String(error);
@@ -134,6 +136,19 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (action === "labels") {
         this._labelsOnly = !this._labelsOnly;
+        this.render();
+        return;
+      }
+      if (action === "all-labels") {
+        const allSelected = this._selectedLabels?.size === this._labels?.length;
+        this._selectedLabels = new Set(allSelected ? [] : (this._labels || []).map((label) => label.label_id));
+        this.render();
+        return;
+      }
+      const labelId = event.target.closest("[data-label-toggle]")?.dataset.labelToggle;
+      if (labelId) {
+        this._selectedLabels ||= new Set();
+        this._selectedLabels.has(labelId) ? this._selectedLabels.delete(labelId) : this._selectedLabels.add(labelId);
         this.render();
         return;
       }
@@ -194,13 +209,16 @@ class AreaTopologyCard extends HTMLElement {
       <style>${this.styles()}</style>
       <ha-card>
         <div class="header">
-          <div><h1>Area topology</h1><p>${this.summary()}</p></div>
-          ${this._data ? `<div class="header-actions">
-            <button data-topology-action="expand" title="Expand all areas"><span>＋</span> Expand all</button>
-            <button data-topology-action="collapse" title="Collapse to areas"><span>−</span> Collapse all</button>
-            <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
-            <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
-          </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
+          <div class="header-main">
+            <div><h1>Area topology</h1><p>${this.summary()}</p></div>
+            ${this._data ? `<div class="header-actions">
+              <button data-topology-action="expand" title="Expand all areas"><span>＋</span> Expand all</button>
+              <button data-topology-action="collapse" title="Collapse to areas"><span>−</span> Collapse all</button>
+              <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
+              <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
+            </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
+          </div>
+          ${this.renderLabelFilters()}
         </div>
         <div class="content">${content}</div>
       </ha-card>`;
@@ -222,6 +240,22 @@ class AreaTopologyCard extends HTMLElement {
     return `${this._data.length} area${this._data.length === 1 ? "" : "s"} · ${deviceCount} device${deviceCount === 1 ? "" : "s"}`;
   }
 
+  renderLabelFilters() {
+    if (!this._labels?.length) return "";
+    const allSelected = this._selectedLabels?.size === this._labels.length;
+    return `<div class="label-filters" aria-label="Filter devices by label">
+      <span class="filter-caption">Labels</span>
+      <button class="label-filter all ${allSelected ? "selected" : ""}" data-topology-action="all-labels" aria-pressed="${allSelected}">All</button>
+      ${this._labels.map((label) => {
+        const selected = this._selectedLabels?.has(label.label_id);
+        const color = safeColor(label.color);
+        return `<button class="label-filter ${selected ? "selected" : ""}" data-label-toggle="${escapeHtml(label.label_id)}" aria-pressed="${selected}" style="--label-color:${color}">
+          ${label.icon ? `<ha-icon icon="${escapeHtml(label.icon)}"></ha-icon>` : ""}<span>${escapeHtml(label.name)}</span>
+        </button>`;
+      }).join("")}
+    </div>`;
+  }
+
   renderAreas() {
     const visibleAreas = this._data.filter((area) => area.id !== "__unassigned__" || this._showUnassigned);
     if (!visibleAreas.length) return '<div class="message">No areas or devices found.</div>';
@@ -233,7 +267,12 @@ class AreaTopologyCard extends HTMLElement {
     visibleAreas.forEach((area, areaIndex) => {
       const angle = -Math.PI / 2 + areaIndex * sector;
       const devices = [];
-      const displayedDevices = this._labelsOnly ? area.devices.filter((device) => device.labels.length) : area.devices;
+      const allLabelsSelected = this._selectedLabels?.size === this._labels?.length;
+      const displayedDevices = area.devices.filter((device) => {
+        if (this._labelsOnly && !device.labels.length) return false;
+        if (allLabelsSelected) return true;
+        return device.labels.some((label) => this._selectedLabels?.has(label.label_id));
+      });
       if (!this._collapsedAreas.has(area.id)) {
         let deviceIndex = 0;
         let ring = 0;
@@ -289,7 +328,7 @@ class AreaTopologyCard extends HTMLElement {
     const requestedHeight = Number(this._config.map_height);
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
-      : "clamp(420px, calc(100vh - 180px), 1200px)";
+      : "clamp(420px, calc(100vh - 230px), 1200px)";
     return `<div class="topology-scroll" style="--map-height:${mapHeight}"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px">
       <svg class="web" viewBox="0 0 ${canvas.width} ${canvas.height}" preserveAspectRatio="none" aria-hidden="true">
         ${lines.join("")}
@@ -336,10 +375,11 @@ class AreaTopologyCard extends HTMLElement {
     :host { display:block; --at-accent:var(--primary-color,#03a9f4); --at-area:#7e57c2; --at-line:color-mix(in srgb,var(--at-accent) 35%,transparent); }
     * { box-sizing:border-box; }
     ha-card { overflow:hidden; background:var(--ha-card-background,var(--card-background-color,#fff)); }
-    .header { display:flex; justify-content:space-between; align-items:center; padding:22px 24px 18px; border-bottom:1px solid var(--divider-color,#ddd); }
+    .header { display:block; padding:18px 24px 14px; border-bottom:1px solid var(--divider-color,#ddd); }
+    .header-main { display:flex; justify-content:space-between; align-items:center; gap:16px; }
     .header h1 { font-size:20px; line-height:1.2; margin:0; font-weight:600; }
     .header p { color:var(--secondary-text-color,#727272); margin:5px 0 0; font-size:13px; }
-    .header>ha-icon { color:var(--at-accent); --mdc-icon-size:30px; }
+    .header-main>ha-icon { color:var(--at-accent); --mdc-icon-size:30px; }
     .header-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
     .header-actions button { display:flex; align-items:center; gap:5px; padding:7px 10px; border:1px solid var(--divider-color,#ddd); border-radius:9px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#f1f1f1); font:inherit; font-size:12px; cursor:pointer; }
     .header-actions button:hover { border-color:var(--at-accent); color:var(--at-accent); }
@@ -349,6 +389,12 @@ class AreaTopologyCard extends HTMLElement {
     .toggle-control .switch i { position:absolute; top:3px; left:3px; width:11px; height:11px; border-radius:50%; background:white; transition:transform .18s ease; }
     .toggle-control.active .switch { background:var(--at-accent); }
     .toggle-control.active .switch i { transform:translateX(13px); }
+    .label-filters { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:13px; padding-top:11px; border-top:1px solid var(--divider-color,#ddd); }
+    .filter-caption { margin-right:3px; color:var(--secondary-text-color,#727272); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+    .label-filter { display:inline-flex; align-items:center; gap:5px; min-height:27px; padding:4px 9px; border:1px solid color-mix(in srgb,var(--label-color,var(--at-accent)) 45%,var(--divider-color,#ddd)); border-radius:999px; color:var(--secondary-text-color,#727272); background:var(--card-background-color,#fff); font:inherit; font-size:11px; cursor:pointer; opacity:.58; }
+    .label-filter.selected { color:var(--label-color,var(--at-accent)); background:color-mix(in srgb,var(--label-color,var(--at-accent)) 13%,var(--card-background-color,#fff)); opacity:1; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--label-color,var(--at-accent)) 24%,transparent); }
+    .label-filter.all { --label-color:var(--at-accent); font-weight:600; }
+    .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
     .topology-scroll { width:100%; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; }
@@ -387,7 +433,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header { align-items:flex-start; gap:12px; } .header-actions button { padding:7px; } .header-actions button span+* { display:none; } .topology-scroll { cursor:grab; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .topology-scroll { cursor:grab; } }
   `; }
 }
 
