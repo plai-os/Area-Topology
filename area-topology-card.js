@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.0";
+const CARD_VERSION = "0.8.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -49,6 +49,9 @@ const contrastColor = (color) => {
 
 export function buildTopology(areas, devices, entities, labels, showUnassigned = true) {
   const labelsById = new Map(labels.map((label) => [label.label_id, label]));
+  const unassignedAreaIds = new Set(areas
+    .filter((area) => area.name?.trim().toLowerCase() === "unassigned")
+    .map((area) => area.area_id));
   const entitiesByDevice = new Map();
   for (const entity of entities) {
     if (!entity.device_id) continue;
@@ -57,7 +60,7 @@ export function buildTopology(areas, devices, entities, labels, showUnassigned =
     entitiesByDevice.set(entity.device_id, list);
   }
 
-  const nodes = areas.map((area) => ({
+  const nodes = areas.filter((area) => !unassignedAreaIds.has(area.area_id)).map((area) => ({
     id: area.area_id,
     name: area.name,
     icon: area.icon || "mdi:floor-plan",
@@ -69,7 +72,8 @@ export function buildTopology(areas, devices, entities, labels, showUnassigned =
   for (const device of devices) {
     const deviceEntities = entitiesByDevice.get(device.id) || [];
     const inheritedArea = deviceEntities.find((entity) => entity.area_id)?.area_id;
-    const area = areaById.get(device.area_id || inheritedArea) || unassigned;
+    const requestedArea = device.area_id || inheritedArea;
+    const area = unassignedAreaIds.has(requestedArea) ? unassigned : (areaById.get(requestedArea) || unassigned);
     const deviceLabels = (device.labels || []).map((id) => labelsById.get(id)).filter(Boolean);
     const iconLabel = deviceLabels.find((label) => label.icon);
     const colorLabel = iconLabel?.color ? iconLabel : deviceLabels.find((label) => label.color);
