@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.1";
+const CARD_VERSION = "1.0.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -173,6 +173,10 @@ class AreaTopologyCard extends HTMLElement {
       this._floors = floors;
       if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
+      if (!this._treeDeviceExpansionInitialized) {
+        this._collapsedDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
+        this._treeDeviceExpansionInitialized = true;
+      }
     } catch (error) {
       this._error = error?.message || String(error);
     } finally {
