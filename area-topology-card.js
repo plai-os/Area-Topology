@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.9.0";
+const CARD_VERSION = "1.9.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1164,6 +1164,7 @@ class AreaTopologyCard extends HTMLElement {
       </div>
       ${floorViews.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
+          <div class="lcars-nav-cap"></div>
           ${floorViews.map((group) => `<button class="${group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
           <div class="lcars-nav-foot"></div>
         </nav>
@@ -1720,6 +1721,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-body { display:grid; grid-template-columns:210px minmax(0,1fr); gap:18px; align-items:start; }
     .lcars-main { min-width:0; }
     .lcars-floor-nav { position:sticky; top:12px; z-index:12; align-self:start; display:flex; flex-direction:column; gap:7px; padding:0 0 8px; }
+    .lcars-nav-cap { height:72px; border-top:28px solid #7893a4; border-radius:0 30px 0 0; background:#263c48; box-sizing:border-box; }
     .lcars-nav-foot { height:72px; margin-top:4px; border-bottom:28px solid #7893a4; border-radius:0 0 30px 0; background:#263c48; box-sizing:border-box; }
     .lcars-floor-nav button { display:grid; grid-template-columns:58px minmax(0,1fr); gap:5px; min-height:54px; padding:0; border:0; color:var(--nav-contrast); background:transparent; font:inherit; text-align:left; cursor:pointer; }
     .lcars-floor-nav button:hover { filter:brightness(1.12); transform:translateX(3px); }
@@ -1729,6 +1731,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor-nav button span { justify-content:center; border-radius:28px 0 0 28px; font-family:Impact,"Arial Narrow",sans-serif; font-size:29px; font-weight:400; letter-spacing:.02em; }
     .lcars-floor-nav button b { padding:0 11px; overflow:hidden; font-family:Impact,"Arial Narrow",sans-serif; font-size:15px; font-weight:400; letter-spacing:.025em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
     .lcars-floor { --lcars-tone:#cc99cc; --lcars-tone-contrast:#08080a; margin-top:14px; scroll-margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
+    .lcars-main>.lcars-floor:first-child { margin-top:0; }
     .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-family:Impact,"Arial Narrow",sans-serif; font-size:20px; line-height:1.2; font-weight:400; letter-spacing:.025em; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
