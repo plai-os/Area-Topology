@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.6";
+const CARD_VERSION = "0.8.7";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -111,6 +111,7 @@ class AreaTopologyCard extends HTMLElement {
       const preferences = this.loadPreferences();
       this._showUnassigned = preferences.showUnassigned ?? this._config.show_unassigned;
       this._labelsOnly = preferences.labelsOnly ?? this._config.show_only_labeled;
+      this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
     }
     if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
     this.render();
@@ -130,6 +131,7 @@ class AreaTopologyCard extends HTMLElement {
       window.localStorage.setItem(this._preferenceKey, JSON.stringify({
         showUnassigned: this._showUnassigned,
         labelsOnly: this._labelsOnly,
+        unassignedLabelsOnly: this._unassignedLabelsOnly,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -209,6 +211,12 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (action === "labels") {
         this._labelsOnly = !this._labelsOnly;
+        this.savePreferences();
+        this.render();
+        return;
+      }
+      if (action === "unassigned-labels") {
+        this._unassignedLabelsOnly = !this._unassignedLabelsOnly;
         this.savePreferences();
         this.render();
         return;
@@ -506,11 +514,12 @@ class AreaTopologyCard extends HTMLElement {
   renderUnassignedPanel() {
     if (!this._showUnassigned) return "";
     const unassigned = this._data.find((area) => area.id === "__unassigned__");
-    const devices = unassigned?.devices || [];
+    const allDevices = unassigned?.devices || [];
+    const devices = this._unassignedLabelsOnly ? allDevices.filter((device) => device.labels.length) : allDevices;
     return `<aside class="unassigned-panel">
       <div class="panel-head">
-        <div><h2>Unassigned</h2><small>${devices.length} device${devices.length === 1 ? "" : "s"}</small></div>
-        <ha-icon icon="mdi:tray-arrow-right"></ha-icon>
+        <div><h2>Unassigned</h2><small>${devices.length}${this._unassignedLabelsOnly ? ` of ${allDevices.length}` : ""} device${devices.length === 1 ? "" : "s"}</small></div>
+        <button class="panel-toggle toggle-control ${this._unassignedLabelsOnly ? "active" : ""}" data-topology-action="unassigned-labels" aria-pressed="${this._unassignedLabelsOnly}" title="Show only labelled unassigned devices"><span class="switch"><i></i></span> Labelled</button>
       </div>
       <p class="panel-help">Drag a device onto an area to assign it.</p>
       ${this._assignmentMessage ? `<div class="assignment-message ${this._assignmentMessage.type}">${escapeHtml(this._assignmentMessage.text)}</div>` : ""}
@@ -700,7 +709,9 @@ class AreaTopologyCard extends HTMLElement {
     .entities b { color:var(--secondary-text-color,#727272); font-weight:400; white-space:nowrap; }
     .unassigned-panel { flex:0 0 285px; width:285px; height:var(--map-height); overflow:hidden; display:flex; flex-direction:column; border-left:1px solid var(--divider-color,#ddd); background:var(--card-background-color,#fff); }
     .panel-head { display:flex; justify-content:space-between; align-items:center; padding:16px 16px 10px; }
-    .panel-head h2 { font-size:16px; } .panel-head>ha-icon { color:var(--secondary-text-color,#727272); }
+    .panel-head h2 { font-size:16px; }
+    .panel-toggle { display:flex; align-items:center; gap:5px; padding:6px 7px; border:1px solid var(--divider-color,#ddd); border-radius:8px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#f1f1f1); font:inherit; font-size:10px; cursor:pointer; }
+    .panel-toggle:hover { border-color:var(--at-accent); }
     .panel-help { margin:0 16px 12px; color:var(--secondary-text-color,#727272); font-size:11px; line-height:1.35; }
     .assignment-message { margin:0 12px 10px; padding:8px 10px; border-radius:8px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#eee); font-size:11px; }
     .assignment-message.success { color:var(--success-color,#43a047); } .assignment-message.error { color:var(--error-color,#db4437); }
