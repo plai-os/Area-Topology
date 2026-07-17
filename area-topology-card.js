@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.4.4";
+const CARD_VERSION = "1.4.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1550,13 +1550,13 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
-    .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:0; left:0; width:var(--lcars-area-rail); background:var(--lcars-tone); }
-    .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
-    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-tone); }
+    .lcars-area-grid { --lcars-area-tone:#9999ff; --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
+    .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:0; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
+    .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-area-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
+    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-area-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
-    .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
+    .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-area-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; }
     .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
