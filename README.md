@@ -4,9 +4,9 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 
 ## Features
 
-- Radial Home → Area → Device topology
+- Radial Home → Area → Device topology, with an automatic Floor level when multiple floors exist
 - Collision-aware multi-ring layout for larger installations
-- Expand/collapse individual areas or the entire map
+- Expand/collapse floors, areas, or the entire map with space-aware reflow
 - Filters for labelled and unassigned devices
 - Drag-and-drop unassigned device panel for assigning devices to areas
 - Individual label toggles, with all labels selected initially
@@ -15,6 +15,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
 - Header zoom controls
+- Hovered device cards rise above neighbouring nodes
 - Persistent Unassigned and Labelled-only display preferences
 
 ## Install with HACS
@@ -71,9 +72,9 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 
-The card reads Home Assistant's area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
+The card reads Home Assistant's floor, area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
 
-Area nodes can be selected to expand or collapse their devices. Header controls expand or collapse all areas and toggle the Unassigned branch. The canvas grows into additional device rings as needed and scrolls in both directions.
+When Home Assistant has more than one floor, floor nodes are shown between Home and Area nodes. Floors and areas start expanded. Collapse all stops at floors when that level is available; otherwise it stops at areas. The canvas grows into additional device rings as needed and scrolls in both directions.
 
 Clicking an area name opens its Home Assistant area settings. Use the small `+`/`−` button to expand or collapse it. Clicking a device opens that device's configuration page.
 

@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.9";
+const CARD_VERSION = "0.9.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -47,7 +47,7 @@ const contrastColor = (color) => {
   return luminance > 0.42 ? "#151515" : "#ffffff";
 };
 
-export function buildTopology(areas, devices, entities, labels, showUnassigned = true) {
+export function buildTopology(areas, devices, entities, labels, showUnassigned = true, floors = []) {
   const labelsById = new Map(labels.map((label) => [label.label_id, label]));
   const unassignedAreaIds = new Set(areas
     .filter((area) => area.name?.trim().toLowerCase() === "unassigned")
@@ -64,6 +64,7 @@ export function buildTopology(areas, devices, entities, labels, showUnassigned =
     id: area.area_id,
     name: area.name,
     icon: area.icon || "mdi:floor-plan",
+    floorId: area.floor_id || null,
     devices: [],
   }));
   const areaById = new Map(nodes.map((area) => [area.id, area]));
@@ -101,6 +102,7 @@ class AreaTopologyCard extends HTMLElement {
     this._loadedForConnection = null;
     this._data = null;
     this._collapsedAreas = new Set();
+    this._collapsedFloors = new Set();
   }
 
   setConfig(config) {
@@ -156,15 +158,17 @@ class AreaTopologyCard extends HTMLElement {
     this.render();
     try {
       const call = (type) => this._hass.callWS({ type });
-      const [areas, devices, entities, labels] = await Promise.all([
+      const [areas, devices, entities, labels, floors] = await Promise.all([
         call("config/area_registry/list"),
         call("config/device_registry/list"),
         call("config/entity_registry/list"),
         call("config/label_registry/list"),
+        call("config/floor_registry/list").catch(() => []),
       ]);
       this._labels = labels;
+      this._floors = floors;
       if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
-      this._data = buildTopology(areas, devices, entities, labels, true);
+      this._data = buildTopology(areas, devices, entities, labels, true, floors);
     } catch (error) {
       this._error = error?.message || String(error);
     } finally {
@@ -193,12 +197,18 @@ class AreaTopologyCard extends HTMLElement {
       if (action === "expand") {
         this.captureViewportFocus();
         this._collapsedAreas.clear();
+        this._collapsedFloors.clear();
         this.render();
         return;
       }
       if (action === "collapse") {
         this.captureViewportFocus();
-        this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
+        if (this.hasFloorLevel()) {
+          this._collapsedFloors = new Set(this.floorGroups().map((floor) => floor.id));
+          this._collapsedAreas.clear();
+        } else {
+          this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
+        }
         this.render();
         return;
       }
@@ -249,6 +259,13 @@ class AreaTopologyCard extends HTMLElement {
       if (areaId) {
         this.captureViewportFocus();
         this._collapsedAreas.has(areaId) ? this._collapsedAreas.delete(areaId) : this._collapsedAreas.add(areaId);
+        this.render();
+        return;
+      }
+      const floorId = event.target.closest("[data-floor-toggle]")?.dataset.floorToggle;
+      if (floorId) {
+        this.captureViewportFocus();
+        this._collapsedFloors.has(floorId) ? this._collapsedFloors.delete(floorId) : this._collapsedFloors.add(floorId);
         this.render();
         return;
       }
@@ -442,9 +459,34 @@ class AreaTopologyCard extends HTMLElement {
     </div>`;
   }
 
+  hasFloorLevel() {
+    return (this._floors?.length || 0) > 1;
+  }
+
+  floorGroups() {
+    const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
+    const groups = (this._floors || []).map((floor) => ({
+      id: floor.floor_id,
+      name: floor.name,
+      icon: floor.icon || "mdi:layers-outline",
+      level: floor.level,
+      areas: areas.filter((area) => area.floorId === floor.floor_id),
+    })).sort((a, b) => (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
+    const areasWithoutFloor = areas.filter((area) => !groups.some((floor) => floor.id === area.floorId));
+    if (areasWithoutFloor.length) groups.push({
+      id: "__no_floor__",
+      name: "No floor",
+      icon: "mdi:layers-off-outline",
+      level: null,
+      areas: areasWithoutFloor,
+    });
+    return groups;
+  }
+
   renderAreas() {
     const visibleAreas = this._data.filter((area) => area.id !== "__unassigned__");
     if (!visibleAreas.length) return '<div class="message">No areas or devices found.</div>';
+    if (this.hasFloorLevel()) return this.renderFloorTopology();
     const areaRadius = Math.max(285, visibleAreas.length * 190 / (Math.PI * 2));
     const areaLayouts = [];
     let maximumRadius = areaRadius;
@@ -523,6 +565,117 @@ class AreaTopologyCard extends HTMLElement {
       });
     });
 
+    return this.renderTopologyCanvas(canvas, center, lines, [], areaNodes, deviceNodes);
+  }
+
+  renderFloorTopology() {
+    const floorGroups = this.floorGroups();
+    const allLabelsSelected = this._selectedLabels?.size === this._labels?.length;
+    const displayedDevices = (area) => area.devices.filter((device) => {
+      if (this._labelsOnly && !device.labels.length) return false;
+      if (allLabelsSelected) return true;
+      return device.labels.some((label) => this._selectedLabels?.has(label.label_id));
+    });
+    const floorRadius = Math.max(250, floorGroups.length * 200 / (Math.PI * 2));
+    const areaCount = floorGroups.reduce((total, floor) => total + floor.areas.length, 0);
+    const areaRadius = Math.max(floorRadius + 250, areaCount * 205 / (Math.PI * 2));
+    const floorWeights = floorGroups.map((floor) => this._collapsedFloors.has(floor.id) ? 0 : Math.max(1,
+      floor.areas.length + floor.areas.reduce((total, area) => total + displayedDevices(area).length, 0) * 0.35));
+    const floorBaseArc = Math.min(0.78, Math.PI * 2 / floorGroups.length);
+    const floorRemainingArc = Math.max(0, Math.PI * 2 - floorBaseArc * floorGroups.length);
+    const totalFloorWeight = floorWeights.reduce((total, weight) => total + weight, 0);
+    const floorArcs = floorWeights.map((weight) => floorBaseArc + (totalFloorWeight
+      ? floorRemainingArc * weight / totalFloorWeight
+      : floorRemainingArc / floorGroups.length));
+    let floorCursor = -Math.PI / 2 - floorArcs[0] / 2;
+    let maximumRadius = floorRadius;
+    const layouts = [];
+
+    floorGroups.forEach((floor, floorIndex) => {
+      const floorArc = floorArcs[floorIndex];
+      const floorAngle = floorCursor + floorArc / 2;
+      floorCursor += floorArc;
+      const areas = [];
+      if (!this._collapsedFloors.has(floor.id) && floor.areas.length) {
+        maximumRadius = Math.max(maximumRadius, areaRadius);
+        const usableArc = floorArc * 0.82;
+        const areaWeights = floor.areas.map((area) => this._collapsedAreas.has(area.id) ? 0 : Math.max(1, displayedDevices(area).length));
+        const areaBaseArc = Math.min(0.58, usableArc / floor.areas.length);
+        const areaRemainingArc = Math.max(0, usableArc - areaBaseArc * floor.areas.length);
+        const totalAreaWeight = areaWeights.reduce((total, weight) => total + weight, 0);
+        const areaArcs = areaWeights.map((weight) => areaBaseArc + (totalAreaWeight
+          ? areaRemainingArc * weight / totalAreaWeight
+          : areaRemainingArc / floor.areas.length));
+        let areaCursor = floorAngle - usableArc / 2;
+        floor.areas.forEach((area, areaIndex) => {
+          const areaArc = areaArcs[areaIndex];
+          const angle = areaCursor + areaArc / 2;
+          areaCursor += areaArc;
+          const visibleDevices = displayedDevices(area);
+          const devices = [];
+          if (!this._collapsedAreas.has(area.id)) {
+            let deviceIndex = 0;
+            let ring = 0;
+            while (deviceIndex < visibleDevices.length) {
+              const radius = areaRadius + 255 + ring * 190;
+              const deviceArc = areaArc * 0.72;
+              const capacity = Math.max(1, Math.floor(deviceArc * radius / 270) + 1);
+              const ringCount = Math.min(capacity, visibleDevices.length - deviceIndex);
+              for (let slot = 0; slot < ringCount; slot += 1) {
+                const offset = ringCount === 1 ? 0 : (slot / (ringCount - 1) - 0.5) * deviceArc;
+                devices.push({ device: visibleDevices[deviceIndex], angle: angle + offset, radius });
+                deviceIndex += 1;
+              }
+              maximumRadius = Math.max(maximumRadius, radius);
+              ring += 1;
+            }
+          }
+          areas.push({ area, angle, devices, displayedCount: visibleDevices.length });
+        });
+      }
+      layouts.push({ floor, angle: floorAngle, areas });
+    });
+
+    const canvasSize = Math.max(1200, Math.ceil((maximumRadius + 210) * 2));
+    const canvas = { width: canvasSize, height: canvasSize };
+    const center = { x: canvasSize / 2, y: canvasSize / 2 };
+    const floorNodes = [];
+    const areaNodes = [];
+    const deviceNodes = [];
+    const lines = [];
+    layouts.forEach(({ floor, angle, areas }) => {
+      const floorPoint = { x: center.x + Math.cos(angle) * floorRadius, y: center.y + Math.sin(angle) * floorRadius };
+      const floorCollapsed = this._collapsedFloors.has(floor.id);
+      lines.push(this.renderLine(center, floorPoint, "floor-line"));
+      floorNodes.push(`<div class="floor node ${floorCollapsed ? "collapsed" : ""}" aria-expanded="${!floorCollapsed}" style="${this.nodeStyle(floorPoint, canvas)}">
+        <button class="floor-main" data-floor-toggle="${escapeHtml(floor.id)}" title="${floorCollapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">
+          <span class="floor-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
+          <div><h2>${escapeHtml(floor.name)}</h2><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"}</small></div>
+        </button>
+        <button class="toggle" data-floor-toggle="${escapeHtml(floor.id)}" title="${floorCollapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">${floorCollapsed ? "+" : "−"}</button>
+      </div>`);
+      areas.forEach(({ area, angle: areaAngle, devices, displayedCount }) => {
+        const areaPoint = { x: center.x + Math.cos(areaAngle) * areaRadius, y: center.y + Math.sin(areaAngle) * areaRadius };
+        const collapsed = this._collapsedAreas.has(area.id);
+        lines.push(this.renderLine(floorPoint, areaPoint, "area-line"));
+        areaNodes.push(`<div class="area node ${collapsed ? "collapsed" : ""}" data-area-drop="${escapeHtml(area.id)}" aria-expanded="${!collapsed}" style="${this.nodeStyle(areaPoint, canvas)}">
+          <button class="area-main" data-area-config="${escapeHtml(area.id)}" title="Open ${escapeHtml(area.name)} settings">
+            <span class="area-icon"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon></span>
+            <div><h2>${escapeHtml(area.name)}</h2><small>${displayedCount} device${displayedCount === 1 ? "" : "s"}</small></div>
+          </button>
+          <button class="toggle" data-area-toggle="${escapeHtml(area.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(area.name)}">${collapsed ? "+" : "−"}</button>
+        </div>`);
+        devices.forEach(({ device, angle: deviceAngle, radius }) => {
+          const point = { x: center.x + Math.cos(deviceAngle) * radius, y: center.y + Math.sin(deviceAngle) * radius };
+          lines.push(this.renderLine(areaPoint, point, "device-line"));
+          deviceNodes.push(this.renderDevice(device, point, canvas));
+        });
+      });
+    });
+    return this.renderTopologyCanvas(canvas, center, lines, floorNodes, areaNodes, deviceNodes);
+  }
+
+  renderTopologyCanvas(canvas, center, lines, floorNodes, areaNodes, deviceNodes) {
     const requestedHeight = Number(this._config.map_height);
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
@@ -540,6 +693,7 @@ class AreaTopologyCard extends HTMLElement {
         <strong>${escapeHtml(this._config.title)}</strong>
         <small>${this.summary()}</small>
       </div>
+      ${floorNodes.join("")}
       ${areaNodes.join("")}
       ${deviceNodes.join("")}
     </div></div></div>${this.renderUnassignedPanel()}</div>`;
@@ -609,8 +763,9 @@ class AreaTopologyCard extends HTMLElement {
     return `<article class="device node" data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings" style="${this.nodeStyle(point, canvas)};--device-color:${deviceColor}">
       <div class="device-main">
         <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
-        <div class="device-copy"><h3>${escapeHtml(device.name)}</h3>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</div>
+        <div class="device-copy"><h3>${escapeHtml(device.name)}</h3></div>
       </div>
+      ${metadata ? `<small class="device-metadata">${escapeHtml(metadata)}</small>` : ""}
       ${statuses.length ? `<div class="statuses">${statuses.map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="status ${status.active ? "active" : ""}" title="${escapeHtml(status.name)}">
         <ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.value)}</span>
       </button>`).join("")}</div>` : ""}
@@ -679,7 +834,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   styles() { return `
-    :host { display:block; --at-accent:var(--primary-color,#03a9f4); --at-area:#7e57c2; --at-line:color-mix(in srgb,var(--at-accent) 35%,transparent); }
+    :host { display:block; --at-accent:var(--primary-color,#03a9f4); --at-floor:#00897b; --at-area:#7e57c2; --at-line:color-mix(in srgb,var(--at-accent) 35%,transparent); }
     * { box-sizing:border-box; }
     ha-card { overflow:hidden; background:var(--ha-card-background,var(--card-background-color,#fff)); }
     .header { display:block; padding:18px 24px 14px; border-bottom:1px solid var(--divider-color,#ddd); }
@@ -716,6 +871,7 @@ class AreaTopologyCard extends HTMLElement {
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; transform:scale(var(--zoom)); transform-origin:0 0; }
     .web { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .web line { vector-effect:non-scaling-stroke; stroke-linecap:round; }
+    .floor-line { stroke:var(--at-floor); stroke-width:3.5; opacity:.62; }
     .area-line { stroke:var(--at-accent); stroke-width:3; opacity:.5; }
     .device-line { stroke:color-mix(in srgb,var(--at-accent) 35%,transparent); stroke-width:1.5; stroke-dasharray:5 5; }
     .node { position:absolute; left:var(--x); top:var(--y); transform:translate(-50%,-50%); z-index:1; }
@@ -724,12 +880,18 @@ class AreaTopologyCard extends HTMLElement {
     .home-icon svg { width:24px; height:24px; fill:currentColor; }
     .home strong { margin-top:5px; font-size:16px; }
     .home small { margin-top:1px; font-size:9px; }
+    .floor { width:190px; min-height:78px; display:flex; align-items:center; padding:5px; border:2px solid var(--at-floor); border-radius:18px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--at-floor) 10%,var(--card-background-color,#fff)); box-shadow:0 6px 18px rgba(0,0,0,.14); z-index:2; }
+    .floor.collapsed { background:color-mix(in srgb,var(--at-floor) 20%,var(--card-background-color,#fff)); }
+    .floor-main { min-width:0; flex:1; display:flex; align-items:flex-start; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .floor-icon { display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px; margin-top:1px; border-radius:12px; color:var(--at-floor); background:color-mix(in srgb,var(--at-floor) 18%,var(--card-background-color,#fff)); }
+    .floor-icon ha-icon { --mdc-icon-size:24px; }
     .area { width:180px; min-height:72px; display:flex; align-items:center; padding:5px; border:2px solid var(--at-area); border-radius:999px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--at-area) 8%,var(--card-background-color,#fff)); box-shadow:0 5px 16px rgba(0,0,0,.12); z-index:2; font:inherit; text-align:left; }
     .area:hover { box-shadow:0 0 0 5px color-mix(in srgb,var(--at-area) 12%,transparent),0 5px 16px rgba(0,0,0,.14); }
     .area.collapsed { background:color-mix(in srgb,var(--at-area) 16%,var(--card-background-color,#fff)); }
     .area.drop-target { transform:translate(-50%,-50%) scale(1.08); background:color-mix(in srgb,var(--success-color,#43a047) 22%,var(--card-background-color,#fff)); border-color:var(--success-color,#43a047); box-shadow:0 0 0 8px color-mix(in srgb,var(--success-color,#43a047) 18%,transparent),0 7px 20px rgba(0,0,0,.18); }
     .area-main { min-width:0; flex:1; display:flex; align-items:flex-start; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
-    .area .toggle { display:grid; place-items:center; flex:0 0 24px; width:24px; height:24px; margin-right:4px; padding:0; border:0; border-radius:50%; color:white; background:var(--at-area); font:inherit; font-size:17px; line-height:1; cursor:pointer; }
+    .area .toggle,.floor .toggle { display:grid; place-items:center; flex:0 0 24px; width:24px; height:24px; margin-right:4px; padding:0; border:0; border-radius:50%; color:white; font:inherit; font-size:17px; line-height:1; cursor:pointer; }
+    .area .toggle { background:var(--at-area); } .floor .toggle { background:var(--at-floor); }
     .area-icon,.device-icon { display:grid; place-items:center; flex:0 0 auto; border-radius:50%; }
     .area-icon { color:var(--at-area); background:color-mix(in srgb,var(--at-area) 16%,var(--card-background-color,#fff)); }
     .area-icon { width:40px; height:40px; margin-top:1px; }
@@ -737,10 +899,11 @@ class AreaTopologyCard extends HTMLElement {
     h2 { font-size:16px; } h3 { font-size:14px; overflow-wrap:anywhere; }
     small { display:block; margin-top:3px; color:var(--secondary-text-color,#727272); line-height:1.25; }
     .device { width:170px; padding:10px; border:1px solid color-mix(in srgb,var(--device-color) 50%,var(--divider-color,#ddd)); border-radius:12px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); box-shadow:0 3px 11px rgba(0,0,0,.1); cursor:pointer; }
-    .device:hover { box-shadow:0 0 0 4px color-mix(in srgb,var(--device-color) 10%,transparent),0 4px 13px rgba(0,0,0,.14); }
+    .device:hover { z-index:20; box-shadow:0 0 0 4px color-mix(in srgb,var(--device-color) 10%,transparent),0 8px 22px rgba(0,0,0,.24); }
     .device-main { display:flex; align-items:flex-start; gap:10px; }
     .device-icon { width:34px; height:34px; margin-top:1px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
     .device-copy { min-width:0; }
+    .device-metadata { margin-top:5px; }
     .statuses { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0; }
     .status { display:inline-flex; align-items:center; gap:3px; min-height:22px; padding:2px 6px; border:0; border-radius:7px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#eee); font:inherit; font-size:10px; cursor:pointer; }
     .status.active { color:var(--state-active-color,var(--warning-color,#f9a825)); background:color-mix(in srgb,var(--state-active-color,var(--warning-color,#f9a825)) 15%,var(--card-background-color,#fff)); }
