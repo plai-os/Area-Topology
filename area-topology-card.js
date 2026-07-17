@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.0";
+const CARD_VERSION = "0.9.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -193,6 +193,10 @@ class AreaTopologyCard extends HTMLElement {
       this.render();
     });
     this.shadowRoot.addEventListener("click", (event) => {
+      if (Date.now() < (this._suppressDeviceClickUntil || 0) && event.target.closest("[data-device-drag]")) {
+        event.preventDefault();
+        return;
+      }
       const action = event.target.closest("[data-topology-action]")?.dataset.topologyAction;
       if (action === "expand") {
         this.captureViewportFocus();
@@ -290,14 +294,17 @@ class AreaTopologyCard extends HTMLElement {
       }
     });
     this.shadowRoot.addEventListener("dragstart", (event) => {
-      const device = event.target.closest("[data-unassigned-device]");
+      const device = event.target.closest("[data-unassigned-device],[data-device-drag]");
       if (!device || !event.dataTransfer) return;
+      const deviceId = device.dataset.unassignedDevice || device.dataset.deviceDrag;
+      if (!deviceId) return;
       event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", device.dataset.unassignedDevice);
+      event.dataTransfer.setData("text/plain", deviceId);
       device.classList.add("dragging");
     });
     this.shadowRoot.addEventListener("dragend", (event) => {
-      event.target.closest("[data-unassigned-device]")?.classList.remove("dragging");
+      event.target.closest("[data-unassigned-device],[data-device-drag]")?.classList.remove("dragging");
+      this._suppressDeviceClickUntil = Date.now() + 300;
       this.shadowRoot.querySelectorAll(".drop-target").forEach((node) => node.classList.remove("drop-target"));
     });
     this.shadowRoot.addEventListener("dragover", (event) => {
@@ -760,7 +767,7 @@ class AreaTopologyCard extends HTMLElement {
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
     const deviceColor = safeColor(device.color);
     const statuses = this._config.show_status ? this.deviceStatuses(device) : [];
-    return `<article class="device node" data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings" style="${this.nodeStyle(point, canvas)};--device-color:${deviceColor}">
+    return `<article class="device node" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings" style="${this.nodeStyle(point, canvas)};--device-color:${deviceColor}">
       <div class="device-main">
         <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
         <div class="device-copy"><h3>${escapeHtml(device.name)}</h3></div>
@@ -898,8 +905,9 @@ class AreaTopologyCard extends HTMLElement {
     h2,h3 { margin:0; font-weight:600; }
     h2 { font-size:16px; } h3 { font-size:14px; overflow-wrap:anywhere; }
     small { display:block; margin-top:3px; color:var(--secondary-text-color,#727272); line-height:1.25; }
-    .device { width:170px; padding:10px; border:1px solid color-mix(in srgb,var(--device-color) 50%,var(--divider-color,#ddd)); border-radius:12px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); box-shadow:0 3px 11px rgba(0,0,0,.1); cursor:pointer; }
+    .device { width:170px; padding:10px; border:1px solid color-mix(in srgb,var(--device-color) 50%,var(--divider-color,#ddd)); border-radius:12px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); box-shadow:0 3px 11px rgba(0,0,0,.1); cursor:grab; }
     .device:hover { z-index:20; box-shadow:0 0 0 4px color-mix(in srgb,var(--device-color) 10%,transparent),0 8px 22px rgba(0,0,0,.24); }
+    .device:active { cursor:grabbing; } .device.dragging { z-index:30; opacity:.42; }
     .device-main { display:flex; align-items:flex-start; gap:10px; }
     .device-icon { width:34px; height:34px; margin-top:1px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
     .device-copy { min-width:0; }
