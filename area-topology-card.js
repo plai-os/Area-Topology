@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.10.2";
+const CARD_VERSION = "1.10.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1728,7 +1728,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
     .lcars-masthead { display:grid; grid-template-columns:90px minmax(150px,1fr) max-content max-content 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
     .lcars-cap { border-radius:34px 0 0 34px; background:#9999ff; }
-    .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#050507; background:#9999ff; }
+    .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#fff; background:#9999ff; }
     .lcars-title strong { font-family:Impact,"Arial Narrow",sans-serif; font-size:26px; font-weight:400; letter-spacing:.025em; line-height:1; text-transform:uppercase; }
     .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:#ff9900; background:#050507; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; line-height:1; white-space:nowrap; }
     .lcars-clock { padding-left:16px; }.lcars-date { padding-right:16px; }
