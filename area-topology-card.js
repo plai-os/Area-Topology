@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.11.0";
+const CARD_VERSION = "1.11.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -727,16 +727,25 @@ class AreaTopologyCard extends HTMLElement {
     </div>`;
   }
 
-  configureLcarsHistoryCard() {
+  async configureLcarsHistoryCard() {
     const host = this.shadowRoot?.querySelector("[data-lcars-history]");
     if (!host || !this._lcarsPopupEntity) return;
-    customElements.whenDefined("hui-history-graph-card").then(() => {
+    try {
+      const helpers = await window.loadCardHelpers?.();
+      if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
       if (!host.isConnected || host.firstElementChild) return;
-      const chart = document.createElement("hui-history-graph-card");
-      chart.setConfig({ type: "history-graph", entities: [this._lcarsPopupEntity], hours_to_show: 24, show_names: false });
+      const chart = await helpers.createCardElement({
+        type: "history-graph",
+        entities: [this._lcarsPopupEntity],
+        hours_to_show: 24,
+        show_names: false,
+      });
       chart.hass = this._hass;
       host.append(chart);
-    }).catch(() => {});
+    } catch (error) {
+      console.error("Could not load LCARS history graph", error);
+      if (host.isConnected) host.innerHTML = '<div class="lcars-history-error">HISTORY DATA UNAVAILABLE</div>';
+    }
   }
 
   layoutLcarsAreas() {
@@ -1816,6 +1825,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-popup>header { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:12px; margin:13px 16px 0; padding:13px 17px; color:#08080a; background:#cc99cc; }
     .lcars-popup>header ha-icon { --mdc-icon-size:30px; }.lcars-popup>header h2 { margin:2px 0 0; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; text-transform:uppercase; }.lcars-popup>header small { margin:0; color:#33283a; font-size:11px; }.lcars-popup>header>b { padding:8px 13px; border-radius:999px; color:#fff; background:#2e7d32; font-size:18px; white-space:nowrap; }
     .lcars-popup-body { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; margin:0 16px; }.lcars-popup-rail { background:#cc99cc; }.lcars-history { min-height:310px; padding:12px 0; }.lcars-history hui-history-graph-card { display:block; color:var(--primary-text-color,#fff); }
+    .lcars-history-error { display:grid; place-items:center; min-height:286px; color:#ff9966; font-family:Impact,"Arial Narrow",sans-serif; font-size:20px; letter-spacing:.04em; }
     .lcars-popup>footer { display:grid; grid-template-columns:1fr auto 65px; align-items:center; gap:9px; margin:0 16px 14px; }.lcars-popup>footer span { height:9px; background:#cc99cc; }.lcars-popup>footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-popup>footer i { height:24px; border-radius:0 14px 14px 0; background:#ff9966; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
