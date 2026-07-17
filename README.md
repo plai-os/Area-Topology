@@ -100,6 +100,7 @@ The LCARS view groups live systems by floor and area. It prioritises useful read
 The same JavaScript resource also provides `custom:lcars-home-card`. This independent card renders only the LCARS dashboard, without the Home Topology header, layout controls, label toolbar, or unassigned panel. It always shows labelled devices only and always excludes unassigned devices.
 
 Omit `labels`, `floors`, or `areas` to include all entries of that type. When supplied, each option is a YAML list and accepts either the visible Home Assistant name or registry ID.
+The order of each YAML list is also the display order: floors follow `floors`, area panels follow `areas`, and LCARS device groups follow `labels`.
 
 ```yaml
 type: custom:lcars-home-card

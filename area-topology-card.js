@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.0";
+const CARD_VERSION = "1.6.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1125,11 +1125,11 @@ class AreaTopologyCard extends HTMLElement {
     const groups = this.hasFloorLevel()
       ? this.floorGroups()
       : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
-    const visibleGroups = groups
+    const visibleGroups = this.orderConfiguredItems("floors", groups, (group) => group.id, (group) => group.name)
       .filter((group) => !this._standaloneLcars || this.matchesConfiguredItem("floors", group.id, group.name))
       .map((group) => ({
       ...group,
-      areas: group.areas
+      areas: this.orderConfiguredItems("areas", group.areas, (area) => area.id, (area) => area.name)
         .filter((area) => !this._standaloneLcars || this.matchesConfiguredItem("areas", area.id, area.name))
         .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
         .filter((area) => area.displayDevices.length > 0),
@@ -1159,7 +1159,7 @@ class AreaTopologyCard extends HTMLElement {
   lcarsDeviceGroups(devices) {
     const groups = new Map();
     for (const device of devices) {
-      const label = device.labels[0];
+      const label = this.orderConfiguredItems("labels", device.labels, (entry) => entry.label_id, (entry) => entry.name)[0];
       const id = label?.label_id || "__other__";
       if (!groups.has(id)) groups.set(id, {
         id,
@@ -1170,7 +1170,10 @@ class AreaTopologyCard extends HTMLElement {
       });
       groups.get(id).devices.push(device);
     }
-    return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const grouped = [...groups.values()];
+    return Array.isArray(this._config?.labels)
+      ? this.orderConfiguredItems("labels", grouped, (group) => group.id, (group) => group.name)
+      : grouped.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   lcarsConfiguredAreaTemperature(area) {
@@ -1190,6 +1193,17 @@ class AreaTopologyCard extends HTMLElement {
     if (!Array.isArray(configured)) return true;
     const values = new Set(configured.map((value) => String(value).trim().toLowerCase()));
     return values.has(String(id || "").toLowerCase()) || values.has(String(name || "").toLowerCase());
+  }
+
+  orderConfiguredItems(configKey, items, getId, getName) {
+    const configured = this._config?.[configKey];
+    if (!Array.isArray(configured)) return items;
+    const order = new Map(configured.map((value, index) => [String(value).trim().toLowerCase(), index]));
+    const rank = (item) => Math.min(
+      order.get(String(getId(item) || "").toLowerCase()) ?? Number.POSITIVE_INFINITY,
+      order.get(String(getName(item) || "").toLowerCase()) ?? Number.POSITIVE_INFINITY,
+    );
+    return [...items].sort((a, b) => rank(a) - rank(b));
   }
 
   renderLcarsDevice(device) {
