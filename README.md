@@ -107,6 +107,7 @@ Selecting a non-toggle reading opens an LCARS-themed entity overlay with its cur
 type: custom:lcars-home-card
 title: Sarn
 header_color: "#263F4B"
+datetime_color: "#FF9900"
 labels:
   - Alexa
   - Lamps

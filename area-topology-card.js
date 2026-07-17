@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.12.0";
+const CARD_VERSION = "1.12.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -20,6 +20,7 @@ const DEFAULTS = {
   tree_devices_expanded: false,
   map_height: "auto",
   header_color: "#263f4b",
+  datetime_color: "#ff9900",
 };
 
 const escapeHtml = (value = "") => String(value)
@@ -1233,7 +1234,8 @@ class AreaTopologyCard extends HTMLElement {
     const footerColor = displayedFloorViews[0]?.color || "#cc99cc";
     const dateTime = this.lcarsDateTime();
     const headerColor = safeColor(this._config.header_color, "#263f4b");
-    return `<div class="lcars-dashboard" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)}">
+    const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
+    return `<div class="lcars-dashboard" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)};--lcars-datetime:${dateTimeColor}">
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
@@ -1790,7 +1792,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-cap { background:var(--lcars-header,#263f4b); }
     .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#fff; background:var(--lcars-header,#263f4b); }
     .lcars-title strong { font-family:Impact,"Arial Narrow",sans-serif; font-size:26px; font-weight:400; letter-spacing:.025em; line-height:1; text-transform:uppercase; }
-    .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:#ff9900; background:#050507; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; line-height:1; white-space:nowrap; }
+    .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:var(--lcars-datetime,#ff9900); background:#050507; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; line-height:1; white-space:nowrap; }
     .lcars-clock { padding-left:16px; }.lcars-date { padding-right:16px; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:var(--lcars-header,#263f4b); }
     .lcars-body { display:grid; grid-template-columns:210px minmax(0,1fr); gap:18px; align-items:start; }
