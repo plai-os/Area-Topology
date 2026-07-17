@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.1";
-const BUILD_COMMIT = "2dcb3bb";
+const CARD_VERSION = "1.20.2";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1595,6 +1595,8 @@ class AreaTopologyCard extends HTMLElement {
       .fc .fc-day-today .fc-daygrid-day-number { display:inline-grid; place-items:center; min-width:32px; min-height:32px; border-radius:50%; color:${contrast}!important; background:${color}; }
       .fc .fc-event { padding:4px 8px!important; border:0!important; border-radius:14px!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:14px!important; font-weight:400!important; letter-spacing:.025em; }
       .fc .fc-list { border:2px solid ${color}!important; border-radius:0 22px 22px 0; overflow:hidden; }
+      .fc .fc-list-table { border-bottom:2px solid ${color}!important; }
+      .fc .fc-list-table tbody>tr:last-child>td { border-bottom:2px solid ${color}!important; }
       .fc .fc-list-day-cushion { color:${contrast}; background:${color}!important; }
       .fc .fc-list-event:hover td { background:color-mix(in srgb,${color} 18%,#111118)!important; }
     `;
