@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.6";
+const CARD_VERSION = "1.1.7";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -128,9 +128,14 @@ class AreaTopologyCard extends HTMLElement {
       this._unassignedSearch = preferences.unassignedSearch ?? "";
       this._layoutMode = preferences.layoutMode === "tree" || (!preferences.layoutMode && this._config.layout === "tree") ? "tree" : "web";
       this._savedSelectedLabels = Array.isArray(preferences.selectedLabels) ? preferences.selectedLabels : null;
+      this._savedCollapsedAreas = Array.isArray(preferences.collapsedAreas) ? preferences.collapsedAreas : null;
+      this._savedCollapsedFloors = Array.isArray(preferences.collapsedFloors) ? preferences.collapsedFloors : null;
+      this._savedExpandedTreeDevices = Array.isArray(preferences.expandedTreeDevices) ? preferences.expandedTreeDevices : null;
+      this._savedWebZoom = Number.isFinite(Number(preferences.webZoom)) ? Number(preferences.webZoom) : null;
+      this._savedTreeScale = Number.isFinite(Number(preferences.treeScale)) ? Number(preferences.treeScale) : null;
     }
-    if (this._webZoom === undefined) this._webZoom = Math.max(0.65, Math.min(1.8, Number(config.web_zoom ?? config.topology_zoom) || 1));
-    if (this._treeScale === undefined) this._treeScale = Math.max(0.65, Math.min(1.8, Number(this._config.tree_font_scale) || 1));
+    if (this._webZoom === undefined) this._webZoom = Math.max(0.65, Math.min(1.8, this._savedWebZoom ?? (Number(config.web_zoom ?? config.topology_zoom) || 1)));
+    if (this._treeScale === undefined) this._treeScale = Math.max(0.65, Math.min(1.8, this._savedTreeScale ?? (Number(this._config.tree_font_scale) || 1)));
     this.render();
   }
 
@@ -152,6 +157,11 @@ class AreaTopologyCard extends HTMLElement {
         unassignedSearch: this._unassignedSearch,
         layoutMode: this._layoutMode,
         selectedLabels: this._selectedLabels ? [...this._selectedLabels] : this._savedSelectedLabels,
+        collapsedAreas: [...this._collapsedAreas],
+        collapsedFloors: [...this._collapsedFloors],
+        expandedTreeDevices: [...this._expandedTreeDevices],
+        webZoom: this._webZoom,
+        treeScale: this._treeScale,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -191,9 +201,15 @@ class AreaTopologyCard extends HTMLElement {
       }
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
       if (!this._hierarchyDefaultsInitialized) {
-        if (!this._config.areas_expanded) this._collapsedAreas = new Set(this._data.filter((area) => area.id !== "__unassigned__").map((area) => area.id));
-        if (!this._config.floors_expanded && this.hasFloorLevel()) this._collapsedFloors = new Set(this.floorGroups().map((floor) => floor.id));
-        if (this._config.tree_devices_expanded && this._config.tree_show_properties) {
+        const areaIds = new Set(this._data.filter((area) => area.id !== "__unassigned__").map((area) => area.id));
+        const floorIds = new Set(this.floorGroups().map((floor) => floor.id));
+        const deviceIds = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
+        if (this._savedCollapsedAreas) this._collapsedAreas = new Set(this._savedCollapsedAreas.filter((id) => areaIds.has(id)));
+        else if (!this._config.areas_expanded) this._collapsedAreas = new Set(areaIds);
+        if (this._savedCollapsedFloors) this._collapsedFloors = new Set(this._savedCollapsedFloors.filter((id) => floorIds.has(id)));
+        else if (!this._config.floors_expanded && this.hasFloorLevel()) this._collapsedFloors = new Set(floorIds);
+        if (this._savedExpandedTreeDevices) this._expandedTreeDevices = new Set(this._savedExpandedTreeDevices.filter((id) => deviceIds.has(id)));
+        else if (this._config.tree_devices_expanded && this._config.tree_show_properties) {
           this._expandedTreeDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
         }
         this._hierarchyDefaultsInitialized = true;
@@ -232,6 +248,7 @@ class AreaTopologyCard extends HTMLElement {
         this._collapsedAreas.clear();
         this._collapsedFloors.clear();
         this._expandedTreeDevices = new Set(this._data?.flatMap((area) => area.devices.map((device) => device.id)) || []);
+        this.savePreferences();
         this.render();
         return;
       }
@@ -244,6 +261,7 @@ class AreaTopologyCard extends HTMLElement {
         } else {
           this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
         }
+        this.savePreferences();
         this.render();
         return;
       }
@@ -311,6 +329,7 @@ class AreaTopologyCard extends HTMLElement {
       if (areaId) {
         this.captureViewportFocus();
         this._collapsedAreas.has(areaId) ? this._collapsedAreas.delete(areaId) : this._collapsedAreas.add(areaId);
+        this.savePreferences();
         this.render();
         return;
       }
@@ -318,6 +337,7 @@ class AreaTopologyCard extends HTMLElement {
       if (floorId) {
         this.captureViewportFocus();
         this._collapsedFloors.has(floorId) ? this._collapsedFloors.delete(floorId) : this._collapsedFloors.add(floorId);
+        this.savePreferences();
         this.render();
         return;
       }
@@ -334,6 +354,7 @@ class AreaTopologyCard extends HTMLElement {
       const deviceToggleId = event.target.closest("[data-device-toggle]")?.dataset.deviceToggle;
       if (deviceToggleId) {
         this._expandedTreeDevices.has(deviceToggleId) ? this._expandedTreeDevices.delete(deviceToggleId) : this._expandedTreeDevices.add(deviceToggleId);
+        this.savePreferences();
         this.render();
         return;
       }
@@ -457,6 +478,7 @@ class AreaTopologyCard extends HTMLElement {
     if (this._layoutMode === "web") this.captureViewportFocus(clientX, clientY);
     if (this._layoutMode === "tree") this._treeScale = nextZoom;
     else this._webZoom = nextZoom;
+    this.savePreferences();
     this.render();
   }
 
@@ -1090,7 +1112,7 @@ class AreaTopologyCard extends HTMLElement {
     .header { display:block; padding:18px 24px 14px; border-bottom:1px solid var(--divider-color,#ddd); }
     .header-main { display:flex; justify-content:space-between; align-items:center; gap:16px; }
     .header h1 { font-size:20px; line-height:1.2; margin:0; font-weight:600; }
-    .header .version { display:inline-flex; margin-left:5px; padding:2px 5px; border-radius:5px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#f1f1f1); font-size:9px; font-weight:600; vertical-align:middle; }
+    .header .version { display:inline-flex; margin-left:6px; padding:2px 6px; border-radius:5px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#f1f1f1); font-size:14px; font-weight:600; vertical-align:middle; }
     .header p { color:var(--secondary-text-color,#727272); margin:5px 0 0; font-size:13px; }
     .header-main>ha-icon { color:var(--at-accent); --mdc-icon-size:30px; }
     .header-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
