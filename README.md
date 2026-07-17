@@ -157,6 +157,9 @@ security:
       fit_mode: cover
 engineering:
   color: "#FF9966"
+  chart_color: "#FF9966"
+  chart_secondary_color: "#9999FF"
+  chart_tertiary_color: "#FFCC99"
   metrics:
     - name: Demand
       icon: mdi:flash
@@ -200,11 +203,20 @@ engineering:
         - mean
       hide_legend: true
       logarithmic_scale: false
+    - title: Solar Available
+      icon: mdi:solar-power
+      type: sensor
+      entity: sensor.sarn_32_maesderw_sarn
+      graph: line
+      detail: 2
+      name: Solar Available (Sarn)
+      theme: Frosted Glass Dark Lite
+      hours_to_show: 48
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
 Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
-Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel.
+Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel. The three `chart_*_color` settings control the embedded graph series palette.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
