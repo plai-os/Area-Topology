@@ -52,11 +52,18 @@
   card.hass = {
     connection:{},
     states:{ "light.corner_lamp":{ state:"on", attributes:{friendly_name:"Corner lamp"} }, "climate.living_room":{state:"21.5",attributes:{friendly_name:"Room thermostat"}} },
-    callWS: ({type}) => Promise.resolve({
-      "config/area_registry/list":areas,
-      "config/device_registry/list":devices,
-      "config/entity_registry/list":entities,
-      "config/label_registry/list":labels
-    }[type])
+    callWS: ({type, device_id, area_id}) => {
+      if (type === "config/device_registry/update") {
+        const device = devices.find((item) => item.id === device_id);
+        if (device) device.area_id = area_id;
+        return Promise.resolve(device);
+      }
+      return Promise.resolve({
+        "config/area_registry/list":areas,
+        "config/device_registry/list":devices,
+        "config/entity_registry/list":entities,
+        "config/label_registry/list":labels
+      }[type]);
+    }
   };
 </script></body></html>

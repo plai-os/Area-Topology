@@ -8,6 +8,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Collision-aware multi-ring layout for larger installations
 - Expand/collapse individual areas or the entire map
 - Filters for labelled and unassigned devices
+- Drag-and-drop unassigned device panel for assigning devices to areas
 - Individual label toggles, with all labels selected initially
 - Label icons and colours
 - Live device status for lights, doors, windows, locks, covers, temperature, illuminance, humidity and climate

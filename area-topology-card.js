@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.6.1";
+const CARD_VERSION = "0.7.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -202,6 +202,36 @@ class AreaTopologyCard extends HTMLElement {
         return;
       }
     });
+    this.shadowRoot.addEventListener("dragstart", (event) => {
+      const device = event.target.closest("[data-unassigned-device]");
+      if (!device || !event.dataTransfer) return;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", device.dataset.unassignedDevice);
+      device.classList.add("dragging");
+    });
+    this.shadowRoot.addEventListener("dragend", (event) => {
+      event.target.closest("[data-unassigned-device]")?.classList.remove("dragging");
+      this.shadowRoot.querySelectorAll(".drop-target").forEach((node) => node.classList.remove("drop-target"));
+    });
+    this.shadowRoot.addEventListener("dragover", (event) => {
+      const area = event.target.closest("[data-area-drop]");
+      if (!area) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      area.classList.add("drop-target");
+    });
+    this.shadowRoot.addEventListener("dragleave", (event) => {
+      const area = event.target.closest("[data-area-drop]");
+      if (area && !area.contains(event.relatedTarget)) area.classList.remove("drop-target");
+    });
+    this.shadowRoot.addEventListener("drop", (event) => {
+      const area = event.target.closest("[data-area-drop]");
+      if (!area || !event.dataTransfer) return;
+      event.preventDefault();
+      area.classList.remove("drop-target");
+      const deviceId = event.dataTransfer.getData("text/plain");
+      if (deviceId) this.assignDeviceToArea(deviceId, area.dataset.areaDrop);
+    });
     this.render();
   }
 
@@ -215,6 +245,23 @@ class AreaTopologyCard extends HTMLElement {
       composed: true,
       detail: { config: { tap_action: { action: "navigate", navigation_path: path } }, action: "tap" },
     }));
+  }
+
+  async assignDeviceToArea(deviceId, areaId) {
+    this._assignmentMessage = { type: "working", text: "Assigning device…" };
+    this.render();
+    try {
+      await this._hass.callWS({
+        type: "config/device_registry/update",
+        device_id: deviceId,
+        area_id: areaId,
+      });
+      this._assignmentMessage = { type: "success", text: "Device assigned" };
+      await this.loadRegistries();
+    } catch (error) {
+      this._assignmentMessage = { type: "error", text: error?.message || "Could not assign device" };
+      this.render();
+    }
   }
 
   render() {
@@ -261,7 +308,8 @@ class AreaTopologyCard extends HTMLElement {
   summary() {
     if (!this._data) return "Areas and their connected devices";
     const deviceCount = this._data.reduce((total, area) => total + area.devices.length, 0);
-    return `${this._data.length} area${this._data.length === 1 ? "" : "s"} · ${deviceCount} device${deviceCount === 1 ? "" : "s"}`;
+    const areaCount = this._data.filter((area) => area.id !== "__unassigned__").length;
+    return `${areaCount} area${areaCount === 1 ? "" : "s"} · ${deviceCount} device${deviceCount === 1 ? "" : "s"}`;
   }
 
   renderLabelFilters() {
@@ -281,7 +329,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderAreas() {
-    const visibleAreas = this._data.filter((area) => area.id !== "__unassigned__" || this._showUnassigned);
+    const visibleAreas = this._data.filter((area) => area.id !== "__unassigned__");
     if (!visibleAreas.length) return '<div class="message">No areas or devices found.</div>';
     const sector = Math.PI * 2 / visibleAreas.length;
     const areaRadius = Math.max(285, visibleAreas.length * 190 / (Math.PI * 2));
@@ -331,7 +379,7 @@ class AreaTopologyCard extends HTMLElement {
       };
       lines.push(this.renderLine(center, areaPoint, "area-line"));
       const collapsed = this._collapsedAreas.has(area.id);
-      areaNodes.push(`<div class="area node ${collapsed ? "collapsed" : ""}" aria-expanded="${!collapsed}" style="${this.nodeStyle(areaPoint, canvas)}">
+      areaNodes.push(`<div class="area node ${collapsed ? "collapsed" : ""}" data-area-drop="${escapeHtml(area.id)}" aria-expanded="${!collapsed}" style="${this.nodeStyle(areaPoint, canvas)}">
         <button class="area-main" data-area-config="${escapeHtml(area.id)}" title="Open ${escapeHtml(area.name)} settings">
           <span class="area-icon"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon></span>
           <div><h2>${escapeHtml(area.name)}</h2><small>${displayedCount} device${displayedCount === 1 ? "" : "s"}</small></div>
@@ -353,7 +401,7 @@ class AreaTopologyCard extends HTMLElement {
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
       : "clamp(420px, calc(100vh - 230px), 1200px)";
-    return `<div class="topology-scroll" style="--map-height:${mapHeight}"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px">
+    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="topology-scroll"><div class="topology" style="width:${canvas.width}px;height:${canvas.height}px">
       <svg class="web" viewBox="0 0 ${canvas.width} ${canvas.height}" preserveAspectRatio="none" aria-hidden="true">
         ${lines.join("")}
       </svg>
@@ -366,7 +414,36 @@ class AreaTopologyCard extends HTMLElement {
       </div>
       ${areaNodes.join("")}
       ${deviceNodes.join("")}
-    </div></div>`;
+    </div></div>${this.renderUnassignedPanel()}</div>`;
+  }
+
+  renderUnassignedPanel() {
+    if (!this._showUnassigned) return "";
+    const unassigned = this._data.find((area) => area.id === "__unassigned__");
+    const devices = unassigned?.devices || [];
+    return `<aside class="unassigned-panel">
+      <div class="panel-head">
+        <div><h2>Unassigned</h2><small>${devices.length} device${devices.length === 1 ? "" : "s"}</small></div>
+        <ha-icon icon="mdi:tray-arrow-right"></ha-icon>
+      </div>
+      <p class="panel-help">Drag a device onto an area to assign it.</p>
+      ${this._assignmentMessage ? `<div class="assignment-message ${this._assignmentMessage.type}">${escapeHtml(this._assignmentMessage.text)}</div>` : ""}
+      <div class="unassigned-list">
+        ${devices.length ? devices.map((device) => this.renderUnassignedDevice(device)).join("") : '<div class="panel-empty">No unassigned devices</div>'}
+      </div>
+    </aside>`;
+  }
+
+  renderUnassignedDevice(device) {
+    const color = safeColor(device.color);
+    const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
+    return `<article class="unassigned-device" draggable="true" data-unassigned-device="${escapeHtml(device.id)}" style="--device-color:${color}">
+      <span class="drag-handle" title="Drag to an area">⋮⋮</span>
+      <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
+      <button data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings">
+        <strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}
+      </button>
+    </article>`;
   }
 
   renderLine(from, to, className) {
@@ -484,7 +561,8 @@ class AreaTopologyCard extends HTMLElement {
     .label-filter.all { --label-color:var(--at-accent); --label-contrast:#fff; }
     .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
-    .topology-scroll { width:100%; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
+    .workspace { display:flex; width:100%; min-width:0; }
+    .topology-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; }
     .web { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .web line { vector-effect:non-scaling-stroke; stroke-linecap:round; }
@@ -499,6 +577,7 @@ class AreaTopologyCard extends HTMLElement {
     .area { width:180px; min-height:72px; display:flex; align-items:center; padding:5px; border:2px solid var(--at-area); border-radius:999px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--at-area) 8%,var(--card-background-color,#fff)); box-shadow:0 5px 16px rgba(0,0,0,.12); z-index:2; font:inherit; text-align:left; }
     .area:hover { box-shadow:0 0 0 5px color-mix(in srgb,var(--at-area) 12%,transparent),0 5px 16px rgba(0,0,0,.14); }
     .area.collapsed { background:color-mix(in srgb,var(--at-area) 16%,var(--card-background-color,#fff)); }
+    .area.drop-target { transform:translate(-50%,-50%) scale(1.08); background:color-mix(in srgb,var(--success-color,#43a047) 22%,var(--card-background-color,#fff)); border-color:var(--success-color,#43a047); box-shadow:0 0 0 8px color-mix(in srgb,var(--success-color,#43a047) 18%,transparent),0 7px 20px rgba(0,0,0,.18); }
     .area-main { min-width:0; flex:1; display:flex; align-items:flex-start; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
     .area .toggle { display:grid; place-items:center; flex:0 0 24px; width:24px; height:24px; margin-right:4px; padding:0; border:0; border-radius:50%; color:white; background:var(--at-area); font:inherit; font-size:17px; line-height:1; cursor:pointer; }
     .area-icon,.device-icon { display:grid; place-items:center; flex:0 0 auto; border-radius:50%; }
@@ -521,11 +600,26 @@ class AreaTopologyCard extends HTMLElement {
     .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
     .entities button { width:100%; border:0; background:none; color:var(--primary-text-color,#222); display:flex; justify-content:space-between; gap:8px; padding:5px 0; cursor:pointer; text-align:left; font:inherit; font-size:11px; }
     .entities b { color:var(--secondary-text-color,#727272); font-weight:400; white-space:nowrap; }
+    .unassigned-panel { flex:0 0 285px; width:285px; height:var(--map-height); overflow:hidden; display:flex; flex-direction:column; border-left:1px solid var(--divider-color,#ddd); background:var(--card-background-color,#fff); }
+    .panel-head { display:flex; justify-content:space-between; align-items:center; padding:16px 16px 10px; }
+    .panel-head h2 { font-size:16px; } .panel-head>ha-icon { color:var(--secondary-text-color,#727272); }
+    .panel-help { margin:0 16px 12px; color:var(--secondary-text-color,#727272); font-size:11px; line-height:1.35; }
+    .assignment-message { margin:0 12px 10px; padding:8px 10px; border-radius:8px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#eee); font-size:11px; }
+    .assignment-message.success { color:var(--success-color,#43a047); } .assignment-message.error { color:var(--error-color,#db4437); }
+    .unassigned-list { flex:1; min-height:0; overflow:auto; padding:0 10px 14px; }
+    .unassigned-device { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; padding:9px 8px; border:1px solid color-mix(in srgb,var(--device-color) 42%,var(--divider-color,#ddd)); border-radius:10px; background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+    .unassigned-device:active { cursor:grabbing; } .unassigned-device.dragging { opacity:.42; }
+    .drag-handle { align-self:center; color:var(--secondary-text-color,#727272); font-weight:700; letter-spacing:-3px; }
+    .unassigned-device .device-icon { flex:0 0 32px; width:32px; height:32px; }
+    .unassigned-device>button { min-width:0; flex:1; padding:0; border:0; color:var(--primary-text-color,#222); background:none; text-align:left; font:inherit; cursor:pointer; }
+    .unassigned-device strong { display:block; overflow-wrap:anywhere; font-size:12px; }
+    .unassigned-device small { font-size:10px; }
+    .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .topology-scroll { cursor:grab; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } }
   `; }
 }
 
