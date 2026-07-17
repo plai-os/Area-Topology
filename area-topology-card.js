@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.0";
-const BUILD_COMMIT = "937941a";
+const CARD_VERSION = "1.20.1";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1579,6 +1579,7 @@ class AreaTopologyCard extends HTMLElement {
       ha-card,.card-content,.fc { color:#f5f1ff!important; background:#050507!important; font-family:Impact,"Arial Narrow",sans-serif!important; letter-spacing:.025em; }
       .fc .fc-toolbar { gap:14px; padding:14px 16px; background:#0b0b10; }
       .fc .fc-toolbar-title { color:#f5f1ff; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:30px!important; font-weight:400!important; letter-spacing:.045em; text-transform:uppercase; }
+      .fc-toolbar-title,.header-title,.calendar-title,[class*="toolbar-title"],[class*="header-title"],h1,h2 { font-family:Impact,"Arial Narrow",sans-serif!important; font-weight:400!important; letter-spacing:.045em!important; text-transform:uppercase; }
       .fc .fc-button,.fc .fc-button-primary,.fc .fc-today-button,button,mwc-button,ha-button { min-height:38px; border:0!important; border-radius:20px!important; color:${contrast}!important; background:${color}!important; box-shadow:none!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px!important; font-weight:400!important; letter-spacing:.05em!important; text-transform:uppercase; }
       .fc .fc-button:hover,.fc .fc-button:focus,.fc .fc-button-active { filter:brightness(1.14); }
       .fc .fc-button-group { gap:4px; }
