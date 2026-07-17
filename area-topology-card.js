@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.7";
+const CARD_VERSION = "0.8.8";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -112,6 +112,7 @@ class AreaTopologyCard extends HTMLElement {
       this._showUnassigned = preferences.showUnassigned ?? this._config.show_unassigned;
       this._labelsOnly = preferences.labelsOnly ?? this._config.show_only_labeled;
       this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
+      this._unassignedSearch = preferences.unassignedSearch ?? "";
     }
     if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
     this.render();
@@ -132,6 +133,7 @@ class AreaTopologyCard extends HTMLElement {
         showUnassigned: this._showUnassigned,
         labelsOnly: this._labelsOnly,
         unassignedLabelsOnly: this._unassignedLabelsOnly,
+        unassignedSearch: this._unassignedSearch,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -179,6 +181,13 @@ class AreaTopologyCard extends HTMLElement {
         this._unassignedScrollTop = event.target.scrollTop;
       }
     }, true);
+    this.shadowRoot.addEventListener("input", (event) => {
+      if (!event.target.matches?.("[data-unassigned-search]")) return;
+      this._unassignedSearch = event.target.value;
+      this._restoreUnassignedSearchFocus = true;
+      this.savePreferences();
+      this.render();
+    });
     this.shadowRoot.addEventListener("click", (event) => {
       const action = event.target.closest("[data-topology-action]")?.dataset.topologyAction;
       if (action === "expand") {
@@ -394,6 +403,12 @@ class AreaTopologyCard extends HTMLElement {
       if (newUnassignedList && previousUnassignedScroll !== null) {
         newUnassignedList.scrollTop = previousUnassignedScroll;
       }
+      if (this._restoreUnassignedSearchFocus) {
+        const search = this.shadowRoot.querySelector("[data-unassigned-search]");
+        search?.focus();
+        search?.setSelectionRange(search.value.length, search.value.length);
+        this._restoreUnassignedSearchFocus = false;
+      }
     });
   }
 
@@ -515,16 +530,25 @@ class AreaTopologyCard extends HTMLElement {
     if (!this._showUnassigned) return "";
     const unassigned = this._data.find((area) => area.id === "__unassigned__");
     const allDevices = unassigned?.devices || [];
-    const devices = this._unassignedLabelsOnly ? allDevices.filter((device) => device.labels.length) : allDevices;
+    const labelFilteredDevices = this._unassignedLabelsOnly ? allDevices.filter((device) => device.labels.length) : allDevices;
+    const query = String(this._unassignedSearch || "").trim().toLowerCase();
+    const devices = query ? labelFilteredDevices.filter((device) => [
+      device.name,
+      device.manufacturer,
+      device.model,
+      ...device.labels.map((label) => label.name),
+    ].some((value) => String(value || "").toLowerCase().includes(query))) : labelFilteredDevices;
+    const isFiltered = this._unassignedLabelsOnly || Boolean(query);
     return `<aside class="unassigned-panel">
       <div class="panel-head">
-        <div><h2>Unassigned</h2><small>${devices.length}${this._unassignedLabelsOnly ? ` of ${allDevices.length}` : ""} device${devices.length === 1 ? "" : "s"}</small></div>
+        <div><h2>Unassigned</h2><small>${devices.length}${isFiltered ? ` of ${allDevices.length}` : ""} device${devices.length === 1 ? "" : "s"}</small></div>
         <button class="panel-toggle toggle-control ${this._unassignedLabelsOnly ? "active" : ""}" data-topology-action="unassigned-labels" aria-pressed="${this._unassignedLabelsOnly}" title="Show only labelled unassigned devices"><span class="switch"><i></i></span> Labelled</button>
       </div>
+      <label class="panel-search"><ha-icon icon="mdi:magnify"></ha-icon><input type="search" data-unassigned-search value="${escapeHtml(this._unassignedSearch)}" placeholder="Search devices" aria-label="Search unassigned devices"></label>
       <p class="panel-help">Drag a device onto an area to assign it.</p>
       ${this._assignmentMessage ? `<div class="assignment-message ${this._assignmentMessage.type}">${escapeHtml(this._assignmentMessage.text)}</div>` : ""}
       <div class="unassigned-list">
-        ${devices.length ? devices.map((device) => this.renderUnassignedDevice(device)).join("") : '<div class="panel-empty">No unassigned devices</div>'}
+        ${devices.length ? devices.map((device) => this.renderUnassignedDevice(device)).join("") : `<div class="panel-empty">${isFiltered ? "No matching devices" : "No unassigned devices"}</div>`}
       </div>
     </aside>`;
   }
@@ -712,6 +736,10 @@ class AreaTopologyCard extends HTMLElement {
     .panel-head h2 { font-size:16px; }
     .panel-toggle { display:flex; align-items:center; gap:5px; padding:6px 7px; border:1px solid var(--divider-color,#ddd); border-radius:8px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#f1f1f1); font:inherit; font-size:10px; cursor:pointer; }
     .panel-toggle:hover { border-color:var(--at-accent); }
+    .panel-search { display:flex; align-items:center; gap:7px; margin:0 12px 10px; padding:7px 9px; border:1px solid var(--divider-color,#ddd); border-radius:9px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#f1f1f1); }
+    .panel-search:focus-within { border-color:var(--at-accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--at-accent) 14%,transparent); }
+    .panel-search ha-icon { flex:0 0 17px; width:17px; height:17px; --mdc-icon-size:17px; }
+    .panel-search input { min-width:0; width:100%; padding:0; border:0; outline:0; color:var(--primary-text-color,#222); background:transparent; font:inherit; font-size:11px; }
     .panel-help { margin:0 16px 12px; color:var(--secondary-text-color,#727272); font-size:11px; line-height:1.35; }
     .assignment-message { margin:0 12px 10px; padding:8px 10px; border-radius:8px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#eee); font-size:11px; }
     .assignment-message.success { color:var(--success-color,#43a047); } .assignment-message.error { color:var(--error-color,#db4437); }
