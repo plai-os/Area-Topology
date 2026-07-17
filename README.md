@@ -106,6 +106,7 @@ Selecting a non-toggle reading opens an LCARS-themed entity overlay with its cur
 ```yaml
 type: custom:lcars-home-card
 title: Sarn
+header_color: "#263F4B"
 labels:
   - Alexa
   - Lamps

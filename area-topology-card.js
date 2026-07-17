@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.11.5";
+const CARD_VERSION = "1.12.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -19,6 +19,7 @@ const DEFAULTS = {
   areas_expanded: true,
   tree_devices_expanded: false,
   map_height: "auto",
+  header_color: "#263f4b",
 };
 
 const escapeHtml = (value = "") => String(value)
@@ -1231,7 +1232,8 @@ class AreaTopologyCard extends HTMLElement {
       : floorViews;
     const footerColor = displayedFloorViews[0]?.color || "#cc99cc";
     const dateTime = this.lcarsDateTime();
-    return `<div class="lcars-dashboard">
+    const headerColor = safeColor(this._config.header_color, "#263f4b");
+    return `<div class="lcars-dashboard" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)}">
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
@@ -1785,12 +1787,12 @@ class AreaTopologyCard extends HTMLElement {
     .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
     .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
     .lcars-masthead { display:grid; grid-template-columns:90px minmax(150px,1fr) max-content max-content 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
-    .lcars-cap { background:#9999ff; }
-    .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#fff; background:#9999ff; }
+    .lcars-cap { background:var(--lcars-header,#263f4b); }
+    .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#fff; background:var(--lcars-header,#263f4b); }
     .lcars-title strong { font-family:Impact,"Arial Narrow",sans-serif; font-size:26px; font-weight:400; letter-spacing:.025em; line-height:1; text-transform:uppercase; }
     .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:#ff9900; background:#050507; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; line-height:1; white-space:nowrap; }
     .lcars-clock { padding-left:16px; }.lcars-date { padding-right:16px; }
-    .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
+    .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:var(--lcars-header,#263f4b); }
     .lcars-body { display:grid; grid-template-columns:210px minmax(0,1fr); gap:18px; align-items:start; }
     .lcars-main { min-width:0; }
     .lcars-floor-nav { position:sticky; top:12px; z-index:12; align-self:start; display:flex; flex-direction:column; gap:7px; padding:0 0 8px; }
