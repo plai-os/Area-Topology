@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.5";
+const CARD_VERSION = "1.3.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1511,17 +1511,17 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-readout { display:flex; align-items:center; justify-content:flex-end; padding:10px 20px; color:#ff9900; background:#050507; text-align:right; white-space:nowrap; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
     .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
-    .lcars-floor>header { display:grid; grid-template-columns:90px 190px minmax(80px,1fr) auto; min-height:43px; align-items:stretch; text-transform:uppercase; }
+    .lcars-floor>header { display:grid; grid-template-columns:90px 190px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
     .lcars-elbow { border-radius:25px 0 0 0; background:var(--lcars-tone); }
-    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:16px; font-weight:900; text-transform:uppercase; cursor:pointer; }
-    .lcars-floor>header button ha-icon { --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
+    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
+    .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
     .lcars-area-grid { --lcars-rail-width:18px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px; }
     .lcars-area-grid::before { content:""; position:absolute; z-index:0; top:0; bottom:0; left:0; width:var(--lcars-rail-width); background:var(--lcars-tone); }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
-    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
+    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
-    .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
+    .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
     .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-temperature button.temp-cold { background:#1565c0; }.lcars-area-temperature button.temp-normal { background:#2e7d32; }.lcars-area-temperature button.temp-hot { background:#c62828; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
