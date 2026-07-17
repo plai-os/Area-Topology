@@ -1,5 +1,5 @@
 const CARD_VERSION = "1.16.0";
-const BUILD_COMMIT = "pending";
+const BUILD_COMMIT = "95883aa";
 
 const DEFAULTS = {
   title: "Home topology",
