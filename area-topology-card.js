@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.5";
+const CARD_VERSION = "0.9.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -405,7 +405,7 @@ class AreaTopologyCard extends HTMLElement {
       <ha-card>
         <div class="header">
           <div class="header-main">
-            <div><h1>Area topology</h1><p>${this.summary()}</p></div>
+            <div><h1>Home Topology</h1><p>${this.summary()}</p></div>
             ${this._data ? `<div class="header-actions">
               <button data-topology-action="expand" title="Expand all areas"><span>＋</span> Expand all</button>
               <button data-topology-action="collapse" title="Collapse to areas"><span>−</span> Collapse all</button>
@@ -452,7 +452,9 @@ class AreaTopologyCard extends HTMLElement {
     if (!this._data) return "Areas and their connected devices";
     const deviceCount = this._data.reduce((total, area) => total + area.devices.length, 0);
     const areaCount = this._data.filter((area) => area.id !== "__unassigned__").length;
-    return `${areaCount} area${areaCount === 1 ? "" : "s"} · ${deviceCount} device${deviceCount === 1 ? "" : "s"}`;
+    const floorCount = this.effectiveFloors().length;
+    const floorSummary = floorCount ? `${floorCount} floor${floorCount === 1 ? "" : "s"} · ` : "";
+    return `${floorSummary}${areaCount} area${areaCount === 1 ? "" : "s"} · ${deviceCount} device${deviceCount === 1 ? "" : "s"}`;
   }
 
   renderLabelFilters() {
