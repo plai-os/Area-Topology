@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.7";
+const CARD_VERSION = "1.2.8";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1411,7 +1411,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:22px; }
     .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
-    .lcars-devices { padding:9px 12px 12px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
+    .lcars-devices { padding:9px 0 12px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
     .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:13px; text-align:left; cursor:pointer; }
