@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.9";
+const CARD_VERSION = "1.2.10";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1419,7 +1419,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:16px; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { --mdc-icon-size:19px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px 14px; border-left:18px solid var(--lcars-tone); }
+    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px; border-left:18px solid var(--lcars-tone); }
     .lcars-area { min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
