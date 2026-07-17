@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.2";
+const CARD_VERSION = "1.3.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1102,7 +1102,7 @@ class AreaTopologyCard extends HTMLElement {
     const temperatures = this.lcarsAreaTemperatures(area);
     const deviceGroups = this.lcarsDeviceGroups(area.displayDevices);
     return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}">
-      <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button>${temperatures.length ? `<div class="lcars-area-temperature">${temperatures.slice(0, 2).map((temperature) => `<button data-entity="${escapeHtml(temperature.entityId)}" title="${escapeHtml(temperature.name)}"><ha-icon icon="mdi:thermometer"></ha-icon><b>${escapeHtml(temperature.value)}</b></button>`).join("")}</div>` : ""}<span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
+      <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button>${temperatures.length ? `<div class="lcars-area-temperature">${temperatures.slice(0, 2).map((temperature) => `<button class="temp-${temperature.band}" data-entity="${escapeHtml(temperature.entityId)}" title="${escapeHtml(temperature.name)}"><ha-icon icon="mdi:thermometer"></ha-icon><b>${escapeHtml(temperature.value)}</b></button>`).join("")}</div>` : ""}<span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
       <div class="lcars-devices">${deviceGroups.length ? deviceGroups.map((group) => `<section class="lcars-device-group">${group.devices.map((device) => this.renderLcarsDevice(device)).join("")}</section>`).join("") : `<span class="lcars-no-devices">NO DEVICES MATCH THE CURRENT FILTER</span>`}</div>
     </article>`;
   }
@@ -1139,6 +1139,7 @@ class AreaTopologyCard extends HTMLElement {
       return [{
         entityId: entity.entity_id,
         name: stateObj.attributes.friendly_name || entity.name || entity.original_name || entity.entity_id,
+        band: this.temperatureBand(stateObj, domain, deviceClass),
         value: climateTemperature == null
           ? (this._hass?.formatEntityState?.(stateObj) || `${stateObj.state}${stateObj.attributes.unit_of_measurement || "°"}`)
           : `${climateTemperature}${this._hass?.config?.unit_system?.temperature || "°"}`,
@@ -1166,6 +1167,7 @@ class AreaTopologyCard extends HTMLElement {
           ...status,
           domain,
           percentage: percentage == null ? null : Math.max(0, Math.min(100, Number(percentage))),
+          temperatureBand: this.temperatureBand(stateObj, domain, deviceClass),
           adjustable: percentage != null && ["light", "media_player"].includes(domain),
           toggleable: percentage == null && ["light", "switch", "fan", "input_boolean"].includes(domain),
         });
@@ -1202,7 +1204,21 @@ class AreaTopologyCard extends HTMLElement {
         ? ` data-entity-toggle="${escapeHtml(status.entityId)}"`
         : ` data-entity="${escapeHtml(status.entityId)}"`;
     const title = status.adjustable ? "" : ` title="${status.toggleable ? "Toggle" : "Open"} ${escapeHtml(status.name)}"`;
-    return `<${element}${action} class="lcars-meter ${status.active ? "active" : ""} ${status.percentage == null ? "" : "percentage"} ${status.adjustable ? "adjustable" : ""}"${meterStyle}${title}><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b>${interaction}</${element}>`;
+    return `<${element}${action} class="lcars-meter ${status.active ? "active" : ""} ${status.percentage == null ? "" : "percentage"} ${status.temperatureBand ? `temperature temp-${status.temperatureBand}` : ""} ${status.adjustable ? "adjustable" : ""}"${meterStyle}${title}><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b>${interaction}</${element}>`;
+  }
+
+  temperatureBand(stateObj, domain, deviceClass) {
+    if (deviceClass !== "temperature" && domain !== "climate") return "";
+    const rawValue = domain === "climate" ? stateObj.attributes.current_temperature : stateObj.state;
+    let temperature = Number.parseFloat(rawValue);
+    if (!Number.isFinite(temperature)) return "";
+    const unit = domain === "climate"
+      ? this._hass?.config?.unit_system?.temperature
+      : stateObj.attributes.unit_of_measurement;
+    if (String(unit || "").toUpperCase().includes("F")) temperature = (temperature - 32) * 5 / 9;
+    if (temperature > 25) return "hot";
+    if (temperature < 18) return "cold";
+    return "normal";
   }
 
   nodeStyle(point, canvas) {
@@ -1499,13 +1515,13 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
-    .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
+    .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-temperature button.temp-cold { background:#1565c0; }.lcars-area-temperature button.temp-normal { background:#2e7d32; }.lcars-area-temperature button.temp-hot { background:#c62828; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
     .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-meter { --meter-fill:#ff9900; position:relative; min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:linear-gradient(90deg,var(--meter-fill) 0 var(--level,0%),#1b1722 var(--level,0%) 100%); font:inherit; font-size:13px; text-align:left; cursor:pointer; overflow:hidden; }
-    .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.percentage ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { font-size:14px; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #ffcc99; outline-offset:-2px; }
+    .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.adjustable.percentage { --meter-fill:#5858b8; }.lcars-meter.temperature { --level:100%; color:#fff; font-weight:700; text-shadow:0 1px 3px #000; }.lcars-meter.temp-cold { --meter-fill:#1565c0; }.lcars-meter.temp-normal { --meter-fill:#2e7d32; }.lcars-meter.temp-hot { --meter-fill:#c62828; }.lcars-meter.percentage ha-icon,.lcars-meter.temperature ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { font-size:14px; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #aaaaff; outline-offset:-2px; }
     .lcars-standby { padding:9px 13px; border-radius:0 17px 17px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; text-align:right; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
