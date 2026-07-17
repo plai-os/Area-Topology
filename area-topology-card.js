@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.3";
+const CARD_VERSION = "1.0.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1064,11 +1064,12 @@ class AreaTopologyCard extends HTMLElement {
     .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
     .workspace { display:flex; width:100%; min-width:0; }
-    .tree-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; padding:22px 28px 40px; background:color-mix(in srgb,var(--card-background-color,#fff) 96%,var(--at-accent)); }
+    .tree-scroll { --tree-background:color-mix(in srgb,var(--card-background-color,#fff) 96%,var(--at-accent)); flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; padding:22px 28px 40px; background:var(--tree-background); }
     .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:14px; }
     .tree-children { position:relative; margin-left:19px; padding-left:25px; border-left:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
     .tree-branch { position:relative; padding-top:8px; }
-    .tree-branch::before { content:""; position:absolute; top:30px; left:-25px; width:24px; border-top:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
+    .tree-branch::before { content:""; position:absolute; z-index:1; top:30px; left:-25px; width:24px; border-top:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
+    .tree-branch:last-child::after { content:""; position:absolute; z-index:0; top:31px; bottom:0; left:-26px; width:3px; background:var(--tree-background); }
     .tree-row { position:relative; min-height:44px; display:flex; align-items:center; gap:8px; width:max-content; min-width:430px; max-width:900px; padding:5px 9px; border:1px solid transparent; border-radius:9px; }
     .tree-home { padding:8px 11px; border-color:color-mix(in srgb,var(--at-accent) 55%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--at-accent) 9%,var(--card-background-color,#fff)); }
     .tree-floor { border-color:color-mix(in srgb,var(--at-floor) 55%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--at-floor) 9%,var(--card-background-color,#fff)); }
