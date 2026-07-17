@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.18.0";
-const BUILD_COMMIT = "d3720c4";
+const CARD_VERSION = "1.18.1";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -659,6 +659,7 @@ class AreaTopologyCard extends HTMLElement {
 
   render() {
     if (!this.shadowRoot || !this._config) return;
+    const previousPageScroll = this._standaloneLcars ? this.captureAncestorScroll() : [];
     const oldScroller = this.shadowRoot.querySelector(".topology-scroll");
     const previousScroll = oldScroller ? { left: oldScroller.scrollLeft, top: oldScroller.scrollTop } : null;
     const oldTreeScroller = this.shadowRoot.querySelector(".tree-scroll");
@@ -707,6 +708,7 @@ class AreaTopologyCard extends HTMLElement {
     this.configureLcarsCameraCards();
     this.configureLcarsEngineeringCards();
     if (this.shadowRoot.querySelector(".lcars-area-grid")) requestAnimationFrame(() => this.layoutLcarsAreas());
+    if (previousPageScroll.length) requestAnimationFrame(() => requestAnimationFrame(() => this.restoreAncestorScroll(previousPageScroll)));
     if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
       if (newScroller && this._centerHomeAfterRender) {
         newScroller.scrollLeft = Math.max(0, (newScroller.scrollWidth - newScroller.clientWidth) / 2);
@@ -737,6 +739,33 @@ class AreaTopologyCard extends HTMLElement {
         this._restoreUnassignedSearchFocus = false;
       }
     });
+  }
+
+  captureAncestorScroll() {
+    const positions = [];
+    const seen = new Set();
+    const remember = (element) => {
+      if (!element || seen.has(element)) return;
+      seen.add(element);
+      if (element.scrollTop || element.scrollLeft || element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth) {
+        positions.push({ element, top: element.scrollTop, left: element.scrollLeft });
+      }
+    };
+    remember(document.scrollingElement);
+    let node = this;
+    while (node) {
+      remember(node);
+      node = node.parentNode || node.getRootNode?.()?.host || null;
+    }
+    return positions;
+  }
+
+  restoreAncestorScroll(positions) {
+    for (const { element, top, left } of positions) {
+      if (!element?.isConnected && element !== document.scrollingElement) continue;
+      element.scrollTop = top;
+      element.scrollLeft = left;
+    }
   }
 
   renderLcarsPopup() {
