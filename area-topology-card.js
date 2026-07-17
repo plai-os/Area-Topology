@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.3";
+const CARD_VERSION = "0.8.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -105,10 +105,35 @@ class AreaTopologyCard extends HTMLElement {
 
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
-    if (this._showUnassigned === undefined) this._showUnassigned = this._config.show_unassigned;
-    if (this._labelsOnly === undefined) this._labelsOnly = this._config.show_only_labeled;
+    const preferenceKey = `area-topology-card:${window.location.pathname}:${this._config.title}`;
+    if (this._preferenceKey !== preferenceKey) {
+      this._preferenceKey = preferenceKey;
+      const preferences = this.loadPreferences();
+      this._showUnassigned = preferences.showUnassigned ?? this._config.show_unassigned;
+      this._labelsOnly = preferences.labelsOnly ?? this._config.show_only_labeled;
+    }
     if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
     this.render();
+  }
+
+  loadPreferences() {
+    try {
+      const stored = window.localStorage.getItem(this._preferenceKey);
+      return stored ? JSON.parse(stored) : {};
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  savePreferences() {
+    try {
+      window.localStorage.setItem(this._preferenceKey, JSON.stringify({
+        showUnassigned: this._showUnassigned,
+        labelsOnly: this._labelsOnly,
+      }));
+    } catch (_error) {
+      // Storage can be unavailable in restricted browser modes; the card still works for this visit.
+    }
   }
 
   set hass(hass) {
@@ -173,11 +198,13 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (action === "unassigned") {
         this._showUnassigned = !this._showUnassigned;
+        this.savePreferences();
         this.render();
         return;
       }
       if (action === "labels") {
         this._labelsOnly = !this._labelsOnly;
+        this.savePreferences();
         this.render();
         return;
       }

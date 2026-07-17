@@ -15,6 +15,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
 - Header zoom controls
+- Persistent Unassigned and Labelled-only display preferences
 
 ## Install with HACS
 
