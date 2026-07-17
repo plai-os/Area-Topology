@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.8.1";
+const CARD_VERSION = "1.9.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -271,6 +271,11 @@ class AreaTopologyCard extends HTMLElement {
       }
       const floorNavId = event.target.closest("[data-floor-nav]")?.dataset.floorNav;
       if (floorNavId) {
+        if (this._standaloneLcars) {
+          this._lcarsSelectedFloor = floorNavId;
+          this.render();
+          return;
+        }
         const floor = [...this.shadowRoot.querySelectorAll("[data-lcars-floor]")]
           .find((entry) => entry.dataset.lcarsFloor === floorNavId);
         floor?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1145,6 +1150,13 @@ class AreaTopologyCard extends HTMLElement {
       const color = this.configuredItemColor("floor_colors", group.id, group.name, ["#cc99cc", "#ff9966", "#ffcc99", "#9999ff"][index % 4]);
       return { ...group, color, contrast: contrastColor(color), number: String(index + 1).padStart(2, "0") };
     });
+    const selectedFloorId = this._standaloneLcars
+      ? (floorViews.some((group) => group.id === this._lcarsSelectedFloor) ? this._lcarsSelectedFloor : floorViews[0]?.id)
+      : null;
+    if (this._standaloneLcars) this._lcarsSelectedFloor = selectedFloorId;
+    const displayedFloorViews = this._standaloneLcars
+      ? floorViews.filter((group) => group.id === selectedFloorId)
+      : floorViews;
     const dateTime = this.lcarsDateTime();
     return `<div class="lcars-dashboard">
       <div class="lcars-masthead">
@@ -1152,10 +1164,10 @@ class AreaTopologyCard extends HTMLElement {
       </div>
       ${floorViews.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
-          ${floorViews.map((group) => `<button data-floor-nav="${escapeHtml(group.id)}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Go to ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
+          ${floorViews.map((group) => `<button class="${group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
           <div class="lcars-nav-foot"></div>
         </nav>
-        <main class="lcars-main">` : ""}${floorViews.map((group, index) => {
+        <main class="lcars-main">` : ""}${displayedFloorViews.map((group, index) => {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
@@ -1711,6 +1723,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-nav-foot { height:72px; margin-top:4px; border-bottom:28px solid #7893a4; border-radius:0 0 30px 0; background:#263c48; box-sizing:border-box; }
     .lcars-floor-nav button { display:grid; grid-template-columns:58px minmax(0,1fr); gap:5px; min-height:54px; padding:0; border:0; color:var(--nav-contrast); background:transparent; font:inherit; text-align:left; cursor:pointer; }
     .lcars-floor-nav button:hover { filter:brightness(1.12); transform:translateX(3px); }
+    .lcars-floor-nav button.active { filter:brightness(1.14); }
+    .lcars-floor-nav button.active b { box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--nav-contrast) 55%,transparent); }
     .lcars-floor-nav button span,.lcars-floor-nav button b { min-width:0; display:flex; align-items:center; height:54px; background:var(--nav-color); box-sizing:border-box; }
     .lcars-floor-nav button span { justify-content:center; border-radius:28px 0 0 28px; font-family:Impact,"Arial Narrow",sans-serif; font-size:29px; font-weight:400; letter-spacing:.02em; }
     .lcars-floor-nav button b { padding:0 11px; overflow:hidden; font-family:Impact,"Arial Narrow",sans-serif; font-size:15px; font-weight:400; letter-spacing:.025em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
