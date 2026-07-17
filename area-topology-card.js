@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.8";
+const CARD_VERSION = "0.8.9";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -191,11 +191,13 @@ class AreaTopologyCard extends HTMLElement {
     this.shadowRoot.addEventListener("click", (event) => {
       const action = event.target.closest("[data-topology-action]")?.dataset.topologyAction;
       if (action === "expand") {
+        this.captureViewportFocus();
         this._collapsedAreas.clear();
         this.render();
         return;
       }
       if (action === "collapse") {
+        this.captureViewportFocus();
         this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
         this.render();
         return;
@@ -245,6 +247,7 @@ class AreaTopologyCard extends HTMLElement {
       }
       const areaId = event.target.closest("[data-area-toggle]")?.dataset.areaToggle;
       if (areaId) {
+        this.captureViewportFocus();
         this._collapsedAreas.has(areaId) ? this._collapsedAreas.delete(areaId) : this._collapsedAreas.add(areaId);
         this.render();
         return;
@@ -334,6 +337,12 @@ class AreaTopologyCard extends HTMLElement {
   setZoom(value, clientX, clientY) {
     const nextZoom = Math.round(Math.max(0.65, Math.min(1.8, value)) * 10) / 10;
     if (nextZoom === this._zoom) return;
+    this.captureViewportFocus(clientX, clientY);
+    this._zoom = nextZoom;
+    this.render();
+  }
+
+  captureViewportFocus(clientX, clientY) {
     const scroller = this.shadowRoot.querySelector(".topology-scroll");
     if (scroller) {
       const rect = scroller.getBoundingClientRect();
@@ -346,8 +355,6 @@ class AreaTopologyCard extends HTMLElement {
         focusY,
       };
     }
-    this._zoom = nextZoom;
-    this.render();
   }
 
   render() {
@@ -438,20 +445,32 @@ class AreaTopologyCard extends HTMLElement {
   renderAreas() {
     const visibleAreas = this._data.filter((area) => area.id !== "__unassigned__");
     if (!visibleAreas.length) return '<div class="message">No areas or devices found.</div>';
-    const sector = Math.PI * 2 / visibleAreas.length;
     const areaRadius = Math.max(285, visibleAreas.length * 190 / (Math.PI * 2));
     const areaLayouts = [];
     let maximumRadius = areaRadius;
-
-    visibleAreas.forEach((area, areaIndex) => {
-      const angle = -Math.PI / 2 + areaIndex * sector;
-      const devices = [];
-      const allLabelsSelected = this._selectedLabels?.size === this._labels?.length;
+    const allLabelsSelected = this._selectedLabels?.size === this._labels?.length;
+    const areaAllocations = visibleAreas.map((area) => {
       const displayedDevices = area.devices.filter((device) => {
         if (this._labelsOnly && !device.labels.length) return false;
         if (allLabelsSelected) return true;
         return device.labels.some((label) => this._selectedLabels?.has(label.label_id));
       });
+      const expanded = !this._collapsedAreas.has(area.id);
+      return { area, displayedDevices, weight: expanded ? Math.max(1, displayedDevices.length) : 0 };
+    });
+    const baseArc = Math.min(0.72, Math.PI * 2 / visibleAreas.length);
+    const distributableArc = Math.max(0, Math.PI * 2 - baseArc * visibleAreas.length);
+    const totalWeight = areaAllocations.reduce((total, allocation) => total + allocation.weight, 0);
+    const arcs = areaAllocations.map((allocation) => baseArc + (totalWeight
+      ? distributableArc * allocation.weight / totalWeight
+      : distributableArc / visibleAreas.length));
+    let arcCursor = -Math.PI / 2 - arcs[0] / 2;
+
+    areaAllocations.forEach(({ area, displayedDevices }, areaIndex) => {
+      const sector = arcs[areaIndex];
+      const angle = arcCursor + sector / 2;
+      arcCursor += sector;
+      const devices = [];
       if (!this._collapsedAreas.has(area.id)) {
         let deviceIndex = 0;
         let ring = 0;
