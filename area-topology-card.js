@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.13";
+const CARD_VERSION = "1.4.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -231,6 +231,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   connectedCallback() {
+    this.startLcarsClock();
     if (this._eventsBound) return;
     this._eventsBound = true;
     this.shadowRoot.addEventListener("scroll", (event) => {
@@ -436,6 +437,35 @@ class AreaTopologyCard extends HTMLElement {
       if (deviceId) this.assignDeviceToArea(deviceId, area.dataset.areaDrop);
     });
     this.render();
+  }
+
+  disconnectedCallback() {
+    if (this._lcarsClockTimer) window.clearInterval(this._lcarsClockTimer);
+    this._lcarsClockTimer = null;
+  }
+
+  startLcarsClock() {
+    if (this._lcarsClockTimer) return;
+    this._lcarsClockTimer = window.setInterval(() => this.updateLcarsClock(), 1000);
+    this.updateLcarsClock();
+  }
+
+  lcarsDateTime() {
+    const now = new Date();
+    const timeZone = this._hass?.config?.time_zone || undefined;
+    return {
+      time: new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone }).format(now),
+      date: new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric", timeZone }).format(now),
+    };
+  }
+
+  updateLcarsClock() {
+    const clock = this.shadowRoot?.querySelector("[data-lcars-clock]");
+    const date = this.shadowRoot?.querySelector("[data-lcars-date]");
+    if (!clock || !date) return;
+    const value = this.lcarsDateTime();
+    clock.textContent = value.time;
+    date.textContent = value.date;
   }
 
   getCardSize() { return 8; }
@@ -1091,10 +1121,10 @@ class AreaTopologyCard extends HTMLElement {
         .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
         .filter((area) => area.displayDevices.length > 0),
     })).filter((group) => group.areas.length > 0);
-    const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.devices.length, 0), 0);
+    const dateTime = this.lcarsDateTime();
     return `<div class="lcars-dashboard">
       <div class="lcars-masthead">
-        <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
+        <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
       ${visibleGroups.length ? visibleGroups.map((group, index) => `<section class="lcars-floor lcars-tone-${index % 4}">
         <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
@@ -1504,11 +1534,12 @@ class AreaTopologyCard extends HTMLElement {
     .panel-labels>span { display:inline-flex; padding:2px 6px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
     .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
     .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
-    .lcars-masthead { display:grid; grid-template-columns:90px minmax(260px,1fr) auto 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
+    .lcars-masthead { display:grid; grid-template-columns:90px minmax(150px,.55fr) auto minmax(300px,1fr) 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
     .lcars-cap { border-radius:34px 0 0 34px; background:#9999ff; }
     .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#050507; background:#9999ff; }
-    .lcars-title strong,.lcars-readout { font-size:24px; font-weight:900; line-height:1; text-transform:uppercase; }
-    .lcars-readout { display:flex; align-items:center; justify-content:flex-end; padding:10px 20px; color:#ff9900; background:#050507; text-align:right; white-space:nowrap; }
+    .lcars-title strong { font-size:24px; font-weight:900; line-height:1; text-transform:uppercase; }
+    .lcars-clock,.lcars-date { display:flex; align-items:center; padding:10px 12px; color:#ff9900; background:#050507; font-size:25px; font-weight:900; line-height:1; white-space:nowrap; }
+    .lcars-clock { justify-content:flex-end; padding-left:20px; }.lcars-date { justify-content:flex-start; padding-right:20px; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
     .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
@@ -1534,7 +1565,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:0; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter,.lcars-standby { border-radius:12px; }.lcars-footer { margin-left:0; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; grid-template-rows:48px 42px; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-clock { grid-column:1 / 2; justify-content:flex-end; padding:8px 6px; font-size:18px; }.lcars-date { grid-column:2 / 4; justify-content:flex-start; padding:8px 10px; font-size:16px; }.lcars-end { grid-column:3; grid-row:1; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:0; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter,.lcars-standby { border-radius:12px; }.lcars-footer { margin-left:0; } }
   `; }
 }
 
