@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.2";
+const CARD_VERSION = "0.8.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -484,12 +484,17 @@ class AreaTopologyCard extends HTMLElement {
 
   renderUnassignedDevice(device) {
     const color = safeColor(device.color);
+    const hasLabelColor = Boolean(device.color);
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
-    return `<article class="unassigned-device" draggable="true" data-unassigned-device="${escapeHtml(device.id)}" style="--device-color:${color}">
+    return `<article class="unassigned-device ${hasLabelColor ? "label-coloured" : ""}" draggable="true" data-unassigned-device="${escapeHtml(device.id)}" style="--device-color:${color}">
       <span class="drag-handle" title="Drag to an area">⋮⋮</span>
       <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
       <button data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings">
         <strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}
+        ${device.labels.length ? `<span class="panel-labels">${device.labels.map((label) => {
+          const labelColor = safeColor(label.color, color);
+          return `<span style="--label-color:${labelColor};--label-contrast:${contrastColor(labelColor)}">${escapeHtml(label.name)}</span>`;
+        }).join("")}</span>` : ""}
       </button>
     </article>`;
   }
@@ -663,12 +668,15 @@ class AreaTopologyCard extends HTMLElement {
     .assignment-message.success { color:var(--success-color,#43a047); } .assignment-message.error { color:var(--error-color,#db4437); }
     .unassigned-list { flex:1; min-height:0; overflow:auto; padding:0 10px 14px; }
     .unassigned-device { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; padding:9px 8px; border:1px solid color-mix(in srgb,var(--device-color) 42%,var(--divider-color,#ddd)); border-radius:10px; background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+    .unassigned-device.label-coloured { border-color:color-mix(in srgb,var(--device-color) 78%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); box-shadow:0 2px 8px color-mix(in srgb,var(--device-color) 24%,transparent); }
     .unassigned-device:active { cursor:grabbing; } .unassigned-device.dragging { opacity:.42; }
     .drag-handle { align-self:center; color:var(--secondary-text-color,#727272); font-weight:700; letter-spacing:-3px; }
     .unassigned-device .device-icon { flex:0 0 32px; width:32px; height:32px; }
     .unassigned-device>button { min-width:0; flex:1; padding:0; border:0; color:var(--primary-text-color,#222); background:none; text-align:left; font:inherit; cursor:pointer; }
     .unassigned-device strong { display:block; overflow-wrap:anywhere; font-size:12px; }
     .unassigned-device small { font-size:10px; }
+    .panel-labels { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .panel-labels>span { display:inline-flex; padding:2px 6px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
     .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
