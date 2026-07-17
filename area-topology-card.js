@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.22.0";
-const BUILD_COMMIT = "0044383";
+const CARD_VERSION = "1.23.0";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1311,7 +1311,7 @@ class AreaTopologyCard extends HTMLElement {
     const dateTime = this.lcarsDateTime();
     const headerColor = safeColor(this._config.header_color, "#263f4b");
     const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
-    return `<div class="lcars-dashboard" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)};--lcars-datetime:${dateTimeColor}">
+    return `<div class="lcars-dashboard ${bridgeSelected ? "bridge-active" : ""}" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)};--lcars-datetime:${dateTimeColor}">
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
@@ -1589,13 +1589,18 @@ class AreaTopologyCard extends HTMLElement {
     const offline = Math.max(0, devices.length - online);
     const temperature = primary ? this.lcarsConfiguredAreaTemperature(primary) : null;
     const camera = securityConfig?.cameras?.find((entry) => entry.entity === config.camera) || securityConfig?.cameras?.[0];
+    const wasRenderingBridge = this._renderingBridge;
+    this._renderingBridge = true;
+    const primaryHtml = primary ? this.renderLcarsArea(primary) : "";
+    const secondaryHtml = secondary.map((area) => this.renderLcarsArea(area)).join("");
+    this._renderingBridge = wasRenderingBridge;
     return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
       <header><strong>${escapeHtml(group.name)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}</header>
       <div class="lcars-bridge-shell">
         <aside><b>LC-24</b><i></i><b>DATA NODE</b><i></i><b>LC-24</b></aside>
         <div class="lcars-bridge-grid">
-          <div class="lcars-bridge-primary">${primary ? this.renderLcarsArea(primary) : ""}</div>
-          <div class="lcars-bridge-secondary">${secondary.map((area) => this.renderLcarsArea(area)).join("")}${camera ? this.renderLcarsBridgeCamera(camera, config) : ""}</div>
+          <div class="lcars-bridge-primary">${primaryHtml}</div>
+          <div class="lcars-bridge-secondary">${secondaryHtml}${camera ? this.renderLcarsBridgeCamera(camera, config) : ""}</div>
         </div>
       </div>
     </section>`;
@@ -1828,9 +1833,10 @@ class AreaTopologyCard extends HTMLElement {
     }
     statuses.sort((a, b) => a.priority - b.priority);
     const visibleStatuses = this.dedupeLcarsStatuses(statuses);
+    const displayName = this._renderingBridge ? device.name.replace(/^Lamp\s*\|\s*(.+)$/i, "$1 Lamp") : device.name;
     return `<div class="lcars-device" style="--lcars-device:${color};--lcars-device-contrast:${contrastColor(color)}">
-      <button class="lcars-device-name ${visibleStatuses.length > 1 ? "multi-status" : "single-status"}" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
-      <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby ${offline ? "offline" : ""}">${offline ? "OFFLINE" : "SYSTEM READY"}</span>`}</div>
+      <button class="lcars-device-name ${visibleStatuses.length > 1 ? "multi-status" : "single-status"}" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(displayName)}</span></button>
+      <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby ${offline ? "offline" : ""}">${offline ? "OFFLINE" : (this._renderingBridge ? "ONLINE" : "SYSTEM READY")}</span>`}</div>
     </div>`;
   }
 
@@ -2300,6 +2306,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge { color:#f5f1ff; background:#050507; }.lcars-bridge>header { position:relative; min-height:64px; display:flex; align-items:center; gap:22px; padding:0 24px 0 132px; overflow:hidden; border-radius:34px 34px 0 0; color:#08080a; background:var(--bridge-tone); font-family:Impact,"Arial Narrow",sans-serif; font-size:19px; letter-spacing:.045em; text-transform:uppercase; }.lcars-bridge>header::before { content:""; position:absolute; top:0; bottom:0; left:94px; width:9px; background:#050507; }.lcars-bridge>header strong { margin-right:auto; font-size:31px; font-weight:400; }.lcars-bridge>header span { white-space:nowrap; }.lcars-bridge>header span:nth-of-type(2) { color:#aaaaff; }.lcars-bridge>header span:nth-of-type(3) { color:#4d4b51; }.lcars-bridge>header i { width:9px; height:9px; border-radius:50%; background:#050507; }.lcars-bridge>header b { margin-left:auto; color:#ff9900; font-size:27px; font-weight:400; }
     .lcars-bridge-shell { display:grid; grid-template-columns:94px minmax(0,1fr); gap:12px; }.lcars-bridge-shell>aside { display:grid; grid-template-rows:58px minmax(140px,1fr) 96px minmax(140px,1fr) 58px; gap:8px; align-items:center; justify-items:center; min-height:780px; color:#08080a; background:#050507; font-family:Impact,"Arial Narrow",sans-serif; letter-spacing:.04em; }.lcars-bridge-shell>aside i { width:100%; height:100%; background:#162b33; }.lcars-bridge-shell>aside b { width:100%; height:100%; display:grid; place-items:center; box-sizing:border-box; background:var(--bridge-tone); font-size:14px; font-weight:400; }.lcars-bridge-shell>aside b:nth-of-type(2) { color:#08080a; background:#9999ff; }.lcars-bridge-shell>aside b:first-child { border-radius:0 0 24px 0; }.lcars-bridge-shell>aside b:last-child { border-radius:0 24px 0 0; }
     .lcars-bridge-grid { position:relative; min-width:0; display:grid; grid-template-columns:minmax(420px,1fr) minmax(420px,1fr); gap:28px; padding:16px 0 14px; }.lcars-bridge-grid::before { content:""; position:absolute; z-index:0; top:7%; bottom:7%; left:calc(50% - 3px); width:7px; background:var(--bridge-tone); }.lcars-bridge-grid::after { content:""; position:absolute; z-index:0; top:46%; left:calc(50% - 24px); width:48px; height:7px; background:var(--bridge-tone); }.lcars-bridge-primary,.lcars-bridge-secondary { position:relative; z-index:1; min-width:0; }.lcars-bridge-primary::after { content:""; position:absolute; top:46%; right:-14px; width:14px; height:7px; background:var(--bridge-tone); }.lcars-bridge-secondary { display:flex; flex-direction:column; gap:16px; }.lcars-bridge-secondary::before { content:""; position:absolute; top:46%; left:-14px; width:14px; height:7px; background:var(--bridge-tone); }.lcars-bridge .lcars-area { --lcars-area-tone:var(--bridge-tone); --lcars-area-contrast:var(--bridge-contrast); border:6px solid var(--bridge-tone); border-radius:30px; background:#050507; }.lcars-bridge .lcars-area>header { height:62px; padding:0; border-radius:24px 24px 0 0; background:#050507; }.lcars-bridge .lcars-area>header>button[data-area-config] { padding-left:24px; color:var(--bridge-tone); }.lcars-bridge .lcars-area>header strong { color:var(--bridge-tone); font-size:24px; }.lcars-bridge .lcars-area-reading { margin-right:14px; }.lcars-bridge .lcars-devices { padding:8px 8px 14px 12px; }.lcars-bridge .lcars-device { gap:7px; padding-top:7px; padding-bottom:7px; }.lcars-bridge .lcars-device-name { min-height:48px; border-radius:24px 0 0 24px; text-transform:uppercase; }.lcars-bridge .lcars-meter,.lcars-bridge .lcars-standby { min-height:48px; border-radius:0 24px 24px 0; }.lcars-bridge .lcars-standby { color:#08080a; background:#9999ff; }
+    .lcars-bridge .lcars-standby.offline { color:#f5f1ff; background:#555962; text-shadow:0 1px 2px #000; }.bridge-active .lcars-footer { grid-template-columns:minmax(0,1fr) auto 92px; gap:12px; margin:0; }.bridge-active .lcars-footer span { position:relative; height:42px; margin-left:106px; background:var(--lcars-footer-tone); }.bridge-active .lcars-footer span::before { content:""; position:absolute; top:0; bottom:0; left:-106px; width:94px; border-radius:0 0 0 30px; background:var(--lcars-footer-tone); }.bridge-active .lcars-footer b { color:#d9d2e9; font-family:Impact,"Arial Narrow",sans-serif; font-size:11px; font-weight:400; }.bridge-active .lcars-footer i { height:42px; border-radius:0 24px 24px 0; }
     .lcars-bridge-camera { overflow:hidden; border:6px solid var(--bridge-tone); border-radius:30px; background:#050507; }.lcars-bridge-camera>header { display:grid; grid-template-columns:25px 1fr auto; align-items:center; gap:9px; min-height:58px; padding:0 18px; color:var(--bridge-tone); background:#050507; font-family:Impact,"Arial Narrow",sans-serif; font-size:24px; letter-spacing:.04em; text-transform:uppercase; }.lcars-bridge-camera>header strong,.lcars-bridge-camera>header b { font-weight:400; }.lcars-bridge-camera>header b { color:#d9d2e9; font-size:16px; }.lcars-bridge-feed { position:relative; }.lcars-bridge-feed .lcars-camera-card { min-height:310px; }.lcars-bridge-feed>i { position:absolute; width:28px; height:28px; border-color:var(--bridge-tone); border-style:solid; pointer-events:none; }.lcars-bridge-feed>i:nth-of-type(1) { top:12px; left:12px; border-width:3px 0 0 3px; }.lcars-bridge-feed>i:nth-of-type(2) { top:12px; right:12px; border-width:3px 3px 0 0; }.lcars-bridge-feed>i:nth-of-type(3) { bottom:12px; left:12px; border-width:0 0 3px 3px; }.lcars-bridge-feed>i:nth-of-type(4) { right:12px; bottom:12px; border-width:0 3px 3px 0; }.lcars-bridge-camera>footer { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; padding:5px; background:var(--bridge-tone); }.lcars-bridge-camera>footer span { min-width:0; padding:9px 5px; overflow:hidden; color:#d9d2e9; background:#0b0b10; font-family:Impact,"Arial Narrow",sans-serif; font-size:12px; letter-spacing:.03em; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
