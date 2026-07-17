@@ -157,6 +157,19 @@ security:
       fit_mode: cover
 engineering:
   color: "#FF9966"
+  metrics:
+    - name: Demand
+      icon: mdi:flash
+      entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+    - name: Standing
+      icon: mdi:currency-gbp
+      entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_standing_charge
+    - name: Rate
+      icon: mdi:currency-gbp
+      entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_rate
+    - name: Points
+      icon: mdi:trophy-outline
+      entity: sensor.octopus_energy_a_52705f81_octoplus_points
   panels:
     - title: Energy Consumption
       icon: mdi:lightning-bolt
@@ -172,6 +185,21 @@ engineering:
       stat_types:
         - max
       hide_legend: true
+    - title: Live Demand
+      icon: mdi:chart-line
+      type: statistics-graph
+      grid_options:
+        columns: 12
+        rows: auto
+      entities:
+        - sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+      days_to_show: 1
+      period: hour
+      chart_type: line
+      stat_types:
+        - mean
+      hide_legend: true
+      logarithmic_scale: false
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
