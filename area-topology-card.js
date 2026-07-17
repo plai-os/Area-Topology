@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.13";
+const CARD_VERSION = "1.3.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -239,13 +239,25 @@ class AreaTopologyCard extends HTMLElement {
       }
     }, true);
     this.shadowRoot.addEventListener("input", (event) => {
+      if (event.target.matches?.("[data-entity-level]")) {
+        const meter = event.target.closest(".lcars-meter");
+        meter?.style.setProperty("--level", `${event.target.value}%`);
+        const value = meter?.querySelector("b");
+        if (value) value.textContent = `${Math.round(Number(event.target.value))}%`;
+        return;
+      }
       if (!event.target.matches?.("[data-unassigned-search]")) return;
       this._unassignedSearch = event.target.value;
       this._restoreUnassignedSearchFocus = true;
       this.savePreferences();
       this.render();
     });
+    this.shadowRoot.addEventListener("change", (event) => {
+      if (!event.target.matches?.("[data-entity-level]")) return;
+      this.setEntityLevel(event.target.dataset.entityLevel, event.target.dataset.levelDomain, Number(event.target.value), event.target);
+    });
     this.shadowRoot.addEventListener("click", (event) => {
+      if (event.target.closest("[data-entity-level]")) return;
       if (Date.now() < (this._suppressDeviceClickUntil || 0) && event.target.closest("[data-device-drag]")) {
         event.preventDefault();
         return;
@@ -501,6 +513,28 @@ class AreaTopologyCard extends HTMLElement {
     } finally {
       control?.classList.remove("working");
       control?.removeAttribute("aria-busy");
+    }
+  }
+
+  async setEntityLevel(entityId, domain, percentage, control) {
+    if (!this._hass || !Number.isFinite(percentage)) return;
+    control.disabled = true;
+    try {
+      if (domain === "media_player") {
+        await this._hass.callService("media_player", "volume_set", { volume_level: percentage / 100 }, { entity_id: entityId });
+      } else if (domain === "light") {
+        if (percentage <= 0) await this._hass.callService("light", "turn_off", {}, { entity_id: entityId });
+        else await this._hass.callService("light", "turn_on", { brightness_pct: Math.round(percentage) }, { entity_id: entityId });
+      }
+    } catch (error) {
+      console.error(`Could not set ${entityId} level`, error);
+      this.dispatchEvent(new CustomEvent("hass-notification", {
+        bubbles: true,
+        composed: true,
+        detail: { message: error?.message || `Could not adjust ${entityId}` },
+      }));
+    } finally {
+      control.disabled = false;
     }
   }
 
@@ -1126,13 +1160,49 @@ class AreaTopologyCard extends HTMLElement {
         || (["switch", "fan", "media_player", "input_boolean"].includes(domain)
           ? { entityId: entity.entity_id, name: stateObj.attributes.friendly_name || entity.name || device.name, value: stateObj.state === "on" || stateObj.state === "playing" ? "On" : stateObj.state, icon: stateObj.attributes.icon || entity.icon || "mdi:toggle-switch", active: stateObj.state === "on" || stateObj.state === "playing", priority: 6 }
           : null);
-      if (status) statuses.push({ ...status, toggleable: ["light", "switch", "fan", "input_boolean"].includes(domain) });
+      if (status) {
+        const percentage = /^\s*(\d+(?:\.\d+)?)%\s*$/.exec(String(status.value))?.[1];
+        statuses.push({
+          ...status,
+          domain,
+          percentage: percentage == null ? null : Math.max(0, Math.min(100, Number(percentage))),
+          adjustable: percentage != null && ["light", "media_player"].includes(domain),
+          toggleable: percentage == null && ["light", "switch", "fan", "input_boolean"].includes(domain),
+        });
+      }
     }
     statuses.sort((a, b) => a.priority - b.priority);
+    const visibleStatuses = this.dedupeLcarsStatuses(statuses);
     return `<div class="lcars-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" style="--lcars-device:${color}">
       <button class="lcars-device-name" data-device="${escapeHtml(device.id)}"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
-      <div class="lcars-values">${statuses.slice(0, 6).map((status) => `<button ${status.toggleable ? `data-entity-toggle="${escapeHtml(status.entityId)}"` : `data-entity="${escapeHtml(status.entityId)}"`} class="${status.active ? "active" : ""}" title="${status.toggleable ? `Toggle ${escapeHtml(status.name)}` : `Open ${escapeHtml(status.name)}`}"><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b></button>`).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
+      <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
     </div>`;
+  }
+
+  dedupeLcarsStatuses(statuses) {
+    const controls = new Map();
+    for (const status of statuses) {
+      const isPowerControl = ["light", "switch", "fan", "input_boolean"].includes(status.domain);
+      const key = isPowerControl ? `control:${status.name.trim().toLowerCase()}` : status.entityId;
+      const existing = controls.get(key);
+      if (!existing || status.domain === "light" || (status.adjustable && !existing.adjustable)) controls.set(key, status);
+    }
+    return [...controls.values()];
+  }
+
+  renderLcarsStatus(status) {
+    const meterStyle = status.percentage == null ? "" : ` style="--level:${status.percentage}%"`;
+    const interaction = status.adjustable
+      ? `<input type="range" min="0" max="100" step="1" value="${status.percentage}" data-entity-level="${escapeHtml(status.entityId)}" data-level-domain="${escapeHtml(status.domain)}" aria-label="Adjust ${escapeHtml(status.name)}" title="Drag to adjust ${escapeHtml(status.name)}">`
+      : "";
+    const element = status.adjustable ? "div" : "button";
+    const action = status.adjustable
+      ? ""
+      : status.toggleable
+        ? ` data-entity-toggle="${escapeHtml(status.entityId)}"`
+        : ` data-entity="${escapeHtml(status.entityId)}"`;
+    const title = status.adjustable ? "" : ` title="${status.toggleable ? "Toggle" : "Open"} ${escapeHtml(status.name)}"`;
+    return `<${element}${action} class="lcars-meter ${status.active ? "active" : ""} ${status.percentage == null ? "" : "percentage"} ${status.adjustable ? "adjustable" : ""}"${meterStyle}${title}><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b>${interaction}</${element}>`;
   }
 
   nodeStyle(point, canvas) {
@@ -1238,7 +1308,9 @@ class AreaTopologyCard extends HTMLElement {
       return { ...common, priority: 1, active: open, value: open ? "Open" : "Closed", icon: open ? "mdi:window-open" : "mdi:window-closed" };
     }
     if (domain === "light") {
-      return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:lightbulb-on" : "mdi:lightbulb-outline" };
+      const brightness = Number(stateObj.attributes.brightness);
+      const percentage = Number.isFinite(brightness) ? (on ? Math.round(brightness / 255 * 100) : 0) : null;
+      return { ...common, priority: 2, active: on, value: percentage == null ? (on ? "On" : "Off") : `${percentage}%`, icon: on ? "mdi:lightbulb-on" : "mdi:lightbulb-outline" };
     }
     if (domain === "switch" && (deviceClass === "outlet" || isPlug)) {
       return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:power-plug" : "mdi:power-plug-off" };
@@ -1431,8 +1503,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
     .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:13px; text-align:left; cursor:pointer; }
-    .lcars-values button.active { color:#08080a; background:#ff9900; }.lcars-values button ha-icon { --mdc-icon-size:17px; }.lcars-values button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-values button b { font-size:14px; text-transform:uppercase; white-space:nowrap; }
+    .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-meter { --meter-fill:#ff9900; position:relative; min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:linear-gradient(90deg,var(--meter-fill) 0 var(--level,0%),#1b1722 var(--level,0%) 100%); font:inherit; font-size:13px; text-align:left; cursor:pointer; overflow:hidden; }
+    .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { text-shadow:0 1px 2px #050507; }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { font-size:14px; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #ffcc99; outline-offset:-2px; }
     .lcars-standby { padding:9px 13px; border-radius:0 17px 17px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; text-align:right; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
@@ -1441,7 +1513,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-values button { border-radius:12px; }.lcars-footer { margin-left:38px; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter { border-radius:12px; }.lcars-footer { margin-left:38px; } }
   `; }
 }
 
