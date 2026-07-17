@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.1";
+const CARD_VERSION = "1.6.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1596,10 +1596,10 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
     .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:0; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-area-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
-    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-area-tone); }
-    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
-    .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
-    .lcars-area-reading { display:flex; align-items:center; justify-content:center; gap:5px; min-width:92px; margin-left:6px; padding:6px 13px; border:0; border-radius:24px 0 0 24px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { --mdc-icon-size:17px; }.lcars-area-reading b { font-size:14px; white-space:nowrap; }
+    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:52px; padding-bottom:4px; background:var(--lcars-area-tone); }
+    .lcars-area>header>button[data-area-config] { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button[data-area-config]>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
+    .lcars-area-reading { flex:0 0 auto; align-self:center; width:max-content; min-height:36px; display:flex; align-items:center; justify-content:center; gap:5px; margin-left:6px; padding:5px 11px; border:0; border-radius:20px 0 0 20px; color:#fff; background:#607d8b; font:inherit; text-shadow:0 1px 2px #000; cursor:pointer; }.lcars-area-reading.temp-cold { background:#1565c0; }.lcars-area-reading.temp-normal { background:#2e7d32; }.lcars-area-reading.temp-hot { background:#c62828; }.lcars-area-reading ha-icon { color:#fff; --mdc-icon-size:16px; }.lcars-area-reading b { color:#fff; font-size:14px; white-space:nowrap; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; }
     .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
