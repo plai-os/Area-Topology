@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.11.2";
+const CARD_VERSION = "1.11.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1821,10 +1821,10 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
-    .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-left:9px solid #07070a; border-radius:0 25px 25px 0; color:#08080a; background:#ff9966; font:inherit; font-size:27px; cursor:pointer; }
+    .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-left:9px solid #07070a; border-radius:0 25px 25px 0; color:#fff; background:#9999ff; font:inherit; font-size:27px; cursor:pointer; }
     .lcars-popup>header { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:12px; margin:13px 16px 0; padding:13px 17px; color:#fff; background:#cc99cc; }
     .lcars-popup>header ha-icon { --mdc-icon-size:30px; }.lcars-popup>header h2 { margin:2px 0 0; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; text-transform:uppercase; }.lcars-popup>header small { margin:0; color:rgba(255,255,255,.78); font-size:11px; }.lcars-popup>header>b { padding:8px 13px; border-radius:999px; color:#fff; background:#2e7d32; font-size:18px; white-space:nowrap; }
-    .lcars-popup-body { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; margin:0 16px; }.lcars-popup-rail { background:#cc99cc; }.lcars-history { min-height:310px; padding:12px 0; }.lcars-history hui-history-graph-card { display:block; color:var(--primary-text-color,#fff); }
+    .lcars-popup-body { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; margin:0 16px; }.lcars-popup-rail { position:relative; background:#cc99cc; }.lcars-popup-rail::after { content:""; position:absolute; right:0; bottom:-12px; left:0; height:12px; background:#cc99cc; }.lcars-history { min-height:310px; padding:12px 0; }.lcars-history hui-history-graph-card { display:block; color:var(--primary-text-color,#fff); }
     .lcars-history-error { display:grid; place-items:center; min-height:286px; color:#ff9966; font-family:Impact,"Arial Narrow",sans-serif; font-size:20px; letter-spacing:.04em; }
     .lcars-popup>footer { display:grid; grid-template-columns:1fr auto 65px; align-items:center; gap:9px; margin:0 16px 14px; }.lcars-popup>footer span { height:9px; background:#cc99cc; }.lcars-popup>footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-popup>footer i { height:24px; border-radius:0 14px 14px 0; background:#ff9966; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
