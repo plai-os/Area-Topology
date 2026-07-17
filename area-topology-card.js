@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.4.2";
+const CARD_VERSION = "1.4.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1538,12 +1538,12 @@ class AreaTopologyCard extends HTMLElement {
     .panel-labels>span { display:inline-flex; padding:2px 6px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
     .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
     .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
-    .lcars-masthead { display:grid; grid-template-columns:90px minmax(150px,.55fr) auto minmax(300px,1fr) 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
+    .lcars-masthead { display:grid; grid-template-columns:90px minmax(150px,1fr) max-content max-content 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
     .lcars-cap { border-radius:34px 0 0 34px; background:#9999ff; }
     .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#050507; background:#9999ff; }
     .lcars-title strong { font-size:24px; font-weight:900; line-height:1; text-transform:uppercase; }
-    .lcars-clock,.lcars-date { display:flex; align-items:center; padding:10px 12px; color:#ff9900; background:#050507; font-size:25px; font-weight:900; line-height:1; white-space:nowrap; }
-    .lcars-clock { justify-content:flex-end; padding-left:20px; }.lcars-date { justify-content:flex-start; padding-right:20px; }
+    .lcars-clock,.lcars-date { display:flex; align-items:center; justify-content:flex-end; padding:10px 8px; color:#ff9900; background:#050507; font-size:25px; font-weight:900; line-height:1; white-space:nowrap; }
+    .lcars-clock { padding-left:16px; }.lcars-date { padding-right:16px; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
     .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
