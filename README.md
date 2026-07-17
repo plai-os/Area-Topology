@@ -102,6 +102,7 @@ The order of each YAML list is also the display order: floors follow `floors`, a
 Use `label_colors`, `floor_colors`, and `area_colors` to override colours by visible name or registry ID. Any item without an override retains its current Home Assistant or LCARS colour.
 The standalone dashboard includes a numbered floor navigator on the left. Only one floor is displayed at a time: it starts on the first configured floor, and selecting another tab replaces the dashboard content with that floor. Its tab order and colours follow `floors` and `floor_colors`. On narrow screens it becomes a horizontal navigation strip. Floor and room headings use the same condensed LCARS-style display type.
 Selecting a non-toggle reading opens an LCARS-themed entity overlay with its current value and 24-hour Home Assistant history graph.
+LCARS views bundle the Antonio condensed display family for consistent headings, controls, device labels, and property rows. The font is distributed under the SIL Open Font License in `fonts/OFL.txt`.
 
 ```yaml
 type: custom:lcars-home-card
@@ -248,6 +249,7 @@ captains_log:
     - calendar.holidays_in_united_kingdom
     - calendar.sarn_powys_gmail_com
 bridge:
+  title: Living Area
   floor: Living Area
   primary_area: Lounge
   camera: camera.c110_mainstream
