@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.3";
+const CARD_VERSION = "0.9.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -826,6 +826,14 @@ class AreaTopologyCard extends HTMLElement {
       name: stateObj.attributes.friendly_name || entity.name || entity.original_name || entity.entity_id,
     };
 
+    if (domain === "sensor" && deviceClass === "battery") {
+      const percentage = Number.parseFloat(stateObj.state);
+      const numeric = Number.isFinite(percentage);
+      const value = numeric ? `${Math.round(percentage)}%` : formatted();
+      const low = numeric && percentage <= 20;
+      const icon = low ? "mdi:battery-alert" : numeric && percentage <= 50 ? "mdi:battery-medium" : "mdi:battery-high";
+      return { ...common, priority: 0, active: low, value, icon };
+    }
     if (domain === "binary_sensor" && ["door", "garage_door", "opening", "window"].includes(deviceClass)) {
       const label = deviceClass === "window" ? (on ? "Open" : "Closed") : (on ? "Open" : "Closed");
       return { ...common, priority: 1, active: on, value: label, icon: on ? "mdi:door-open" : "mdi:door-closed" };
