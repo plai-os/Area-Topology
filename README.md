@@ -212,11 +212,48 @@ engineering:
       name: Solar Available (Sarn)
       theme: Frosted Glass Dark Lite
       hours_to_show: 48
+menus:
+  - id: environmental
+    title: Environmental
+    icon: mdi:leaf
+    color: "#7A9E8E"
+    labels:
+      - Climate
+    properties:
+      - temperature
+      - humidity
+      - illuminance
+      - climate
+  - id: communications
+    title: Communications
+    icon: mdi:access-point
+    color: "#6B8EAD"
+    labels:
+      - Alexa
+      - Speaker Group
+    properties:
+      - media_player
+  - id: computer_core
+    title: Computer Core
+    icon: mdi:server
+    color: "#8B7AAE"
+    labels:
+      - Computers
+      - Service
+      - Routers
+      - Powerstations
+  - id: personnel
+    title: Personnel
+    icon: mdi:account-group
+    color: "#B48A78"
+    labels:
+      - Mobiles
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
 Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
 Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel. The three `chart_*_color` settings control the embedded graph series palette.
+Each entry in `menus` creates another numbered floor-style destination. Devices are discovered automatically when any configured label or entity property matches, then grouped into the existing LCARS area panels.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
