@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.4.1";
+const CARD_VERSION = "1.4.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -733,7 +733,11 @@ class AreaTopologyCard extends HTMLElement {
       icon: floor.icon || "mdi:layers-outline",
       level: floor.level,
       areas: areas.filter((area) => area.floorId === floor.floor_id),
-    })).sort((a, b) => (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
+    })).sort((a, b) => {
+      const groundA = /^ground(?: floor)?$/i.test(a.name.trim()) ? 0 : 1;
+      const groundB = /^ground(?: floor)?$/i.test(b.name.trim()) ? 0 : 1;
+      return groundA - groundB || (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name);
+    });
     const areasWithoutFloor = areas.filter((area) => !groups.some((floor) => floor.id === area.floorId));
     if (areasWithoutFloor.length) groups.push({
       id: "__no_floor__",
