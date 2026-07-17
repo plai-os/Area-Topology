@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.10";
+const CARD_VERSION = "1.2.11";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -9,6 +9,7 @@ const DEFAULTS = {
   web_show_properties: undefined,
   tree_show_properties: true,
   show_status: true,
+  hide_child_lock: true,
   max_statuses: 3,
   topology_zoom: 1,
   web_zoom: undefined,
@@ -1197,6 +1198,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   isHiddenProperty(entity, stateObj) {
+    if (!this._config.hide_child_lock) return false;
     const text = [
       entity?.entity_id,
       entity?.name,

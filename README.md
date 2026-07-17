@@ -61,6 +61,7 @@ floors_expanded: true
 areas_expanded: true
 tree_devices_expanded: false
 show_status: true
+hide_child_lock: true
 max_statuses: 3
 map_height: auto
 ```
@@ -84,6 +85,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `areas_expanded` | `true` | Initially expand area nodes |
 | `tree_devices_expanded` | `false` | Initially expand Tree devices to show their properties |
 | `show_status` | `true` | Show compact live-status chips on device nodes |
+| `hide_child_lock` | `true` | Hide child-lock entities from LCARS, Web, and Tree properties |
 | `max_statuses` | `3` | Maximum number of status chips shown per device |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 
