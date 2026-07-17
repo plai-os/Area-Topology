@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.1.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -126,6 +126,7 @@ class AreaTopologyCard extends HTMLElement {
       this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
       this._unassignedSearch = preferences.unassignedSearch ?? "";
       this._layoutMode = preferences.layoutMode === "tree" || (!preferences.layoutMode && this._config.layout === "tree") ? "tree" : "web";
+      this._savedSelectedLabels = Array.isArray(preferences.selectedLabels) ? preferences.selectedLabels : null;
     }
     if (this._webZoom === undefined) this._webZoom = Math.max(0.65, Math.min(1.8, Number(config.web_zoom ?? config.topology_zoom) || 1));
     if (this._treeScale === undefined) this._treeScale = Math.max(0.65, Math.min(1.8, Number(this._config.tree_font_scale) || 1));
@@ -149,6 +150,7 @@ class AreaTopologyCard extends HTMLElement {
         unassignedLabelsOnly: this._unassignedLabelsOnly,
         unassignedSearch: this._unassignedSearch,
         layoutMode: this._layoutMode,
+        selectedLabels: this._selectedLabels ? [...this._selectedLabels] : this._savedSelectedLabels,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -180,7 +182,12 @@ class AreaTopologyCard extends HTMLElement {
       ]);
       this._labels = labels;
       this._floors = floors;
-      if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
+      if (!this._selectedLabels) {
+        const availableLabelIds = new Set(labels.map((label) => label.label_id));
+        this._selectedLabels = this._savedSelectedLabels
+          ? new Set(this._savedSelectedLabels.filter((labelId) => availableLabelIds.has(labelId)))
+          : new Set(availableLabelIds);
+      }
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
       if (!this._hierarchyDefaultsInitialized) {
         if (!this._config.areas_expanded) this._collapsedAreas = new Set(this._data.filter((area) => area.id !== "__unassigned__").map((area) => area.id));
@@ -285,6 +292,7 @@ class AreaTopologyCard extends HTMLElement {
         this._selectedLabels = new Set(allSelected ? [] : (this._labels || []).map((label) => label.label_id));
         this.collapseTreeProperties();
         this.centerWebAfterFilter();
+        this.savePreferences();
         this.render();
         return;
       }
@@ -294,6 +302,7 @@ class AreaTopologyCard extends HTMLElement {
         this._selectedLabels.has(labelId) ? this._selectedLabels.delete(labelId) : this._selectedLabels.add(labelId);
         this.collapseTreeProperties();
         this.centerWebAfterFilter();
+        this.savePreferences();
         this.render();
         return;
       }
