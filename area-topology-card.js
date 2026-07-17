@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.4";
+const CARD_VERSION = "1.6.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1209,6 +1209,12 @@ class AreaTopologyCard extends HTMLElement {
   renderLcarsDevice(device) {
     const color = safeColor(device.color, "#ff9c5b");
     const statuses = [];
+    const isMobile = device.labels.some((label) => /^mobiles?$/i.test(label.name));
+    const hasGeocodedLocation = device.entities.some((entity) => {
+      const stateObj = this._hass?.states?.[entity.entity_id];
+      return stateObj && !["unavailable", "unknown"].includes(stateObj.state)
+        && /(?:geocoded|recorded)[ _-]?location/i.test(`${entity.entity_id} ${entity.name || ""} ${entity.original_name || ""} ${stateObj.attributes.friendly_name || ""}`);
+    });
     const offline = device.entities.length > 0 && device.entities.every((entity) => {
       const state = this._hass?.states?.[entity.entity_id]?.state;
       return !state || ["unavailable", "unknown"].includes(state);
@@ -1220,7 +1226,20 @@ class AreaTopologyCard extends HTMLElement {
       if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
       const domain = entity.entity_id.split(".")[0];
       const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
+      const entityText = `${entity.entity_id} ${entity.name || ""} ${entity.original_name || ""} ${stateObj.attributes.friendly_name || ""}`;
+      const isGeocodedLocation = /(?:geocoded|recorded)[ _-]?location/i.test(entityText);
+      const locationStatus = isMobile && ((hasGeocodedLocation && isGeocodedLocation) || (!hasGeocodedLocation && domain === "device_tracker"))
+        ? {
+            entityId: entity.entity_id,
+            name: stateObj.attributes.friendly_name || entity.name || entity.original_name || "Recorded location",
+            value: this._hass?.formatEntityState?.(stateObj) || stateObj.state,
+            icon: "mdi:map-marker",
+            active: false,
+            priority: 1,
+          }
+        : null;
       const status = this.statusForEntity(entity, stateObj, domain, deviceClass, isPlug)
+        || locationStatus
         || (["switch", "fan", "media_player", "input_boolean"].includes(domain)
           ? { entityId: entity.entity_id, name: stateObj.attributes.friendly_name || entity.name || device.name, value: stateObj.state === "on" || stateObj.state === "playing" ? "On" : stateObj.state, icon: stateObj.attributes.icon || entity.icon || "mdi:toggle-switch", active: stateObj.state === "on" || stateObj.state === "playing", priority: 6 }
           : null);
@@ -1618,7 +1637,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-device-name { min-width:0; min-height:42px; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-meter { --meter-fill:#ff9900; position:relative; min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:42px; padding:6px 12px; border:0; border-radius:0 21px 21px 0; color:#d9d2e9; background:linear-gradient(90deg,var(--meter-fill) 0 var(--level,0%),#1b1722 var(--level,0%) 100%); font:inherit; font-size:13px; text-align:left; cursor:pointer; overflow:hidden; }
-    .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.adjustable.percentage { --meter-fill:#5858b8; }.lcars-meter.battery-low { --meter-fill:#c62828; }.lcars-meter.battery-medium { --meter-fill:#ef6c00; }.lcars-meter.battery-high { --meter-fill:#2e7d32; }.lcars-meter.temperature { --level:100%; color:#fff; font-weight:700; text-shadow:0 1px 3px #000; }.lcars-meter.temp-cold { --meter-fill:#1565c0; }.lcars-meter.temp-normal { --meter-fill:#2e7d32; }.lcars-meter.temp-hot { --meter-fill:#c62828; }.lcars-meter.percentage ha-icon,.lcars-meter.temperature ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { font-size:14px; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #aaaaff; outline-offset:-2px; }
+    .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.adjustable.percentage { --meter-fill:#5858b8; }.lcars-meter.battery-low { --meter-fill:#c62828; }.lcars-meter.battery-medium { --meter-fill:#ef6c00; }.lcars-meter.battery-high { --meter-fill:#2e7d32; }.lcars-meter.temperature { --level:100%; color:#fff; font-weight:700; text-shadow:0 1px 3px #000; }.lcars-meter.temp-cold { --meter-fill:#1565c0; }.lcars-meter.temp-normal { --meter-fill:#2e7d32; }.lcars-meter.temp-hot { --meter-fill:#c62828; }.lcars-meter.percentage ha-icon,.lcars-meter.temperature ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { max-width:48%; overflow:hidden; font-size:14px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #aaaaff; outline-offset:-2px; }
     .lcars-standby { min-height:42px; display:flex; align-items:center; justify-content:flex-end; padding:6px 13px; border-radius:0 21px 21px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; line-height:1.2; text-align:right; }.lcars-standby.offline { color:#fff; background:#555962; text-shadow:0 1px 2px #000; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
