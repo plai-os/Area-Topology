@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.3";
+const CARD_VERSION = "1.1.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -677,15 +677,16 @@ class AreaTopologyCard extends HTMLElement {
   renderTreeArea(area) {
     const collapsed = this._collapsedAreas.has(area.id);
     const devices = this.devicesForDisplay(area);
+    const hasFilteredDevices = devices.length > 0;
     return `<div class="tree-branch tree-area-branch">
       <div class="tree-row tree-area" data-area-drop="${escapeHtml(area.id)}">
-        <button class="tree-toggle" data-area-toggle="${escapeHtml(area.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(area.name)}">${collapsed ? "+" : "−"}</button>
+        <button class="tree-toggle ${hasFilteredDevices ? "" : "empty"}" ${hasFilteredDevices ? `data-area-toggle="${escapeHtml(area.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(area.name)}"` : "disabled"}>${hasFilteredDevices ? (collapsed ? "+" : "−") : ""}</button>
         <button class="tree-main" data-area-config="${escapeHtml(area.id)}" title="Open ${escapeHtml(area.name)} settings">
           <span class="tree-node-icon"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon></span>
           <span class="tree-copy"><strong>${escapeHtml(area.name)}</strong><small>${this.treeDeviceCount([area])}</small></span>
         </button>
       </div>
-      ${collapsed ? "" : `<div class="tree-children">${devices.map((device) => this.renderTreeDevice(device)).join("")}</div>`}
+      ${collapsed || !hasFilteredDevices ? "" : `<div class="tree-children">${devices.map((device) => this.renderTreeDevice(device)).join("")}</div>`}
     </div>`;
   }
 
@@ -1136,7 +1137,7 @@ class AreaTopologyCard extends HTMLElement {
     .tree-device:hover { z-index:4; box-shadow:0 3px 12px color-mix(in srgb,var(--device-color) 22%,transparent); }
     .tree-device:active { cursor:grabbing; } .tree-device.dragging { opacity:.42; }
     .tree-toggle { display:grid; place-items:center; flex:0 0 22px; width:22px; height:22px; padding:0; border:1px solid var(--divider-color,#ddd); border-radius:6px; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); font:inherit; font-size:14px; cursor:pointer; }
-    .tree-toggle.empty { opacity:.25; cursor:default; }
+    .tree-toggle.empty { visibility:hidden; cursor:default; }
     .tree-main { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:0; border:0; color:inherit; background:none; text-align:left; font:inherit; cursor:pointer; }
     .tree-node-icon { display:grid; place-items:center; flex:0 0 30px; width:30px; height:30px; border-radius:7px; color:var(--at-accent); background:color-mix(in srgb,currentColor 12%,var(--card-background-color,#fff)); }
     .tree-floor .tree-node-icon { color:var(--at-floor); } .tree-area .tree-node-icon { color:var(--at-area); } .tree-device .tree-node-icon { color:var(--device-color); }
