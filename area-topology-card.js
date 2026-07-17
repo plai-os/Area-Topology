@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.6";
+const CARD_VERSION = "0.9.7";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -814,12 +814,13 @@ class AreaTopologyCard extends HTMLElement {
 
   deviceStatuses(device) {
     const statuses = [];
+    const isPlug = /\bplugs?\b/i.test(device.name) || device.labels.some((label) => /\bplugs?\b/i.test(label.name));
     for (const entity of device.entities) {
       const stateObj = this._hass?.states?.[entity.entity_id];
       if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
       const domain = entity.entity_id.split(".")[0];
       const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
-      const status = this.statusForEntity(entity, stateObj, domain, deviceClass);
+      const status = this.statusForEntity(entity, stateObj, domain, deviceClass, isPlug);
       if (status) statuses.push(status);
     }
     statuses.sort((a, b) => a.priority - b.priority);
@@ -827,7 +828,7 @@ class AreaTopologyCard extends HTMLElement {
     return statuses.slice(0, limit);
   }
 
-  statusForEntity(entity, stateObj, domain, deviceClass) {
+  statusForEntity(entity, stateObj, domain, deviceClass, isPlug = false) {
     const on = stateObj.state === "on";
     const formatted = () => this._hass?.formatEntityState?.(stateObj)
       || `${stateObj.state}${stateObj.attributes.unit_of_measurement ? ` ${stateObj.attributes.unit_of_measurement}` : ""}`;
@@ -858,6 +859,9 @@ class AreaTopologyCard extends HTMLElement {
     }
     if (domain === "light") {
       return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:lightbulb-on" : "mdi:lightbulb-outline" };
+    }
+    if (domain === "switch" && (deviceClass === "outlet" || isPlug)) {
+      return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:power-plug" : "mdi:power-plug-off" };
     }
     if (domain === "climate") {
       const temperature = stateObj.attributes.current_temperature;

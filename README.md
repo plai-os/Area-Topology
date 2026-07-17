@@ -11,7 +11,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Drag-and-drop device cards and unassigned devices for assigning them to areas
 - Individual label toggles, with all labels selected initially
 - Label icons and colours
-- Live device status for batteries, lights, doors, windows, locks, covers, temperature, illuminance, humidity and climate
+- Live device status for batteries, lights, plugs, doors, windows, locks, covers, temperature, illuminance, humidity and climate
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
 - Header zoom controls
