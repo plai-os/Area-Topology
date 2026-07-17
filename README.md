@@ -212,6 +212,17 @@ engineering:
       name: Solar Available (Sarn)
       theme: Frosted Glass Dark Lite
       hours_to_show: 48
+captains_log:
+  color: "#C090B8"
+  initial_view: listWeek
+  entities:
+    - calendar.octopus_energy_a_52705f81_octoplus_saving_sessions
+    - calendar.octopus_energy_a_52705f81_greener_nights
+    - calendar.birthdays
+    - calendar.mike_jackson
+    - calendar.waste_collection_schedule_powys_county_council
+    - calendar.holidays_in_united_kingdom
+    - calendar.sarn_powys_gmail_com
 menus:
   - id: environmental
     title: Environmental
@@ -224,15 +235,6 @@ menus:
       - humidity
       - illuminance
       - climate
-  - id: communications
-    title: Communications
-    icon: mdi:access-point
-    color: "#6B8EAD"
-    labels:
-      - Alexa
-      - Speaker Group
-    properties:
-      - media_player
   - id: computer_core
     title: Computer Core
     icon: mdi:server
@@ -253,6 +255,7 @@ menus:
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
 Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
 Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel. The three `chart_*_color` settings control the embedded graph series palette.
+Adding `captains_log.entities` creates a numbered `CAPTAIN'S LOG` destination with a full-width `CALENDAR` sector. Its colour and initial calendar view can be configured with `color` and `initial_view`.
 Each entry in `menus` creates another numbered floor-style destination. Devices are discovered automatically when any configured label or entity property matches, then grouped into the existing LCARS area panels.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.

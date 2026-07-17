@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.18.1";
-const BUILD_COMMIT = "9483b15";
+const CARD_VERSION = "1.19.0";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -195,8 +195,8 @@ class AreaTopologyCard extends HTMLElement {
         const stateObj = hass.states?.[this._lcarsPopupEntity];
         const value = this.shadowRoot?.querySelector("[data-lcars-popup-value]");
         if (stateObj && value) value.textContent = hass.formatEntityState?.(stateObj) || stateObj.state;
-      } else if (this._standaloneLcars && ["security", "engineering"].includes(this._lcarsSelectedView)) {
-        for (const card of this.shadowRoot?.querySelectorAll(".lcars-camera-card > *,.lcars-engineering-card > *") || []) card.hass = hass;
+      } else if (this._standaloneLcars && ["security", "engineering", "captains_log"].includes(this._lcarsSelectedView)) {
+        for (const card of this.shadowRoot?.querySelectorAll(".lcars-camera-card > *,.lcars-engineering-card > *,.lcars-captains-log-card > *") || []) card.hass = hass;
         for (const value of this.shadowRoot?.querySelectorAll("[data-camera-state]") || []) value.textContent = hass.states?.[value.dataset.cameraState]?.state || "unavailable";
         for (const value of this.shadowRoot?.querySelectorAll("[data-engineering-metric]") || []) {
           const metric = this._config.engineering?.metrics?.[Number(value.dataset.engineeringMetric)];
@@ -294,7 +294,7 @@ class AreaTopologyCard extends HTMLElement {
         if (this._standaloneLcars) {
           if (floorNavId.startsWith("__menu_") && floorNavId.endsWith("__")) {
             this._lcarsSelectedView = `menu:${floorNavId.slice(7, -2)}`;
-          } else if (["__weather__", "__security__", "__engineering__"].includes(floorNavId)) {
+          } else if (["__weather__", "__security__", "__engineering__", "__captains_log__"].includes(floorNavId)) {
             this._lcarsSelectedView = floorNavId.slice(2, -2);
           } else {
             this._lcarsSelectedView = "floor";
@@ -707,6 +707,7 @@ class AreaTopologyCard extends HTMLElement {
     this.configureLcarsHistoryCard();
     this.configureLcarsCameraCards();
     this.configureLcarsEngineeringCards();
+    this.configureLcarsCaptainsLogCard();
     if (this.shadowRoot.querySelector(".lcars-area-grid")) requestAnimationFrame(() => this.layoutLcarsAreas());
     if (previousPageScroll.length) requestAnimationFrame(() => requestAnimationFrame(() => this.restoreAncestorScroll(previousPageScroll)));
     if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
@@ -1286,17 +1287,20 @@ class AreaTopologyCard extends HTMLElement {
     const securitySelected = Boolean(securityConfig && this._lcarsSelectedView === "security");
     const engineeringConfig = this._standaloneLcars && ((Array.isArray(this._config.engineering?.panels) && this._config.engineering.panels.length) || (Array.isArray(this._config.engineering?.metrics) && this._config.engineering.metrics.length)) ? this._config.engineering : null;
     const engineeringSelected = Boolean(engineeringConfig && this._lcarsSelectedView === "engineering");
+    const captainsLogConfig = this._standaloneLcars && Array.isArray(this._config.captains_log?.entities) && this._config.captains_log.entities.length ? this._config.captains_log : null;
+    const captainsLogSelected = Boolean(captainsLogConfig && this._lcarsSelectedView === "captains_log");
     const customMenus = this._standaloneLcars && Array.isArray(this._config.menus)
       ? this._config.menus.filter((menu) => menu?.id && menu?.title).map((menu, index) => ({ ...menu, color: safeColor(menu.color, ["#cc99cc", "#66aacc", "#ffcc99", "#9999ff"][index % 4]) }))
       : [];
     const selectedCustomMenu = customMenus.find((menu) => this._lcarsSelectedView === `menu:${menu.id}`) || null;
     const displayedFloorViews = this._standaloneLcars
-      ? floorViews.filter((group) => !weatherSelected && !securitySelected && !engineeringSelected && !selectedCustomMenu && group.id === selectedFloorId)
+      ? floorViews.filter((group) => !weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId)
       : floorViews;
     const weatherColor = safeColor(weatherConfig?.color, "#66aacc");
     const securityColor = safeColor(securityConfig?.color, "#cc6677");
     const engineeringColor = safeColor(engineeringConfig?.color, "#ff9966");
-    const footerColor = weatherSelected ? weatherColor : (securitySelected ? securityColor : (engineeringSelected ? engineeringColor : (selectedCustomMenu?.color || displayedFloorViews[0]?.color || "#cc99cc")));
+    const captainsLogColor = safeColor(captainsLogConfig?.color, "#c090b8");
+    const footerColor = weatherSelected ? weatherColor : (securitySelected ? securityColor : (engineeringSelected ? engineeringColor : (captainsLogSelected ? captainsLogColor : (selectedCustomMenu?.color || displayedFloorViews[0]?.color || "#cc99cc"))));
     const dateTime = this.lcarsDateTime();
     const headerColor = safeColor(this._config.header_color, "#263f4b");
     const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
@@ -1304,17 +1308,18 @@ class AreaTopologyCard extends HTMLElement {
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
-      ${floorViews.length || weatherConfig || securityConfig || engineeringConfig || customMenus.length ? `${this._standaloneLcars ? `<div class="lcars-body">
+      ${floorViews.length || weatherConfig || securityConfig || engineeringConfig || captainsLogConfig || customMenus.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
           <div class="lcars-nav-cap"></div>
-          ${floorViews.map((group) => `<button class="${!weatherSelected && !securitySelected && !engineeringSelected && !selectedCustomMenu && group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${!weatherSelected && !securitySelected && !engineeringSelected && !selectedCustomMenu && group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
+          ${floorViews.map((group) => `<button class="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
           ${weatherConfig ? `<button class="${weatherSelected ? "active" : ""}" data-floor-nav="__weather__" aria-pressed="${weatherSelected}" style="--nav-color:${weatherColor};--nav-contrast:${contrastColor(weatherColor)}" title="Show weather"><span>${String(floorViews.length + 1).padStart(2, "0")}</span><b>WEATHER</b></button>` : ""}
           ${securityConfig ? `<button class="${securitySelected ? "active" : ""}" data-floor-nav="__security__" aria-pressed="${securitySelected}" style="--nav-color:${securityColor};--nav-contrast:${contrastColor(securityColor)}" title="Show security cameras"><span>${String(floorViews.length + (weatherConfig ? 2 : 1)).padStart(2, "0")}</span><b>SECURITY</b></button>` : ""}
           ${engineeringConfig ? `<button class="${engineeringSelected ? "active" : ""}" data-floor-nav="__engineering__" aria-pressed="${engineeringSelected}" style="--nav-color:${engineeringColor};--nav-contrast:#fff" title="Show engineering systems"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0)).padStart(2, "0")}</span><b>ENGINEERING</b></button>` : ""}
-          ${customMenus.map((menu, index) => `<button class="${selectedCustomMenu?.id === menu.id ? "active" : ""}" data-floor-nav="__menu_${escapeHtml(menu.id)}__" aria-pressed="${selectedCustomMenu?.id === menu.id}" style="--nav-color:${menu.color};--nav-contrast:${contrastColor(menu.color)}" title="Show ${escapeHtml(menu.title)}"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0) + index).padStart(2, "0")}</span><b>${escapeHtml(menu.title)}</b></button>`).join("")}
+          ${captainsLogConfig ? `<button class="${captainsLogSelected ? "active" : ""}" data-floor-nav="__captains_log__" aria-pressed="${captainsLogSelected}" style="--nav-color:${captainsLogColor};--nav-contrast:${contrastColor(captainsLogColor)}" title="Show Captain's Log"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0)).padStart(2, "0")}</span><b>CAPTAIN'S LOG</b></button>` : ""}
+          ${customMenus.map((menu, index) => `<button class="${selectedCustomMenu?.id === menu.id ? "active" : ""}" data-floor-nav="__menu_${escapeHtml(menu.id)}__" aria-pressed="${selectedCustomMenu?.id === menu.id}" style="--nav-color:${menu.color};--nav-contrast:${contrastColor(menu.color)}" title="Show ${escapeHtml(menu.title)}"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0) + (captainsLogConfig ? 1 : 0) + index).padStart(2, "0")}</span><b>${escapeHtml(menu.title)}</b></button>`).join("")}
           <div class="lcars-nav-foot"></div>
         </nav>
-        <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : securitySelected ? this.renderLcarsSecurity(securityConfig, securityColor) : engineeringSelected ? this.renderLcarsEngineering(engineeringConfig, engineeringColor) : selectedCustomMenu ? this.renderLcarsCustomMenu(selectedCustomMenu) : displayedFloorViews.map((group, index) => {
+        <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : securitySelected ? this.renderLcarsSecurity(securityConfig, securityColor) : engineeringSelected ? this.renderLcarsEngineering(engineeringConfig, engineeringColor) : captainsLogSelected ? this.renderLcarsCaptainsLog(captainsLogConfig, captainsLogColor) : selectedCustomMenu ? this.renderLcarsCustomMenu(selectedCustomMenu) : displayedFloorViews.map((group, index) => {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTOR${group.areas.length === 1 ? "" : "S"}</b></header>
@@ -1495,6 +1500,35 @@ class AreaTopologyCard extends HTMLElement {
     } catch (error) {
       console.error("Could not load LCARS engineering cards", error);
       for (const host of hosts) if (host.isConnected && !host.firstElementChild) host.innerHTML = '<div class="lcars-engineering-error">ENGINEERING DATA UNAVAILABLE</div>';
+    }
+  }
+
+  renderLcarsCaptainsLog(config, color) {
+    return `<section class="lcars-engineering lcars-captains-log" style="--engineering-tone:${color};--engineering-contrast:${contrastColor(color)};--engineering-chart:${color};--engineering-chart-secondary:#9999ff;--engineering-chart-tertiary:#ffcc99">
+      <header><ha-icon icon="mdi:notebook-edit-outline"></ha-icon><strong>CAPTAIN'S LOG</strong><i></i><b>1 SECTOR</b></header>
+      <div class="lcars-engineering-grid">
+        <div class="lcars-engineering-panels"><article class="lcars-engineering-panel"><header><ha-icon icon="mdi:calendar-month"></ha-icon><strong>CALENDAR</strong></header><div class="lcars-engineering-card lcars-captains-log-card" data-lcars-captains-log></div></article></div>
+      </div>
+    </section>`;
+  }
+
+  async configureLcarsCaptainsLogCard() {
+    const host = this.shadowRoot?.querySelector("[data-lcars-captains-log]");
+    if (!host || host.firstElementChild) return;
+    try {
+      const helpers = await window.loadCardHelpers?.();
+      if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
+      const config = this._config.captains_log;
+      const card = await helpers.createCardElement({
+        type: "calendar",
+        entities: config.entities,
+        initial_view: config.initial_view,
+      });
+      card.hass = this._hass;
+      host.append(card);
+    } catch (error) {
+      console.error("Could not load LCARS Captain's Log calendar", error);
+      if (host.isConnected) host.innerHTML = '<div class="lcars-engineering-error">CALENDAR DATA UNAVAILABLE</div>';
     }
   }
 
@@ -2116,6 +2150,9 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-engineering-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }.lcars-engineering-metrics article { min-width:0; display:flex; align-items:center; gap:12px; min-height:72px; padding:10px 16px; border:2px solid color-mix(in srgb,var(--engineering-tone) 60%,#30303a); border-radius:24px; background:linear-gradient(115deg,color-mix(in srgb,var(--engineering-tone) 16%,#0b0b10),#161721); }.lcars-engineering-metrics article>ha-icon { flex:0 0 28px; color:var(--engineering-tone); --mdc-icon-size:28px; }.lcars-engineering-metrics article>div { min-width:0; }.lcars-engineering-metrics strong,.lcars-engineering-metrics span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-engineering-metrics strong { font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; font-weight:400; letter-spacing:.035em; }.lcars-engineering-metrics span { margin-top:3px; font-size:14px; }
     .lcars-engineering-card>* { --graph-color-1:var(--engineering-chart)!important; --graph-color-2:var(--engineering-chart-secondary)!important; --graph-color-3:var(--engineering-chart-tertiary)!important; --accent-color:var(--engineering-chart)!important; --primary-color:var(--engineering-chart)!important; --state-icon-color:var(--engineering-chart)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#b9b2c8; --divider-color:color-mix(in srgb,var(--engineering-tone) 35%,#252531); color-scheme:dark; }
     .lcars-engineering>header,.lcars-engineering-panel>header { text-shadow:0 1px 2px rgba(0,0,0,.65); }
+    .lcars-captains-log .lcars-engineering-panels { grid-template-columns:1fr; }
+    .lcars-captains-log-card { min-height:620px; }
+    .lcars-captains-log-card>* { --primary-color:var(--engineering-tone)!important; --accent-color:var(--engineering-tone)!important; --state-icon-color:var(--engineering-tone)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#c9c2d8; color-scheme:dark; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
