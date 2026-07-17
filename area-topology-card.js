@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.10.3";
+const CARD_VERSION = "1.10.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1752,6 +1752,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-size:12px; text-align:right; }
     .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-contrast:var(--lcars-tone-contrast,#08080a); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); grid-auto-rows:4px; grid-auto-flow:row dense; align-items:start; column-gap:16px; row-gap:16px; margin-left:0; padding:14px 0 0 calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
+    .standalone-lcars .lcars-area-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:-12px; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-area-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:52px; padding-bottom:4px; background:var(--lcars-area-tone); }
@@ -1771,6 +1772,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    @media (max-width:1200px) { .standalone-lcars .lcars-area-grid { grid-template-columns:1fr; } }
     @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; grid-template-rows:48px 42px; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-clock { grid-column:1 / 2; justify-content:flex-end; padding:8px 6px; font-size:18px; }.lcars-date { grid-column:2 / 4; justify-content:flex-start; padding:8px 10px; font-size:16px; }.lcars-end { grid-column:3; grid-row:1; }.lcars-body { display:block; }.lcars-floor-nav { position:sticky; top:0; flex-direction:row; overflow-x:auto; margin:0 -4px 8px; padding:6px 4px; background:#050507; }.lcars-nav-cap,.lcars-nav-foot { display:none; }.lcars-floor-nav button { flex:0 0 auto; grid-template-columns:38px auto; min-height:38px; }.lcars-floor-nav button span,.lcars-floor-nav button b { height:38px; }.lcars-floor-nav button span { font-size:19px; }.lcars-floor-nav button b { max-width:150px; font-size:12px; }.lcars-floor { scroll-margin-top:58px; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { --lcars-area-rail:22px; --lcars-area-rail-gap:8px; grid-template-columns:1fr; grid-auto-rows:auto; margin-left:0; }.lcars-area { grid-row:auto!important; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter,.lcars-standby { border-radius:12px; }.lcars-footer { margin-left:0; } }
   `; }
 }
