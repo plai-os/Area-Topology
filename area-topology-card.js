@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.5.0";
+const CARD_VERSION = "0.5.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -366,7 +366,7 @@ class AreaTopologyCard extends HTMLElement {
         <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
         <div class="device-copy"><h3>${escapeHtml(device.name)}</h3>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</div>
       </div>
-      ${device.labels.length ? `<div class="labels">${device.labels.map((label) => `<span style="--label-color:${safeColor(label.color, deviceColor)}">${label.icon ? `<ha-icon icon="${escapeHtml(label.icon)}"></ha-icon>` : ""}${escapeHtml(label.name)}</span>`).join("")}</div>` : ""}
+      ${device.labels.length ? `<div class="labels">${device.labels.map((label) => `<span style="--label-color:${safeColor(label.color, deviceColor)}">${escapeHtml(label.name)}</span>`).join("")}</div>` : ""}
       ${entityRows}
     </article>`;
   }
@@ -425,7 +425,6 @@ class AreaTopologyCard extends HTMLElement {
     .device-icon { width:34px; height:34px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
     .device-copy { min-width:0; } .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
     .labels span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; color:var(--label-color); background:color-mix(in srgb,var(--label-color) 12%,var(--secondary-background-color,#eee)); font-size:10px; }
-    .labels ha-icon { width:12px; height:12px; --mdc-icon-size:12px; }
     .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
     .entities button { width:100%; border:0; background:none; color:var(--primary-text-color,#222); display:flex; justify-content:space-between; gap:8px; padding:5px 0; cursor:pointer; text-align:left; font:inherit; font-size:11px; }
     .entities b { color:var(--secondary-text-color,#727272); font-weight:400; white-space:nowrap; }

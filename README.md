@@ -58,7 +58,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `title` | `Home topology` | Card heading |
 | `show_unassigned` | `false` | Include devices that are not assigned to an area initially |
 | `show_entities` | `false` | List each device's entities and current states |
-| `show_only_labeled` | `true` | Initially show only devices with at least one label |
+| `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 
 The card reads Home Assistant's area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
