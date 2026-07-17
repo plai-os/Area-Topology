@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.3";
+const CARD_VERSION = "1.3.4";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -399,6 +399,10 @@ class AreaTopologyCard extends HTMLElement {
       }
     });
     this.shadowRoot.addEventListener("dragstart", (event) => {
+      if (event.target.closest("[data-entity-level]")) {
+        event.preventDefault();
+        return;
+      }
       const device = event.target.closest("[data-unassigned-device],[data-device-drag]");
       if (!device || !event.dataTransfer) return;
       const deviceId = device.dataset.unassignedDevice || device.dataset.deviceDrag;
@@ -1175,8 +1179,8 @@ class AreaTopologyCard extends HTMLElement {
     }
     statuses.sort((a, b) => a.priority - b.priority);
     const visibleStatuses = this.dedupeLcarsStatuses(statuses);
-    return `<div class="lcars-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" style="--lcars-device:${color}">
-      <button class="lcars-device-name" data-device="${escapeHtml(device.id)}"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
+    return `<div class="lcars-device" style="--lcars-device:${color}">
+      <button class="lcars-device-name" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
       <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
     </div>`;
   }
