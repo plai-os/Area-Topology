@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.4";
+const CARD_VERSION = "1.0.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -104,7 +104,7 @@ class AreaTopologyCard extends HTMLElement {
     this._data = null;
     this._collapsedAreas = new Set();
     this._collapsedFloors = new Set();
-    this._collapsedDevices = new Set();
+    this._expandedTreeDevices = new Set();
   }
 
   setConfig(config) {
@@ -173,10 +173,6 @@ class AreaTopologyCard extends HTMLElement {
       this._floors = floors;
       if (!this._selectedLabels) this._selectedLabels = new Set(labels.map((label) => label.label_id));
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
-      if (!this._treeDeviceExpansionInitialized) {
-        this._collapsedDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
-        this._treeDeviceExpansionInitialized = true;
-      }
     } catch (error) {
       this._error = error?.message || String(error);
     } finally {
@@ -210,12 +206,13 @@ class AreaTopologyCard extends HTMLElement {
         this.captureViewportFocus();
         this._collapsedAreas.clear();
         this._collapsedFloors.clear();
-        this._collapsedDevices.clear();
+        this._expandedTreeDevices = new Set(this._data?.flatMap((area) => area.devices.map((device) => device.id)) || []);
         this.render();
         return;
       }
       if (action === "collapse") {
         this.captureViewportFocus();
+        this._expandedTreeDevices.clear();
         if (this.hasFloorLevel()) {
           this._collapsedFloors = new Set(this.floorGroups().map((floor) => floor.id));
           this._collapsedAreas.clear();
@@ -304,7 +301,7 @@ class AreaTopologyCard extends HTMLElement {
       }
       const deviceToggleId = event.target.closest("[data-device-toggle]")?.dataset.deviceToggle;
       if (deviceToggleId) {
-        this._collapsedDevices.has(deviceToggleId) ? this._collapsedDevices.delete(deviceToggleId) : this._collapsedDevices.add(deviceToggleId);
+        this._expandedTreeDevices.has(deviceToggleId) ? this._expandedTreeDevices.delete(deviceToggleId) : this._expandedTreeDevices.add(deviceToggleId);
         this.render();
         return;
       }
@@ -373,7 +370,7 @@ class AreaTopologyCard extends HTMLElement {
 
   collapseTreeProperties() {
     if (this._layoutMode !== "tree" || !this._data) return;
-    this._collapsedDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
+    this._expandedTreeDevices.clear();
   }
 
   openFloorConfig(floorId) {
@@ -445,6 +442,8 @@ class AreaTopologyCard extends HTMLElement {
     if (!this.shadowRoot || !this._config) return;
     const oldScroller = this.shadowRoot.querySelector(".topology-scroll");
     const previousScroll = oldScroller ? { left: oldScroller.scrollLeft, top: oldScroller.scrollTop } : null;
+    const oldTreeScroller = this.shadowRoot.querySelector(".tree-scroll");
+    const previousTreeScroll = oldTreeScroller ? { left: oldTreeScroller.scrollLeft, top: oldTreeScroller.scrollTop } : null;
     const oldUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
     const previousUnassignedScroll = oldUnassignedList?.scrollTop ?? this._unassignedScrollTop ?? null;
     const content = this._loading
@@ -468,11 +467,11 @@ class AreaTopologyCard extends HTMLElement {
               </div>
               <button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
               <button data-topology-action="collapse" title="Collapse to the first hierarchy level"><span>−</span> Collapse all</button>
-              ${this._layoutMode === "web" ? `<div class="zoom-controls" aria-label="Topology zoom">
-                <button data-topology-action="zoom-out" title="Zoom out">−</button>
-                <button class="zoom-level" data-topology-action="zoom-reset" title="Reset zoom">${Math.round(this._zoom * 100)}%</button>
-                <button data-topology-action="zoom-in" title="Zoom in">＋</button>
-              </div>` : ""}
+              <div class="zoom-controls" aria-label="${this._layoutMode === "tree" ? "Tree text size" : "Topology zoom"}">
+                <button data-topology-action="zoom-out" title="${this._layoutMode === "tree" ? "Decrease text size" : "Zoom out"}">−</button>
+                <button class="zoom-level" data-topology-action="zoom-reset" title="${this._layoutMode === "tree" ? "Reset text size" : "Reset zoom"}">${Math.round(this._zoom * 100)}%</button>
+                <button data-topology-action="zoom-in" title="${this._layoutMode === "tree" ? "Increase text size" : "Zoom in"}">＋</button>
+              </div>
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
               <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
@@ -482,8 +481,9 @@ class AreaTopologyCard extends HTMLElement {
         <div class="content">${content}</div>
       </ha-card>`;
     const newScroller = this.shadowRoot.querySelector(".topology-scroll");
+    const newTreeScroller = this.shadowRoot.querySelector(".tree-scroll");
     const newUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
-    if (newScroller || newUnassignedList) requestAnimationFrame(() => {
+    if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
       if (newScroller && this._zoomFocus) {
         newScroller.scrollLeft = this._zoomFocus.x * newScroller.scrollWidth - this._zoomFocus.focusX;
         newScroller.scrollTop = this._zoomFocus.y * newScroller.scrollHeight - this._zoomFocus.focusY;
@@ -497,6 +497,10 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (newUnassignedList && previousUnassignedScroll !== null) {
         newUnassignedList.scrollTop = previousUnassignedScroll;
+      }
+      if (newTreeScroller && previousTreeScroll) {
+        newTreeScroller.scrollLeft = previousTreeScroll.left;
+        newTreeScroller.scrollTop = previousTreeScroll.top;
       }
       if (this._restoreUnassignedSearchFocus) {
         const search = this.shadowRoot.querySelector("[data-unassigned-search]");
@@ -592,7 +596,8 @@ class AreaTopologyCard extends HTMLElement {
     const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
       ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
       : "clamp(420px, calc(100vh - 230px), 1200px)";
-    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree">
+    const treeScale = this._zoom;
+    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree" style="--tree-font:${14 * treeScale}px;--tree-small:${11 * treeScale}px;--tree-label:${10 * treeScale}px;--tree-property:${12 * treeScale}px;--tree-id:${10 * treeScale}px">
       <div class="tree-row tree-home">
         <span class="tree-node-icon"><ha-icon icon="mdi:home"></ha-icon></span>
         <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong></div>
@@ -634,7 +639,7 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderTreeDevice(device) {
-    const collapsed = this._collapsedDevices.has(device.id);
+    const collapsed = !this._expandedTreeDevices.has(device.id);
     const color = safeColor(device.color);
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
     const properties = device.entities.map((entity) => {
@@ -1065,7 +1070,7 @@ class AreaTopologyCard extends HTMLElement {
     .content { padding:0; }
     .workspace { display:flex; width:100%; min-width:0; }
     .tree-scroll { --tree-background:color-mix(in srgb,var(--card-background-color,#fff) 96%,var(--at-accent)); flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; padding:22px 28px 40px; background:var(--tree-background); }
-    .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:14px; }
+    .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:var(--tree-font,14px); }
     .tree-children { position:relative; margin-left:19px; padding-left:25px; border-left:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
     .tree-branch { position:relative; padding-top:8px; }
     .tree-branch::before { content:""; position:absolute; z-index:1; top:30px; left:-25px; width:24px; border-top:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
@@ -1085,15 +1090,15 @@ class AreaTopologyCard extends HTMLElement {
     .tree-floor .tree-node-icon { color:var(--at-floor); } .tree-area .tree-node-icon { color:var(--at-area); } .tree-device .tree-node-icon { color:var(--device-color); }
     .tree-node-icon ha-icon { --mdc-icon-size:19px; }
     .tree-copy { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
-    .tree-copy strong { font-size:14px; overflow-wrap:anywhere; } .tree-copy small { margin-top:3px; font-size:11px; }
+    .tree-copy strong { font-size:var(--tree-font,14px); overflow-wrap:anywhere; } .tree-copy small { margin-top:3px; font-size:var(--tree-small,11px); }
     .tree-labels { display:flex; flex-wrap:wrap; gap:4px; margin-left:auto; padding-left:14px; }
-    .tree-labels>span { padding:3px 7px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:10px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+    .tree-labels>span { padding:3px 7px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:var(--tree-label,10px); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
     .tree-properties { padding-top:2px; }
     .tree-property { position:relative; width:max-content; min-width:520px; max-width:900px; display:grid; grid-template-columns:22px minmax(220px,1fr) auto; align-items:center; gap:8px; margin-top:5px; padding:6px 10px; border:1px solid color-mix(in srgb,var(--device-color) 30%,var(--divider-color,#ddd)); border-radius:7px; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); text-align:left; font:inherit; cursor:pointer; }
     .tree-property::before { content:""; position:absolute; top:50%; left:-26px; width:25px; border-top:1px solid color-mix(in srgb,var(--device-color) 42%,var(--divider-color,#ddd)); }
     .tree-property ha-icon { color:var(--device-color); --mdc-icon-size:16px; }
-    .tree-property>span { min-width:0; } .tree-property b { display:block; font-size:12px; overflow-wrap:anywhere; } .tree-property small { margin-top:2px; font-size:10px; }
-    .tree-property em { color:var(--secondary-text-color,#727272); font-size:12px; font-style:normal; white-space:nowrap; }
+    .tree-property>span { min-width:0; } .tree-property b { display:block; font-size:var(--tree-property,12px); overflow-wrap:anywhere; } .tree-property small { margin-top:2px; font-size:var(--tree-id,10px); }
+    .tree-property em { color:var(--secondary-text-color,#727272); font-size:var(--tree-property,12px); font-style:normal; white-space:nowrap; }
     .topology-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
     .topology-canvas { position:relative; flex:none; }
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; transform:scale(var(--zoom)); transform-origin:0 0; }
