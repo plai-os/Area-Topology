@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.4";
+const CARD_VERSION = "0.8.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -678,13 +678,13 @@ class AreaTopologyCard extends HTMLElement {
     .device-main { display:flex; align-items:flex-start; gap:10px; }
     .device-icon { width:34px; height:34px; margin-top:1px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
     .device-copy { min-width:0; }
-    .statuses { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0 44px; }
+    .statuses { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0; }
     .status { display:inline-flex; align-items:center; gap:3px; min-height:22px; padding:2px 6px; border:0; border-radius:7px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#eee); font:inherit; font-size:10px; cursor:pointer; }
     .status.active { color:var(--state-active-color,var(--warning-color,#f9a825)); background:color-mix(in srgb,var(--state-active-color,var(--warning-color,#f9a825)) 15%,var(--card-background-color,#fff)); }
     .status ha-icon { width:13px; height:13px; --mdc-icon-size:13px; }
-    .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
+    .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0; }
     .labels span { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:10px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
-    .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
+    .entities { margin:9px 0 0; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
     .entities button { width:100%; border:0; background:none; color:var(--primary-text-color,#222); display:flex; justify-content:space-between; gap:8px; padding:5px 0; cursor:pointer; text-align:left; font:inherit; font-size:11px; }
     .entities b { color:var(--secondary-text-color,#727272); font-weight:400; white-space:nowrap; }
     .unassigned-panel { flex:0 0 285px; width:285px; height:var(--map-height); overflow:hidden; display:flex; flex-direction:column; border-left:1px solid var(--divider-color,#ddd); background:var(--card-background-color,#fff); }
