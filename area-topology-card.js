@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.8";
+const CARD_VERSION = "1.1.9";
 
 const DEFAULTS = {
   title: "Home topology",
