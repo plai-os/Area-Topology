@@ -5,7 +5,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 ## Features
 
 - Radial Home → Area → Device topology, with an automatic Floor level when multiple floors exist
-- Switchable spider-web, hierarchical tree, and LCARS dashboard layouts
+- Switchable spider-web and hierarchical tree layouts
 - Collision-aware multi-ring layout for larger installations
 - Expand/collapse floors, areas, or the entire map with space-aware reflow
 - Filters for labelled and unassigned devices
@@ -93,16 +93,15 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 
 The card reads Home Assistant's floor, area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
 
-The LCARS view groups live systems by floor and area. It prioritises useful readings such as temperature, humidity, illumination, battery, door/lock state, light and plug state, climate state, and media-player volume. Select `LCARS` in the header or set `layout: lcars` in YAML to make it the initial view.
-
 ## Standalone LCARS dashboard card
 
-The same JavaScript resource also provides `custom:lcars-home-card`. This independent card renders only the LCARS dashboard, without the Home Topology header, layout controls, label toolbar, or unassigned panel. It always shows labelled devices only and always excludes unassigned devices.
+The same JavaScript resource also provides `custom:lcars-home-card`. This independent card groups live systems by floor and area and prioritises useful readings such as temperature, humidity, illumination, battery, door/lock state, light and plug state, climate state, and media-player volume. It renders without the Home Topology header, layout controls, label toolbar, or unassigned panel. It always shows labelled devices only and always excludes unassigned devices.
 
 Omit `labels`, `floors`, or `areas` to include all entries of that type. When supplied, each option is a YAML list and accepts either the visible Home Assistant name or registry ID.
 The order of each YAML list is also the display order: floors follow `floors`, area panels follow `areas`, and LCARS device groups follow `labels`.
 Use `label_colors`, `floor_colors`, and `area_colors` to override colours by visible name or registry ID. Any item without an override retains its current Home Assistant or LCARS colour.
 The standalone dashboard includes a numbered floor navigator on the left. Only one floor is displayed at a time: it starts on the first configured floor, and selecting another tab replaces the dashboard content with that floor. Its tab order and colours follow `floors` and `floor_colors`. On narrow screens it becomes a horizontal navigation strip. Floor and room headings use the same condensed LCARS-style display type.
+Selecting a non-toggle reading opens an LCARS-themed entity overlay with its current value and 24-hour Home Assistant history graph.
 
 ```yaml
 type: custom:lcars-home-card

@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.10.6";
+const CARD_VERSION = "1.11.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -136,7 +136,9 @@ class AreaTopologyCard extends HTMLElement {
       this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
       this._unassignedSearch = preferences.unassignedSearch ?? "";
       const requestedLayout = preferences.layoutMode || this._config.layout;
-      this._layoutMode = ["web", "tree", "lcars"].includes(requestedLayout) ? requestedLayout : "web";
+      this._layoutMode = this._standaloneLcars
+        ? "lcars"
+        : (["web", "tree"].includes(requestedLayout) ? requestedLayout : "web");
       this._savedSelectedLabels = Array.isArray(preferences.selectedLabels) ? preferences.selectedLabels : null;
       this._savedCollapsedAreas = Array.isArray(preferences.collapsedAreas) ? preferences.collapsedAreas : null;
       this._savedCollapsedFloors = Array.isArray(preferences.collapsedFloors) ? preferences.collapsedFloors : null;
@@ -282,6 +284,11 @@ class AreaTopologyCard extends HTMLElement {
         return;
       }
       const action = event.target.closest("[data-topology-action]")?.dataset.topologyAction;
+      if (action === "close-lcars-popup" && (event.target.classList?.contains("lcars-popup-backdrop") || event.target.closest(".lcars-popup-top button"))) {
+        this._lcarsPopupEntity = null;
+        this.render();
+        return;
+      }
       if (action === "expand") {
         this.captureViewportFocus();
         this._collapsedAreas.clear();
@@ -304,7 +311,7 @@ class AreaTopologyCard extends HTMLElement {
         this.render();
         return;
       }
-      if (["layout-web", "layout-tree", "layout-lcars"].includes(action)) {
+      if (["layout-web", "layout-tree"].includes(action)) {
         this._layoutMode = action.replace("layout-", "");
         if (this._layoutMode === "tree") this.collapseTreeProperties();
         this.savePreferences();
@@ -404,6 +411,11 @@ class AreaTopologyCard extends HTMLElement {
       }
       const target = event.target.closest("[data-entity]");
       if (target) {
+        if (this._standaloneLcars) {
+          this._lcarsPopupEntity = target.dataset.entity;
+          this.render();
+          return;
+        }
         this.dispatchEvent(new CustomEvent("hass-more-info", {
           bubbles: true,
           composed: true,
@@ -645,15 +657,14 @@ class AreaTopologyCard extends HTMLElement {
               <div class="layout-controls" aria-label="Topology layout">
                 <button class="${this._layoutMode === "web" ? "active" : ""}" data-topology-action="layout-web" title="Spider web layout"><ha-icon icon="mdi:graph-outline"></ha-icon> Web</button>
                 <button class="${this._layoutMode === "tree" ? "active" : ""}" data-topology-action="layout-tree" title="Tree layout"><ha-icon icon="mdi:file-tree-outline"></ha-icon> Tree</button>
-                <button class="${this._layoutMode === "lcars" ? "active" : ""}" data-topology-action="layout-lcars" title="LCARS dashboard"><ha-icon icon="mdi:space-station"></ha-icon> LCARS</button>
               </div>
-              ${this._layoutMode === "lcars" ? "" : `<button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
+              <button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
               <button data-topology-action="collapse" title="Collapse to the first hierarchy level"><span>−</span> Collapse all</button>
               <div class="zoom-controls" aria-label="${this._layoutMode === "tree" ? "Tree text size" : "Topology zoom"}">
                 <button data-topology-action="zoom-out" title="${this._layoutMode === "tree" ? "Decrease text size" : "Zoom out"}">−</button>
                 <button class="zoom-level" data-topology-action="zoom-reset" title="${this._layoutMode === "tree" ? "Reset text size" : "Reset zoom"}">${Math.round(this.currentScale() * 100)}%</button>
                 <button data-topology-action="zoom-in" title="${this._layoutMode === "tree" ? "Increase text size" : "Zoom in"}">＋</button>
-              </div>`}
+              </div>
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
               <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
@@ -661,10 +672,12 @@ class AreaTopologyCard extends HTMLElement {
           ${this.renderLabelFilters()}
         </div>`}
         <div class="content">${content}</div>
+        ${this._standaloneLcars ? this.renderLcarsPopup() : ""}
       </ha-card>`;
     const newScroller = this.shadowRoot.querySelector(".topology-scroll");
     const newTreeScroller = this.shadowRoot.querySelector(".tree-scroll");
     const newUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
+    this.configureLcarsHistoryCard();
     if (this.shadowRoot.querySelector(".lcars-area-grid")) requestAnimationFrame(() => this.layoutLcarsAreas());
     if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
       if (newScroller && this._centerHomeAfterRender) {
@@ -696,6 +709,34 @@ class AreaTopologyCard extends HTMLElement {
         this._restoreUnassignedSearchFocus = false;
       }
     });
+  }
+
+  renderLcarsPopup() {
+    if (!this._lcarsPopupEntity) return "";
+    const stateObj = this._hass?.states?.[this._lcarsPopupEntity];
+    if (!stateObj) return "";
+    const name = stateObj.attributes?.friendly_name || this._lcarsPopupEntity;
+    const value = this._hass?.formatEntityState?.(stateObj) || stateObj.state;
+    return `<div class="lcars-popup-backdrop" data-topology-action="close-lcars-popup">
+      <section class="lcars-popup" role="dialog" aria-modal="true" aria-label="${escapeHtml(name)}">
+        <div class="lcars-popup-top"><i></i><span>ENTITY ANALYSIS</span><button data-topology-action="close-lcars-popup" title="Close">×</button></div>
+        <header><ha-icon icon="${escapeHtml(stateObj.attributes?.icon || "mdi:chart-line")}"></ha-icon><div><small>${escapeHtml(this._lcarsPopupEntity)}</small><h2>${escapeHtml(name)}</h2></div><b>${escapeHtml(value)}</b></header>
+        <div class="lcars-popup-body"><div class="lcars-popup-rail"></div><div class="lcars-history" data-lcars-history></div></div>
+        <footer><span></span><b>HISTORY // 24 HOURS</b><i></i></footer>
+      </section>
+    </div>`;
+  }
+
+  configureLcarsHistoryCard() {
+    const host = this.shadowRoot?.querySelector("[data-lcars-history]");
+    if (!host || !this._lcarsPopupEntity) return;
+    customElements.whenDefined("hui-history-graph-card").then(() => {
+      if (!host.isConnected || host.firstElementChild) return;
+      const chart = document.createElement("hui-history-graph-card");
+      chart.setConfig({ type: "history-graph", entities: [this._lcarsPopupEntity], hours_to_show: 24, show_names: false });
+      chart.hass = this._hass;
+      host.append(chart);
+    }).catch(() => {});
   }
 
   layoutLcarsAreas() {
@@ -1768,6 +1809,14 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
     .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:0 0 3px; }.lcars-footer span { height:9px; background:var(--lcars-footer-tone); }.lcars-footer b { color:var(--lcars-footer-tone); font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:var(--lcars-footer-tone); }
+    .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
+    .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
+    .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#08080a; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
+    .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-left:9px solid #07070a; border-radius:0 25px 25px 0; color:#08080a; background:#ff9966; font:inherit; font-size:27px; cursor:pointer; }
+    .lcars-popup>header { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:12px; margin:13px 16px 0; padding:13px 17px; color:#08080a; background:#cc99cc; }
+    .lcars-popup>header ha-icon { --mdc-icon-size:30px; }.lcars-popup>header h2 { margin:2px 0 0; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; text-transform:uppercase; }.lcars-popup>header small { margin:0; color:#33283a; font-size:11px; }.lcars-popup>header>b { padding:8px 13px; border-radius:999px; color:#fff; background:#2e7d32; font-size:18px; white-space:nowrap; }
+    .lcars-popup-body { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; margin:0 16px; }.lcars-popup-rail { background:#cc99cc; }.lcars-history { min-height:310px; padding:12px 0; }.lcars-history hui-history-graph-card { display:block; color:var(--primary-text-color,#fff); }
+    .lcars-popup>footer { display:grid; grid-template-columns:1fr auto 65px; align-items:center; gap:9px; margin:0 16px 14px; }.lcars-popup>footer span { height:9px; background:#cc99cc; }.lcars-popup>footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-popup>footer i { height:24px; border-radius:0 14px 14px 0; background:#ff9966; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
