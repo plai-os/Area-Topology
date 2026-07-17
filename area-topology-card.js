@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.12";
+const CARD_VERSION = "1.3.13";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1132,6 +1132,10 @@ class AreaTopologyCard extends HTMLElement {
   renderLcarsDevice(device) {
     const color = safeColor(device.color, "#ff9c5b");
     const statuses = [];
+    const offline = device.entities.length > 0 && device.entities.every((entity) => {
+      const state = this._hass?.states?.[entity.entity_id]?.state;
+      return !state || ["unavailable", "unknown"].includes(state);
+    });
     const isPlug = /\bplugs?\b/i.test(device.name) || device.labels.some((label) => /\bplugs?\b/i.test(label.name));
     for (const entity of device.entities) {
       const stateObj = this._hass?.states?.[entity.entity_id];
@@ -1163,7 +1167,7 @@ class AreaTopologyCard extends HTMLElement {
     const visibleStatuses = this.dedupeLcarsStatuses(statuses);
     return `<div class="lcars-device" style="--lcars-device:${color}">
       <button class="lcars-device-name" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}" title="Drag to another area, or click to open ${escapeHtml(device.name)} settings"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
-      <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
+      <div class="lcars-values">${visibleStatuses.slice(0, 6).map((status) => this.renderLcarsStatus(status)).join("") || `<span class="lcars-standby ${offline ? "offline" : ""}">${offline ? "OFFLINE" : "SYSTEM READY"}</span>`}</div>
     </div>`;
   }
 
@@ -1522,7 +1526,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-meter { --meter-fill:#ff9900; position:relative; min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:42px; padding:6px 12px; border:0; border-radius:0 21px 21px 0; color:#d9d2e9; background:linear-gradient(90deg,var(--meter-fill) 0 var(--level,0%),#1b1722 var(--level,0%) 100%); font:inherit; font-size:13px; text-align:left; cursor:pointer; overflow:hidden; }
     .lcars-meter.active:not(.percentage) { --level:100%; color:#08080a; }.lcars-meter.percentage { --meter-fill:#9a5700; color:#fff; font-weight:600; text-shadow:0 1px 3px #000,0 0 2px #000; box-shadow:inset 0 0 0 1px rgba(255,204,153,.16); }.lcars-meter.adjustable.percentage { --meter-fill:#5858b8; }.lcars-meter.battery-low { --meter-fill:#c62828; }.lcars-meter.battery-medium { --meter-fill:#ef6c00; }.lcars-meter.battery-high { --meter-fill:#2e7d32; }.lcars-meter.temperature { --level:100%; color:#fff; font-weight:700; text-shadow:0 1px 3px #000; }.lcars-meter.temp-cold { --meter-fill:#1565c0; }.lcars-meter.temp-normal { --meter-fill:#2e7d32; }.lcars-meter.temp-hot { --meter-fill:#c62828; }.lcars-meter.percentage ha-icon,.lcars-meter.temperature ha-icon { color:#fff; filter:drop-shadow(0 1px 2px #000); }.lcars-meter ha-icon { --mdc-icon-size:17px; }.lcars-meter span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-meter b { font-size:14px; text-transform:uppercase; white-space:nowrap; }.lcars-meter.adjustable input { position:absolute; z-index:2; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }.lcars-meter.adjustable:focus-within { outline:2px solid #aaaaff; outline-offset:-2px; }
-    .lcars-standby { min-height:42px; display:flex; align-items:center; justify-content:flex-end; padding:6px 13px; border-radius:0 21px 21px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; line-height:1.2; text-align:right; }
+    .lcars-standby { min-height:42px; display:flex; align-items:center; justify-content:flex-end; padding:6px 13px; border-radius:0 21px 21px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; line-height:1.2; text-align:right; }.lcars-standby.offline { color:#fff; background:#c62828; text-shadow:0 1px 2px #000; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
     .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
