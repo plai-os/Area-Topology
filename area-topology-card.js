@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.1";
+const CARD_VERSION = "0.9.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -567,7 +567,7 @@ class AreaTopologyCard extends HTMLElement {
           x: center.x + Math.cos(deviceAngle) * radius,
           y: center.y + Math.sin(deviceAngle) * radius,
         };
-        lines.push(this.renderLine(areaPoint, point, "device-line"));
+        lines.push(this.renderLine(areaPoint, point, "device-line", safeColor(device.color)));
         deviceNodes.push(this.renderDevice(device, point, canvas));
       });
     });
@@ -674,7 +674,7 @@ class AreaTopologyCard extends HTMLElement {
         </div>`);
         devices.forEach(({ device, angle: deviceAngle, radius }) => {
           const point = { x: center.x + Math.cos(deviceAngle) * radius, y: center.y + Math.sin(deviceAngle) * radius };
-          lines.push(this.renderLine(areaPoint, point, "device-line"));
+          lines.push(this.renderLine(areaPoint, point, "device-line", safeColor(device.color)));
           deviceNodes.push(this.renderDevice(device, point, canvas));
         });
       });
@@ -750,8 +750,9 @@ class AreaTopologyCard extends HTMLElement {
     </article>`;
   }
 
-  renderLine(from, to, className) {
-    return `<line class="${className}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`;
+  renderLine(from, to, className, color = "") {
+    const style = color ? ` style="--line-color:${color}"` : "";
+    return `<line class="${className}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"${style}/>`;
   }
 
   nodeStyle(point, canvas) {
@@ -880,7 +881,7 @@ class AreaTopologyCard extends HTMLElement {
     .web line { vector-effect:non-scaling-stroke; stroke-linecap:round; }
     .floor-line { stroke:var(--at-floor); stroke-width:3.5; opacity:.62; }
     .area-line { stroke:var(--at-accent); stroke-width:3; opacity:.5; }
-    .device-line { stroke:color-mix(in srgb,var(--at-accent) 35%,transparent); stroke-width:1.5; stroke-dasharray:5 5; }
+    .device-line { stroke:color-mix(in srgb,var(--line-color,var(--at-accent)) 72%,transparent); stroke-width:1.5; stroke-dasharray:5 5; }
     .node { position:absolute; left:var(--x); top:var(--y); transform:translate(-50%,-50%); z-index:1; }
     .home { width:156px; height:104px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px solid var(--at-accent); border-radius:50%; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); box-shadow:0 0 0 8px color-mix(in srgb,var(--at-accent) 9%,transparent),0 8px 28px rgba(0,0,0,.16); z-index:3; }
     .home>span { display:grid; place-items:center; width:38px; height:38px; margin-top:-3px; border-radius:50%; color:white; background:var(--at-accent); }
