@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.11.4";
+const CARD_VERSION = "1.11.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -186,7 +186,15 @@ class AreaTopologyCard extends HTMLElement {
       this._loadedForConnection = hass.connection;
       this.loadRegistries();
     } else if (this._data) {
-      this.render();
+      if (this._standaloneLcars && this._lcarsPopupEntity) {
+        const chart = this.shadowRoot?.querySelector("[data-lcars-history] > *");
+        if (chart) chart.hass = hass;
+        const stateObj = hass.states?.[this._lcarsPopupEntity];
+        const value = this.shadowRoot?.querySelector("[data-lcars-popup-value]");
+        if (stateObj && value) value.textContent = hass.formatEntityState?.(stateObj) || stateObj.state;
+      } else {
+        this.render();
+      }
     }
   }
 
@@ -720,7 +728,7 @@ class AreaTopologyCard extends HTMLElement {
     return `<div class="lcars-popup-backdrop" data-topology-action="close-lcars-popup">
       <section class="lcars-popup" role="dialog" aria-modal="true" aria-label="${escapeHtml(name)}">
         <div class="lcars-popup-top"><i></i><span>ENTITY ANALYSIS</span><button data-topology-action="close-lcars-popup" title="Close">×</button></div>
-        <header><ha-icon icon="${escapeHtml(stateObj.attributes?.icon || "mdi:chart-line")}"></ha-icon><div><small>${escapeHtml(this._lcarsPopupEntity)}</small><h2>${escapeHtml(name)}</h2></div><b>${escapeHtml(value)}</b></header>
+        <header><ha-icon icon="${escapeHtml(stateObj.attributes?.icon || "mdi:chart-line")}"></ha-icon><div><small>${escapeHtml(this._lcarsPopupEntity)}</small><h2>${escapeHtml(name)}</h2></div><b data-lcars-popup-value>${escapeHtml(value)}</b></header>
         <div class="lcars-popup-body"><div class="lcars-popup-rail"></div><div class="lcars-history" data-lcars-history></div></div>
         <footer><span></span><b>HISTORY // 24 HOURS</b><i></i></footer>
       </section>
@@ -1822,7 +1830,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
-    .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-left:9px solid #07070a; border-radius:0 25px 25px 0; color:#fff; background:#9999ff; font:inherit; font-size:27px; cursor:pointer; }
+    .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-radius:0 25px 25px 0; color:#fff; background:#9999ff; font:inherit; font-size:27px; cursor:pointer; }
     .lcars-popup>header { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:12px; margin:13px 16px 0; padding:13px 17px; color:#fff; background:#cc99cc; }
     .lcars-popup>header ha-icon { --mdc-icon-size:30px; }.lcars-popup>header h2 { margin:2px 0 0; font-family:Impact,"Arial Narrow",sans-serif; font-size:27px; font-weight:400; letter-spacing:.025em; text-transform:uppercase; }.lcars-popup>header small { margin:0; color:rgba(255,255,255,.78); font-size:11px; }.lcars-popup>header>b { padding:8px 13px; border-radius:999px; color:#fff; background:#2e7d32; font-size:18px; white-space:nowrap; }
     .lcars-popup-body { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; margin:0 16px; }.lcars-popup-rail { position:relative; background:#cc99cc; }.lcars-popup-rail::after { content:""; position:absolute; right:0; bottom:-12px; left:0; height:12px; background:#cc99cc; }.lcars-history { min-height:310px; padding:12px 0; }.lcars-history hui-history-graph-card { display:block; color:var(--primary-text-color,#fff); }
