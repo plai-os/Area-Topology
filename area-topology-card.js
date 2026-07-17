@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.5";
+const CARD_VERSION = "1.0.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -250,6 +250,7 @@ class AreaTopologyCard extends HTMLElement {
       if (action === "labels") {
         this._labelsOnly = !this._labelsOnly;
         this.collapseTreeProperties();
+        this.centerWebAfterFilter();
         this.savePreferences();
         this.render();
         return;
@@ -264,6 +265,7 @@ class AreaTopologyCard extends HTMLElement {
         const allSelected = this._selectedLabels?.size === this._labels?.length;
         this._selectedLabels = new Set(allSelected ? [] : (this._labels || []).map((label) => label.label_id));
         this.collapseTreeProperties();
+        this.centerWebAfterFilter();
         this.render();
         return;
       }
@@ -272,6 +274,7 @@ class AreaTopologyCard extends HTMLElement {
         this._selectedLabels ||= new Set();
         this._selectedLabels.has(labelId) ? this._selectedLabels.delete(labelId) : this._selectedLabels.add(labelId);
         this.collapseTreeProperties();
+        this.centerWebAfterFilter();
         this.render();
         return;
       }
@@ -371,6 +374,10 @@ class AreaTopologyCard extends HTMLElement {
   collapseTreeProperties() {
     if (this._layoutMode !== "tree" || !this._data) return;
     this._expandedTreeDevices.clear();
+  }
+
+  centerWebAfterFilter() {
+    if (this._layoutMode === "web") this._centerHomeAfterRender = true;
   }
 
   openFloorConfig(floorId) {
@@ -484,7 +491,11 @@ class AreaTopologyCard extends HTMLElement {
     const newTreeScroller = this.shadowRoot.querySelector(".tree-scroll");
     const newUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
     if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
-      if (newScroller && this._zoomFocus) {
+      if (newScroller && this._centerHomeAfterRender) {
+        newScroller.scrollLeft = Math.max(0, (newScroller.scrollWidth - newScroller.clientWidth) / 2);
+        newScroller.scrollTop = Math.max(0, (newScroller.scrollHeight - newScroller.clientHeight) / 2);
+        this._centerHomeAfterRender = false;
+      } else if (newScroller && this._zoomFocus) {
         newScroller.scrollLeft = this._zoomFocus.x * newScroller.scrollWidth - this._zoomFocus.focusX;
         newScroller.scrollTop = this._zoomFocus.y * newScroller.scrollHeight - this._zoomFocus.focusY;
         this._zoomFocus = null;
