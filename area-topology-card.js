@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.0.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -227,6 +227,7 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (action === "layout-web" || action === "layout-tree") {
         this._layoutMode = action === "layout-tree" ? "tree" : "web";
+        if (this._layoutMode === "tree") this.collapseTreeProperties();
         this.savePreferences();
         this.render();
         return;
@@ -251,6 +252,7 @@ class AreaTopologyCard extends HTMLElement {
       }
       if (action === "labels") {
         this._labelsOnly = !this._labelsOnly;
+        this.collapseTreeProperties();
         this.savePreferences();
         this.render();
         return;
@@ -264,6 +266,7 @@ class AreaTopologyCard extends HTMLElement {
       if (action === "all-labels") {
         const allSelected = this._selectedLabels?.size === this._labels?.length;
         this._selectedLabels = new Set(allSelected ? [] : (this._labels || []).map((label) => label.label_id));
+        this.collapseTreeProperties();
         this.render();
         return;
       }
@@ -271,6 +274,7 @@ class AreaTopologyCard extends HTMLElement {
       if (labelId) {
         this._selectedLabels ||= new Set();
         this._selectedLabels.has(labelId) ? this._selectedLabels.delete(labelId) : this._selectedLabels.add(labelId);
+        this.collapseTreeProperties();
         this.render();
         return;
       }
@@ -295,7 +299,7 @@ class AreaTopologyCard extends HTMLElement {
       }
       const floorConfigId = event.target.closest("[data-floor-config]")?.dataset.floorConfig;
       if (floorConfigId) {
-        this.navigate(`/config/areas/floor/${encodeURIComponent(floorConfigId)}`);
+        this.openFloorConfig(floorConfigId);
         return;
       }
       const deviceToggleId = event.target.closest("[data-device-toggle]")?.dataset.deviceToggle;
@@ -364,6 +368,36 @@ class AreaTopologyCard extends HTMLElement {
       bubbles: true,
       composed: true,
       detail: { config: { tap_action: { action: "navigate", navigation_path: path } }, action: "tap" },
+    }));
+  }
+
+  collapseTreeProperties() {
+    if (this._layoutMode !== "tree" || !this._data) return;
+    this._collapsedDevices = new Set(this._data.flatMap((area) => area.devices.map((device) => device.id)));
+  }
+
+  openFloorConfig(floorId) {
+    const floor = this.effectiveFloors().find((entry) => entry.floor_id === floorId);
+    if (!floor || !customElements.get("dialog-floor-registry-detail")) {
+      this.navigate("/config/areas");
+      return;
+    }
+    const updateEntry = async (updates, addedAreas, removedAreas) => {
+      await this._hass.callWS({ type: "config/floor_registry/update", floor_id: floorId, ...updates });
+      await Promise.all([
+        ...[...addedAreas].map((areaId) => this._hass.callWS({ type: "config/area_registry/update", area_id: areaId, floor_id: floorId })),
+        ...[...removedAreas].map((areaId) => this._hass.callWS({ type: "config/area_registry/update", area_id: areaId, floor_id: null })),
+      ]);
+      await this.loadRegistries();
+    };
+    this.dispatchEvent(new CustomEvent("show-dialog", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        dialogTag: "dialog-floor-registry-detail",
+        dialogImport: async () => {},
+        dialogParams: { entry: floor, updateEntry },
+      },
     }));
   }
 
@@ -1031,7 +1065,7 @@ class AreaTopologyCard extends HTMLElement {
     .content { padding:0; }
     .workspace { display:flex; width:100%; min-width:0; }
     .tree-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; padding:22px 28px 40px; background:color-mix(in srgb,var(--card-background-color,#fff) 96%,var(--at-accent)); }
-    .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:12px; }
+    .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:14px; }
     .tree-children { position:relative; margin-left:19px; padding-left:25px; border-left:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
     .tree-branch { position:relative; padding-top:8px; }
     .tree-branch::before { content:""; position:absolute; top:30px; left:-25px; width:24px; border-top:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
@@ -1050,15 +1084,15 @@ class AreaTopologyCard extends HTMLElement {
     .tree-floor .tree-node-icon { color:var(--at-floor); } .tree-area .tree-node-icon { color:var(--at-area); } .tree-device .tree-node-icon { color:var(--device-color); }
     .tree-node-icon ha-icon { --mdc-icon-size:19px; }
     .tree-copy { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
-    .tree-copy strong { font-size:12px; overflow-wrap:anywhere; } .tree-copy small { margin-top:2px; font-size:9px; }
+    .tree-copy strong { font-size:14px; overflow-wrap:anywhere; } .tree-copy small { margin-top:3px; font-size:11px; }
     .tree-labels { display:flex; flex-wrap:wrap; gap:4px; margin-left:auto; padding-left:14px; }
-    .tree-labels>span { padding:3px 7px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+    .tree-labels>span { padding:3px 7px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:10px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
     .tree-properties { padding-top:2px; }
     .tree-property { position:relative; width:max-content; min-width:520px; max-width:900px; display:grid; grid-template-columns:22px minmax(220px,1fr) auto; align-items:center; gap:8px; margin-top:5px; padding:6px 10px; border:1px solid color-mix(in srgb,var(--device-color) 30%,var(--divider-color,#ddd)); border-radius:7px; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); text-align:left; font:inherit; cursor:pointer; }
     .tree-property::before { content:""; position:absolute; top:50%; left:-26px; width:25px; border-top:1px solid color-mix(in srgb,var(--device-color) 42%,var(--divider-color,#ddd)); }
     .tree-property ha-icon { color:var(--device-color); --mdc-icon-size:16px; }
-    .tree-property>span { min-width:0; } .tree-property b { display:block; font-size:10px; overflow-wrap:anywhere; } .tree-property small { margin-top:1px; font-size:8px; }
-    .tree-property em { color:var(--secondary-text-color,#727272); font-size:10px; font-style:normal; white-space:nowrap; }
+    .tree-property>span { min-width:0; } .tree-property b { display:block; font-size:12px; overflow-wrap:anywhere; } .tree-property small { margin-top:2px; font-size:10px; }
+    .tree-property em { color:var(--secondary-text-color,#727272); font-size:12px; font-style:normal; white-space:nowrap; }
     .topology-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
     .topology-canvas { position:relative; flex:none; }
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; transform:scale(var(--zoom)); transform-origin:0 0; }
