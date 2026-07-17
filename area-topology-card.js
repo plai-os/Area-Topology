@@ -1,4 +1,5 @@
-const CARD_VERSION = "1.13.0";
+const CARD_VERSION = "1.13.1";
+const BUILD_COMMIT = "f8a8bbb";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -668,7 +669,7 @@ class AreaTopologyCard extends HTMLElement {
       <ha-card class="${this._standaloneLcars ? "standalone-lcars" : ""}">
         ${this._standaloneLcars ? "" : `<div class="header">
           <div class="header-main">
-            <div><h1>Home Topology <span class="version">v${CARD_VERSION}</span></h1><p>${this.summary()}</p></div>
+            <div><h1>Home Topology <span class="version">v${CARD_VERSION} · ${BUILD_COMMIT}</span></h1><p>${this.summary()}</p></div>
             ${this._data ? `<div class="header-actions">
               <div class="layout-controls" aria-label="Topology layout">
                 <button class="${this._layoutMode === "web" ? "active" : ""}" data-topology-action="layout-web" title="Spider web layout"><ha-icon icon="mdi:graph-outline"></ha-icon> Web</button>
@@ -1266,7 +1267,7 @@ class AreaTopologyCard extends HTMLElement {
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
           <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
         </section>`;
-      }).join("")}<div class="lcars-footer" style="--lcars-footer-tone:${footerColor}"><span></span><b>VERSION ${CARD_VERSION}</b><i></i></div>${this._standaloneLcars ? "</main></div>" : ""}` : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
+      }).join("")}<div class="lcars-footer" style="--lcars-footer-tone:${footerColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div>${this._standaloneLcars ? "</main></div>" : ""}` : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
     </div>`;
   }
 
@@ -1968,4 +1969,4 @@ window.customCards.push({
   description: "A standalone LCARS dashboard for labelled Home Assistant devices.",
   preview: true,
 });
-console.info(`%c AREA-TOPOLOGY-CARD %c v${CARD_VERSION} `, "color:white;background:#03a9f4;font-weight:bold", "color:#03a9f4;background:#eee");
+console.info(`%c AREA-TOPOLOGY-CARD %c v${CARD_VERSION} · ${BUILD_COMMIT} `, "color:white;background:#03a9f4;font-weight:bold", "color:#03a9f4;background:#eee");
