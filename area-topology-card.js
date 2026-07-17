@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.12";
+const CARD_VERSION = "1.2.13";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1054,7 +1054,7 @@ class AreaTopologyCard extends HTMLElement {
     const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.devices.length, 0), 0);
     return `<div class="lcars-dashboard">
       <div class="lcars-masthead">
-        <div class="lcars-cap"></div><div class="lcars-title"><span>HOME CONTROL</span><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
+        <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
       </div>
       ${visibleGroups.length ? visibleGroups.map((group, index) => `<section class="lcars-floor lcars-tone-${index % 4}">
         <header><span class="lcars-elbow"></span><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
@@ -1411,9 +1411,9 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
     .lcars-masthead { display:grid; grid-template-columns:90px minmax(260px,1fr) auto 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
     .lcars-cap { border-radius:34px 0 0 34px; background:#9999ff; }
-    .lcars-title { display:flex; align-items:baseline; justify-content:flex-end; gap:18px; padding:10px 18px; color:#050507; background:#9999ff; }
-    .lcars-title span { font-size:13px; font-weight:900; letter-spacing:.12em; }.lcars-title strong { font-size:28px; line-height:1; }
-    .lcars-readout { padding:10px 20px; color:#ff9900; background:#050507; font-size:23px; font-weight:900; text-align:right; white-space:nowrap; }
+    .lcars-title { display:flex; align-items:center; justify-content:flex-end; padding:10px 18px; color:#050507; background:#9999ff; }
+    .lcars-title strong,.lcars-readout { font-size:24px; font-weight:900; line-height:1; text-transform:uppercase; }
+    .lcars-readout { display:flex; align-items:center; justify-content:flex-end; padding:10px 20px; color:#ff9900; background:#050507; text-align:right; white-space:nowrap; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
     .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-floor>header { display:grid; grid-template-columns:90px 190px minmax(80px,1fr) auto; min-height:43px; align-items:stretch; text-transform:uppercase; }
@@ -1441,7 +1441,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title span { display:none; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-values button { border-radius:12px; }.lcars-footer { margin-left:38px; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-values button { border-radius:12px; }.lcars-footer { margin-left:38px; } }
   `; }
 }
 
