@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.4";
-const BUILD_COMMIT = "9ff201f";
+const CARD_VERSION = "1.20.5";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1589,6 +1589,7 @@ class AreaTopologyCard extends HTMLElement {
       .fc .fc-button-group>.fc-button:first-child { border-radius:20px 0 0 20px!important; }
       .fc .fc-button-group>.fc-button:last-child { border-radius:0 20px 20px 0!important; }
       .fc .fc-scrollgrid { overflow:hidden; border:2px solid ${color}!important; border-radius:0 22px 22px 0; }
+      .fc .fc-view-harness { height:640px!important; min-height:640px!important; }
       .fc-theme-standard td,.fc-theme-standard th { border-color:color-mix(in srgb,${color} 38%,#27222e)!important; }
       .fc .fc-col-header-cell { color:${contrast}; background:${color}; }
       .fc .fc-col-header-cell-cushion { padding:9px 6px!important; color:${contrast}!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px; font-weight:400; letter-spacing:.05em; text-transform:uppercase; }
