@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.2";
-const BUILD_COMMIT = "fa7e582";
+const CARD_VERSION = "1.20.3";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -195,6 +195,8 @@ class AreaTopologyCard extends HTMLElement {
         const stateObj = hass.states?.[this._lcarsPopupEntity];
         const value = this.shadowRoot?.querySelector("[data-lcars-popup-value]");
         if (stateObj && value) value.textContent = hass.formatEntityState?.(stateObj) || stateObj.state;
+      } else if (this._standaloneLcars && this._lcarsSelectedView === "weather") {
+        for (const card of this.shadowRoot?.querySelectorAll(".lcars-weather-history-card > *") || []) card.hass = hass;
       } else if (this._standaloneLcars && ["security", "engineering", "captains_log"].includes(this._lcarsSelectedView)) {
         for (const card of this.shadowRoot?.querySelectorAll(".lcars-camera-card > *,.lcars-engineering-card > *,.lcars-captains-log-card > *") || []) card.hass = hass;
         for (const value of this.shadowRoot?.querySelectorAll("[data-camera-state]") || []) value.textContent = hass.states?.[value.dataset.cameraState]?.state || "unavailable";
