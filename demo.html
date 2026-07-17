@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Area Topology Card Demo</title>
+  <script type="module" src="https://unpkg.com/@mdi/webfont@7.4.47/build-webfont-loader.js"></script>
+  <style>
+    :root { --primary-color:#03a9f4; --primary-text-color:#202124; --secondary-text-color:#70757a; --divider-color:#e4e7eb; --card-background-color:#fff; --primary-background-color:#f4f6f8; --secondary-background-color:#eef1f4; }
+    body { margin:0; padding:32px; color:var(--primary-text-color); background:#e9edf2; font-family:Arial,sans-serif; }
+    main { max-width:1200px; margin:auto; }
+    ha-card { display:block; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.12); }
+    ha-icon { display:inline-grid; place-items:center; width:24px; height:24px; font-size:10px; }
+  </style>
+</head>
+<body><main><area-topology-card></area-topology-card></main>
+<script type="module">
+  import "./area-topology-card.js";
+  const areas = [
+    { area_id:"living", name:"Living room", icon:"mdi:sofa" },
+    { area_id:"kitchen", name:"Kitchen", icon:"mdi:countertop-outline" },
+    { area_id:"garden", name:"Garden", icon:"mdi:flower" }
+  ];
+  const labels = [
+    { label_id:"lighting", name:"Lighting", icon:"mdi:lightbulb-outline", color:"#f9a825" },
+    { label_id:"climate", name:"Climate", icon:"mdi:thermometer", color:"#e53935" },
+    { label_id:"security", name:"Security", icon:"mdi:cctv", color:"#00897b" }
+  ];
+  const devices = [
+    { id:"d1", area_id:"living", name_by_user:"Corner lamp", manufacturer:"Philips", model:"Hue", labels:["lighting"] },
+    { id:"d2", area_id:"living", name_by_user:"Room thermostat", manufacturer:"Google", model:"Nest", labels:["climate"] },
+    { id:"d3", area_id:"kitchen", name_by_user:"Ceiling lights", manufacturer:"IKEA", model:"TRÅDFRI", labels:["lighting"] },
+    { id:"d4", area_id:"garden", name_by_user:"Patio camera", manufacturer:"Reolink", model:"RLC-810A", labels:["security"] },
+    { id:"d5", name_by_user:"New smart plug", manufacturer:"Shelly", model:"Plug S", labels:[] }
+  ];
+  for (let index = 6; index <= 13; index += 1) {
+    devices.push({
+      id:`d${index}`,
+      area_id:index % 2 ? "living" : "kitchen",
+      name_by_user:index % 2 ? `Living sensor ${index}` : `Kitchen light ${index}`,
+      manufacturer:index % 2 ? "Aqara" : "Philips",
+      model:index % 2 ? "Temperature Sensor" : "Hue",
+      labels:[index % 2 ? "climate" : "lighting"]
+    });
+  }
+  const entities = [
+    { entity_id:"light.corner_lamp", device_id:"d1", original_name:"Light" },
+    { entity_id:"climate.living_room", device_id:"d2", original_name:"Thermostat" }
+  ];
+  const card = document.querySelector("area-topology-card");
+  card.setConfig({ title:"My Home", show_unassigned:false, show_only_labeled:true, show_entities:false });
+  card.hass = {
+    connection:{},
+    states:{ "light.corner_lamp":{ state:"on", attributes:{friendly_name:"Corner lamp"} }, "climate.living_room":{state:"21.5",attributes:{friendly_name:"Room thermostat"}} },
+    callWS: ({type}) => Promise.resolve({
+      "config/area_registry/list":areas,
+      "config/device_registry/list":devices,
+      "config/entity_registry/list":entities,
+      "config/label_registry/list":labels
+    }[type])
+  };
+</script></body></html>
