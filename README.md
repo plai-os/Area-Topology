@@ -102,7 +102,7 @@ The order of each YAML list is also the display order: floors follow `floors`, a
 Use `label_colors`, `floor_colors`, and `area_colors` to override colours by visible name or registry ID. Any item without an override retains its current Home Assistant or LCARS colour.
 The standalone dashboard includes a numbered floor navigator on the left. Only one floor is displayed at a time: it starts on the first configured floor, and selecting another tab replaces the dashboard content with that floor. Its tab order and colours follow `floors` and `floor_colors`. On narrow screens it becomes a horizontal navigation strip. Floor and room headings use the same condensed LCARS-style display type.
 Selecting a non-toggle reading opens an LCARS-themed entity overlay with its current value and 24-hour Home Assistant history graph.
-LCARS views bundle the Teko condensed display family for consistent headings, controls, device labels, and property rows. The font is distributed under the SIL Open Font License in `fonts/OFL.txt`.
+LCARS views bundle the unchanged freeware **LCARS GTJ3** webfont by GTJLCARS.de for authentic ultra-compressed headings, controls, device labels, and property rows. The author permits free use and redistribution but does not permit renaming, modification, or resale. See the [official font page](https://www.gtjlcars.de/LCARSindex/LCARSFONTS.htm).
 
 ```yaml
 type: custom:lcars-home-card
