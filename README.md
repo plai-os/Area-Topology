@@ -51,6 +51,7 @@ type: custom:area-topology-card
 title: My home
 show_unassigned: false
 show_only_labeled: true
+initial_label_selection: all
 layout: web
 web_zoom: 1
 tree_font_scale: 1
@@ -73,6 +74,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `title` | `Home topology` | Card heading |
 | `show_unassigned` | `false` | Include devices that are not assigned to an area initially |
 | `show_only_labeled` | `true` | Initially show only devices that have labels |
+| `initial_label_selection` | `all` | Initial label filters: `all` or `none`; saved user choices take precedence later |
 | `layout` | `web` | Initial layout: `web` or `tree`; the header switch remembers later changes |
 | `web_zoom` | `1` | Initial Web-view zoom from `0.65` to `1.8` |
 | `tree_font_scale` | `1` | Initial Tree-view font scale from `0.65` to `1.8` |

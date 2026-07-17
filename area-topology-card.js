@@ -1,9 +1,10 @@
-const CARD_VERSION = "1.1.1";
+const CARD_VERSION = "1.1.2";
 
 const DEFAULTS = {
   title: "Home topology",
   show_unassigned: false,
   show_only_labeled: true,
+  initial_label_selection: "all",
   show_entities: false,
   web_show_properties: undefined,
   tree_show_properties: true,
@@ -186,7 +187,7 @@ class AreaTopologyCard extends HTMLElement {
         const availableLabelIds = new Set(labels.map((label) => label.label_id));
         this._selectedLabels = this._savedSelectedLabels
           ? new Set(this._savedSelectedLabels.filter((labelId) => availableLabelIds.has(labelId)))
-          : new Set(availableLabelIds);
+          : (this._config.initial_label_selection === "none" ? new Set() : new Set(availableLabelIds));
       }
       this._data = buildTopology(areas, devices, entities, labels, true, floors);
       if (!this._hierarchyDefaultsInitialized) {
