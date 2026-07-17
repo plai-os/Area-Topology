@@ -135,13 +135,14 @@ weather:
   apparent_sensor: sensor.real_feel_temperature
   aqi_sensor: sensor.air_quality_index
   forecast_rows: 10
+  hourly_rows: 10
   locale: en-GB
   hourly_forecast: false
   show_decimal: true
   color: "#66AACC"
 ```
 
-Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Forecasts are requested directly from Home Assistant using daily or hourly mode.
+Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
