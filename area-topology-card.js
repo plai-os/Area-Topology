@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.4";
+const CARD_VERSION = "1.1.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -500,7 +500,7 @@ class AreaTopologyCard extends HTMLElement {
       <ha-card>
         <div class="header">
           <div class="header-main">
-            <div><h1>Home Topology</h1><p>${this.summary()}</p></div>
+            <div><h1>Home Topology <span class="version">v${CARD_VERSION}</span></h1><p>${this.summary()}</p></div>
             ${this._data ? `<div class="header-actions">
               <div class="layout-controls" aria-label="Topology layout">
                 <button class="${this._layoutMode === "web" ? "active" : ""}" data-topology-action="layout-web" title="Spider web layout"><ha-icon icon="mdi:graph-outline"></ha-icon> Web</button>
@@ -659,12 +659,13 @@ class AreaTopologyCard extends HTMLElement {
 
   renderTreeFloor(floor) {
     const collapsed = this._collapsedFloors.has(floor.id);
+    const hasFilteredDevices = floor.areas.some((area) => this.devicesForDisplay(area).length > 0);
     const mainAction = floor.id === "__no_floor__"
       ? `data-floor-toggle="${escapeHtml(floor.id)}"`
       : `data-floor-config="${escapeHtml(floor.id)}"`;
     return `<div class="tree-branch tree-floor-branch">
       <div class="tree-row tree-floor">
-        <button class="tree-toggle" data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">${collapsed ? "+" : "−"}</button>
+        <button class="tree-toggle ${hasFilteredDevices ? "" : "empty"}" ${hasFilteredDevices ? `data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}"` : "disabled"}>${hasFilteredDevices ? (collapsed ? "+" : "−") : ""}</button>
         <button class="tree-main" ${mainAction} title="${floor.id === "__no_floor__" ? `${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}` : `Open ${escapeHtml(floor.name)} settings`}">
           <span class="tree-node-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
           <span class="tree-copy"><strong>${escapeHtml(floor.name)}</strong><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"} · ${this.treeDeviceCount(floor.areas)}</small></span>
@@ -1090,6 +1091,7 @@ class AreaTopologyCard extends HTMLElement {
     .header { display:block; padding:18px 24px 14px; border-bottom:1px solid var(--divider-color,#ddd); }
     .header-main { display:flex; justify-content:space-between; align-items:center; gap:16px; }
     .header h1 { font-size:20px; line-height:1.2; margin:0; font-weight:600; }
+    .header .version { display:inline-flex; margin-left:5px; padding:2px 5px; border-radius:5px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#f1f1f1); font-size:9px; font-weight:600; vertical-align:middle; }
     .header p { color:var(--secondary-text-color,#727272); margin:5px 0 0; font-size:13px; }
     .header-main>ha-icon { color:var(--at-accent); --mdc-icon-size:30px; }
     .header-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
