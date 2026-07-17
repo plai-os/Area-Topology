@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.12.1";
+const CARD_VERSION = "1.12.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -914,7 +914,12 @@ class AreaTopologyCard extends HTMLElement {
     const color = safeColor(device.color);
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
     const propertyEntities = this._config.tree_show_properties
-      ? device.entities.filter((entity) => !this.isHiddenProperty(entity, this._hass?.states?.[entity.entity_id]))
+      ? device.entities.filter((entity) => {
+          const stateObj = this._hass?.states?.[entity.entity_id];
+          return stateObj
+            && !["unavailable", "unknown"].includes(String(stateObj.state).toLowerCase())
+            && !this.isHiddenProperty(entity, stateObj);
+        })
       : [];
     const properties = propertyEntities.map((entity) => {
       const stateObj = this._hass?.states?.[entity.entity_id];
