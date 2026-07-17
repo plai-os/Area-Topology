@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.5";
-const BUILD_COMMIT = "4a456bd";
+const CARD_VERSION = "1.21.0";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -296,7 +296,7 @@ class AreaTopologyCard extends HTMLElement {
         if (this._standaloneLcars) {
           if (floorNavId.startsWith("__menu_") && floorNavId.endsWith("__")) {
             this._lcarsSelectedView = `menu:${floorNavId.slice(7, -2)}`;
-          } else if (["__weather__", "__security__", "__engineering__", "__captains_log__"].includes(floorNavId)) {
+          } else if (["__weather__", "__security__", "__engineering__", "__captains_log__", "__bridge__"].includes(floorNavId)) {
             this._lcarsSelectedView = floorNavId.slice(2, -2);
           } else {
             this._lcarsSelectedView = "floor";
@@ -1292,18 +1292,22 @@ class AreaTopologyCard extends HTMLElement {
     const engineeringSelected = Boolean(engineeringConfig && this._lcarsSelectedView === "engineering");
     const captainsLogConfig = this._standaloneLcars && Array.isArray(this._config.captains_log?.entities) && this._config.captains_log.entities.length ? this._config.captains_log : null;
     const captainsLogSelected = Boolean(captainsLogConfig && this._lcarsSelectedView === "captains_log");
+    const bridgeConfig = this._standaloneLcars && this._config.bridge && typeof this._config.bridge === "object" ? this._config.bridge : null;
+    const bridgeSelected = Boolean(bridgeConfig && this._lcarsSelectedView === "bridge");
     const customMenus = this._standaloneLcars && Array.isArray(this._config.menus)
       ? this._config.menus.filter((menu) => menu?.id && menu?.title).map((menu, index) => ({ ...menu, color: safeColor(menu.color, ["#cc99cc", "#66aacc", "#ffcc99", "#9999ff"][index % 4]) }))
       : [];
     const selectedCustomMenu = customMenus.find((menu) => this._lcarsSelectedView === `menu:${menu.id}`) || null;
     const displayedFloorViews = this._standaloneLcars
-      ? floorViews.filter((group) => !weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId)
+      ? floorViews.filter((group) => !weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !bridgeSelected && !selectedCustomMenu && group.id === selectedFloorId)
       : floorViews;
+    const bridgeFloor = bridgeConfig ? (floorViews.find((group) => [group.id, group.name].some((value) => String(value || "").toLowerCase() === String(bridgeConfig.floor || "").toLowerCase())) || floorViews[0]) : null;
     const weatherColor = safeColor(weatherConfig?.color, "#66aacc");
     const securityColor = safeColor(securityConfig?.color, "#cc6677");
     const engineeringColor = safeColor(engineeringConfig?.color, "#ff9966");
     const captainsLogColor = safeColor(captainsLogConfig?.color, "#c090b8");
-    const footerColor = weatherSelected ? weatherColor : (securitySelected ? securityColor : (engineeringSelected ? engineeringColor : (captainsLogSelected ? captainsLogColor : (selectedCustomMenu?.color || displayedFloorViews[0]?.color || "#cc99cc"))));
+    const bridgeColor = safeColor(bridgeConfig?.color, "#6f99a8");
+    const footerColor = weatherSelected ? weatherColor : (securitySelected ? securityColor : (engineeringSelected ? engineeringColor : (captainsLogSelected ? captainsLogColor : (bridgeSelected ? bridgeColor : (selectedCustomMenu?.color || displayedFloorViews[0]?.color || "#cc99cc")))));
     const dateTime = this.lcarsDateTime();
     const headerColor = safeColor(this._config.header_color, "#263f4b");
     const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
@@ -1311,18 +1315,19 @@ class AreaTopologyCard extends HTMLElement {
       <div class="lcars-masthead">
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div>
       </div>
-      ${floorViews.length || weatherConfig || securityConfig || engineeringConfig || captainsLogConfig || customMenus.length ? `${this._standaloneLcars ? `<div class="lcars-body">
+      ${floorViews.length || weatherConfig || securityConfig || engineeringConfig || captainsLogConfig || bridgeConfig || customMenus.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
           <div class="lcars-nav-cap"></div>
-          ${floorViews.map((group) => `<button class="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !selectedCustomMenu && group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
+          ${floorViews.map((group) => `<button class="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !bridgeSelected && !selectedCustomMenu && group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${!weatherSelected && !securitySelected && !engineeringSelected && !captainsLogSelected && !bridgeSelected && !selectedCustomMenu && group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
           ${weatherConfig ? `<button class="${weatherSelected ? "active" : ""}" data-floor-nav="__weather__" aria-pressed="${weatherSelected}" style="--nav-color:${weatherColor};--nav-contrast:${contrastColor(weatherColor)}" title="Show weather"><span>${String(floorViews.length + 1).padStart(2, "0")}</span><b>WEATHER</b></button>` : ""}
           ${securityConfig ? `<button class="${securitySelected ? "active" : ""}" data-floor-nav="__security__" aria-pressed="${securitySelected}" style="--nav-color:${securityColor};--nav-contrast:${contrastColor(securityColor)}" title="Show security cameras"><span>${String(floorViews.length + (weatherConfig ? 2 : 1)).padStart(2, "0")}</span><b>SECURITY</b></button>` : ""}
           ${engineeringConfig ? `<button class="${engineeringSelected ? "active" : ""}" data-floor-nav="__engineering__" aria-pressed="${engineeringSelected}" style="--nav-color:${engineeringColor};--nav-contrast:#fff" title="Show engineering systems"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0)).padStart(2, "0")}</span><b>ENGINEERING</b></button>` : ""}
           ${captainsLogConfig ? `<button class="${captainsLogSelected ? "active" : ""}" data-floor-nav="__captains_log__" aria-pressed="${captainsLogSelected}" style="--nav-color:${captainsLogColor};--nav-contrast:${contrastColor(captainsLogColor)}" title="Show Captain's Log"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0)).padStart(2, "0")}</span><b>CAPTAIN'S LOG</b></button>` : ""}
-          ${customMenus.map((menu, index) => `<button class="${selectedCustomMenu?.id === menu.id ? "active" : ""}" data-floor-nav="__menu_${escapeHtml(menu.id)}__" aria-pressed="${selectedCustomMenu?.id === menu.id}" style="--nav-color:${menu.color};--nav-contrast:${contrastColor(menu.color)}" title="Show ${escapeHtml(menu.title)}"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0) + (captainsLogConfig ? 1 : 0) + index).padStart(2, "0")}</span><b>${escapeHtml(menu.title)}</b></button>`).join("")}
+          ${bridgeConfig ? `<button class="${bridgeSelected ? "active" : ""}" data-floor-nav="__bridge__" aria-pressed="${bridgeSelected}" style="--nav-color:${bridgeColor};--nav-contrast:${contrastColor(bridgeColor)}" title="Show Bridge"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0) + (captainsLogConfig ? 1 : 0)).padStart(2, "0")}</span><b>BRIDGE</b></button>` : ""}
+          ${customMenus.map((menu, index) => `<button class="${selectedCustomMenu?.id === menu.id ? "active" : ""}" data-floor-nav="__menu_${escapeHtml(menu.id)}__" aria-pressed="${selectedCustomMenu?.id === menu.id}" style="--nav-color:${menu.color};--nav-contrast:${contrastColor(menu.color)}" title="Show ${escapeHtml(menu.title)}"><span>${String(floorViews.length + 1 + (weatherConfig ? 1 : 0) + (securityConfig ? 1 : 0) + (engineeringConfig ? 1 : 0) + (captainsLogConfig ? 1 : 0) + (bridgeConfig ? 1 : 0) + index).padStart(2, "0")}</span><b>${escapeHtml(menu.title)}</b></button>`).join("")}
           <div class="lcars-nav-foot"></div>
         </nav>
-        <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : securitySelected ? this.renderLcarsSecurity(securityConfig, securityColor) : engineeringSelected ? this.renderLcarsEngineering(engineeringConfig, engineeringColor) : captainsLogSelected ? this.renderLcarsCaptainsLog(captainsLogConfig, captainsLogColor) : selectedCustomMenu ? this.renderLcarsCustomMenu(selectedCustomMenu) : displayedFloorViews.map((group, index) => {
+        <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : securitySelected ? this.renderLcarsSecurity(securityConfig, securityColor) : engineeringSelected ? this.renderLcarsEngineering(engineeringConfig, engineeringColor) : captainsLogSelected ? this.renderLcarsCaptainsLog(captainsLogConfig, captainsLogColor) : bridgeSelected ? this.renderLcarsBridge(bridgeConfig, bridgeFloor, securityConfig, bridgeColor) : selectedCustomMenu ? this.renderLcarsCustomMenu(selectedCustomMenu) : displayedFloorViews.map((group, index) => {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTOR${group.areas.length === 1 ? "" : "S"}</b></header>
@@ -1572,6 +1577,43 @@ class AreaTopologyCard extends HTMLElement {
       console.error("Could not load LCARS Captain's Log calendar", error);
       if (host.isConnected) host.innerHTML = '<div class="lcars-engineering-error">CALENDAR DATA UNAVAILABLE</div>';
     }
+  }
+
+  renderLcarsBridge(config, group, securityConfig, color) {
+    if (!group) return '<section class="lcars-custom-empty">BRIDGE FLOOR UNAVAILABLE</section>';
+    const primaryTarget = String(config.primary_area || group.areas[0]?.name || "").toLowerCase();
+    const primary = group.areas.find((area) => [area.id, area.name].some((value) => String(value || "").toLowerCase() === primaryTarget)) || group.areas[0];
+    const secondary = group.areas.filter((area) => area !== primary);
+    const devices = group.areas.flatMap((area) => area.displayDevices);
+    const online = devices.filter((device) => device.entities.some((entity) => !["unavailable", "unknown"].includes(this._hass?.states?.[entity.entity_id]?.state))).length;
+    const offline = Math.max(0, devices.length - online);
+    const temperature = primary ? this.lcarsConfiguredAreaTemperature(primary) : null;
+    const camera = securityConfig?.cameras?.find((entry) => entry.entity === config.camera) || securityConfig?.cameras?.[0];
+    return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
+      <header><strong>${escapeHtml(group.name)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}</header>
+      <div class="lcars-bridge-shell">
+        <aside><b>LC-24</b><i></i><b>DATA NODE</b><i></i><b>LC-24</b></aside>
+        <div class="lcars-bridge-grid">
+          <div class="lcars-bridge-primary">${primary ? this.renderLcarsArea(primary) : ""}</div>
+          <div class="lcars-bridge-secondary">${secondary.map((area) => this.renderLcarsArea(area)).join("")}${camera ? this.renderLcarsBridgeCamera(camera, config) : ""}</div>
+        </div>
+      </div>
+    </section>`;
+  }
+
+  renderLcarsBridgeCamera(camera, config) {
+    const stateObj = this._hass?.states?.[camera.entity];
+    const name = camera.name || stateObj?.attributes?.friendly_name || "SURVEILLANCE";
+    const sensorState = (entityId, fallback) => entityId && this._hass?.states?.[entityId] ? this._hass.states[entityId].state : fallback;
+    const motion = sensorState(config.motion_sensor, "CLEAR");
+    const recording = sensorState(config.recording_sensor, "READY");
+    const activity = sensorState(config.last_activity_sensor, "CURRENT");
+    const link = ["unavailable", "unknown"].includes(stateObj?.state) ? "OFFLINE" : "ONLINE";
+    return `<article class="lcars-bridge-camera">
+      <header><ha-icon icon="mdi:cctv"></ha-icon><strong>${escapeHtml(name)}</strong><b>${escapeHtml(stateObj?.state || "idle")}</b></header>
+      <div class="lcars-bridge-feed"><div class="lcars-camera-card" data-lcars-camera="${escapeHtml(camera.entity)}"></div><i></i><i></i><i></i><i></i></div>
+      <footer><span>MOTION ${escapeHtml(motion)}</span><span>LINK ${link}</span><span>RECORDING ${escapeHtml(recording)}</span><span>LAST ACTIVITY ${escapeHtml(activity)}</span></footer>
+    </article>`;
   }
 
   styleLcarsCalendar(card, color) {
@@ -2255,6 +2297,10 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-captains-log .lcars-engineering-panel,.lcars-captains-log-card { overflow:visible; }
     .lcars-captains-log-card { min-height:760px; }
     .lcars-captains-log-card>* { --primary-color:var(--engineering-tone)!important; --accent-color:var(--engineering-tone)!important; --state-icon-color:var(--engineering-tone)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#c9c2d8; color-scheme:dark; }
+    .lcars-bridge { color:#f5f1ff; }.lcars-bridge>header { min-height:58px; display:flex; align-items:center; gap:18px; padding:0 22px; border-radius:30px 30px 0 0; color:var(--bridge-contrast); background:var(--bridge-tone); font-family:Impact,"Arial Narrow",sans-serif; font-size:19px; letter-spacing:.045em; text-transform:uppercase; }.lcars-bridge>header strong { margin-right:auto; font-size:27px; font-weight:400; }.lcars-bridge>header span { white-space:nowrap; }.lcars-bridge>header i { width:9px; height:9px; border-radius:50%; background:#050507; }.lcars-bridge>header b { margin-left:auto; color:#ff9900; font-size:25px; font-weight:400; }
+    .lcars-bridge-shell { display:grid; grid-template-columns:92px minmax(0,1fr); gap:12px; }.lcars-bridge-shell>aside { display:grid; grid-template-rows:auto 1fr auto 1fr auto; align-items:center; justify-items:center; min-height:780px; color:var(--bridge-contrast); background:var(--bridge-tone); font-family:Impact,"Arial Narrow",sans-serif; letter-spacing:.04em; }.lcars-bridge-shell>aside i { width:100%; height:100%; background:#162b33; border-top:7px solid #050507; border-bottom:7px solid #050507; }.lcars-bridge-shell>aside b { padding:16px 4px; font-weight:400; writing-mode:vertical-rl; transform:rotate(180deg); }
+    .lcars-bridge-grid { min-width:0; display:grid; grid-template-columns:minmax(420px,1fr) minmax(420px,1fr); gap:16px; padding:16px 0 14px; }.lcars-bridge-primary,.lcars-bridge-secondary { min-width:0; }.lcars-bridge-secondary { display:flex; flex-direction:column; gap:16px; }.lcars-bridge .lcars-area { --lcars-area-tone:var(--bridge-tone); --lcars-area-contrast:var(--bridge-contrast); border-radius:22px; }.lcars-bridge .lcars-area>header { border-radius:19px 19px 0 0; }.lcars-bridge .lcars-device-name { text-transform:uppercase; }.lcars-bridge .lcars-standby { color:#08080a; background:#9999ff; }
+    .lcars-bridge-camera { overflow:hidden; border:4px solid var(--bridge-tone); border-radius:22px; background:#050507; }.lcars-bridge-camera>header { display:grid; grid-template-columns:25px 1fr auto; align-items:center; gap:9px; min-height:48px; padding:0 14px; font-family:Impact,"Arial Narrow",sans-serif; font-size:22px; letter-spacing:.04em; text-transform:uppercase; }.lcars-bridge-camera>header strong,.lcars-bridge-camera>header b { font-weight:400; }.lcars-bridge-camera>header b { font-size:16px; }.lcars-bridge-feed { position:relative; }.lcars-bridge-feed .lcars-camera-card { min-height:310px; }.lcars-bridge-feed>i { position:absolute; width:28px; height:28px; border-color:var(--bridge-tone); border-style:solid; pointer-events:none; }.lcars-bridge-feed>i:nth-of-type(1) { top:12px; left:12px; border-width:3px 0 0 3px; }.lcars-bridge-feed>i:nth-of-type(2) { top:12px; right:12px; border-width:3px 3px 0 0; }.lcars-bridge-feed>i:nth-of-type(3) { bottom:12px; left:12px; border-width:0 0 3px 3px; }.lcars-bridge-feed>i:nth-of-type(4) { right:12px; bottom:12px; border-width:0 3px 3px 0; }.lcars-bridge-camera>footer { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:5px; background:var(--bridge-tone); }.lcars-bridge-camera>footer span { min-width:0; padding:8px 5px; overflow:hidden; color:#d9d2e9; background:#0b0b10; font-family:Impact,"Arial Narrow",sans-serif; font-size:12px; letter-spacing:.03em; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
@@ -2271,6 +2317,7 @@ class AreaTopologyCard extends HTMLElement {
     @media (max-width:1200px) { .standalone-lcars .lcars-area-grid { grid-template-columns:1fr; } }
     @media (max-width:1100px) { .lcars-weather-panels,.lcars-weather-history-panels,.lcars-camera-grid,.lcars-engineering-panels { grid-template-columns:1fr; }.lcars-engineering-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (max-width:900px) { .lcars-weather-grid,.lcars-security-grid,.lcars-engineering-grid { padding-left:30px; }.lcars-weather-grid::before,.lcars-security-grid::before,.lcars-engineering-grid::before { width:22px; }.lcars-weather-current { grid-template-columns:110px 1fr; }.weather-main-icon { --mdc-icon-size:82px; }.lcars-weather-current dl { grid-column:1 / -1; }.lcars-weather-current strong { font-size:52px; } }
+    @media (max-width:1000px) { .lcars-bridge-grid { grid-template-columns:1fr; }.lcars-bridge>header { flex-wrap:wrap; padding:12px 18px; }.lcars-bridge>header i { display:none; }.lcars-bridge-camera>footer { grid-template-columns:repeat(2,1fr); } }
     @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; grid-template-rows:48px 42px; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-clock { grid-column:1 / 2; justify-content:flex-end; padding:8px 6px; font-size:18px; }.lcars-date { grid-column:2 / 4; justify-content:flex-start; padding:8px 10px; font-size:16px; }.lcars-end { grid-column:3; grid-row:1; }.lcars-body { display:block; }.lcars-floor-nav { position:sticky; top:0; flex-direction:row; overflow-x:auto; margin:0 -4px 8px; padding:6px 4px; background:#050507; }.lcars-nav-cap,.lcars-nav-foot { display:none; }.lcars-floor-nav button { flex:0 0 auto; grid-template-columns:38px auto; min-height:38px; }.lcars-floor-nav button span,.lcars-floor-nav button b { height:38px; }.lcars-floor-nav button span { font-size:19px; }.lcars-floor-nav button b { max-width:150px; font-size:12px; }.lcars-floor { scroll-margin-top:58px; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { --lcars-area-rail:22px; --lcars-area-rail-gap:8px; grid-template-columns:1fr; grid-auto-rows:auto; margin-left:0; }.lcars-area { grid-row:auto!important; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter,.lcars-standby { border-radius:12px; }.lcars-footer { margin-left:0; } }
   `; }
 }

@@ -247,6 +247,15 @@ captains_log:
     - calendar.waste_collection_schedule_powys_county_council
     - calendar.holidays_in_united_kingdom
     - calendar.sarn_powys_gmail_com
+bridge:
+  floor: Living Area
+  primary_area: Lounge
+  camera: camera.c110_mainstream
+  color: "#6F99A8"
+  # Optional telemetry sensors:
+  # motion_sensor: binary_sensor.car_camera_motion
+  # recording_sensor: binary_sensor.car_camera_recording
+  # last_activity_sensor: sensor.car_camera_last_activity
 menus:
   - id: environmental
     title: Environmental
@@ -280,6 +289,7 @@ Adding `weather.entity` creates a numbered `WEATHER` destination in the standalo
 Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header. Set `show_on_floor` to a floor name or ID to display a second copy of that feed on the selected floor while retaining it in Security.
 Adding one or more `engineering.panels` creates a numbered `ENGINEERING` destination. Each entry accepts a standard Home Assistant Lovelace card configuration plus an LCARS `title` and `icon`, and is rendered inside a matching area-style panel. The three `chart_*_color` settings control the embedded graph series palette.
 Adding `captains_log.entities` creates a numbered `CAPTAIN'S LOG` destination with a full-width `CALENDAR` sector. Its colour and initial calendar view can be configured with `color` and `initial_view`.
+Adding `bridge` creates a numbered `BRIDGE` destination using live devices from the configured floor. `primary_area` fills the left command module, remaining areas stack on the right, and `camera` reuses the matching Security feed with an LCARS surveillance frame and optional telemetry sensors.
 Each entry in `menus` creates another numbered floor-style destination. Devices are discovered automatically when any configured label or entity property matches, then grouped into the existing LCARS area panels.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
