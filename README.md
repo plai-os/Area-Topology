@@ -135,14 +135,24 @@ weather:
   apparent_sensor: sensor.real_feel_temperature
   aqi_sensor: sensor.air_quality_index
   forecast_rows: 10
-  hourly_rows: 10
+  hourly_rows: 8
   locale: en-GB
   hourly_forecast: false
   show_decimal: true
   color: "#66AACC"
+security:
+  color: "#B56B7A"
+  cameras:
+    - entity: camera.c110_mainstream
+      camera_image: camera.c110_mainstream
+      name: Car
+      show_state: true
+      camera_view: auto
+      fit_mode: cover
 ```
 
 Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Daily and hourly forecasts are requested directly from Home Assistant and displayed in separate LCARS panels.
+Adding one or more `security.cameras` creates a numbered `SECURITY` destination. Each camera is rendered as a Home Assistant picture-entity feed inside an LCARS area-style panel. Set `show_state: false` to omit its state from the panel header.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
