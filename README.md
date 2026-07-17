@@ -134,6 +134,12 @@ weather:
   humidity_sensor: sensor.outdoor_humidity
   apparent_sensor: sensor.real_feel_temperature
   aqi_sensor: sensor.air_quality_index
+  wind_speed_sensor: sensor.outdoor_wind_speed
+  wind_gust_sensor: sensor.outdoor_wind_gust
+  hourly_rain_sensor: sensor.hourly_rain
+  dew_point_sensor: sensor.outdoor_dew_point
+  uv_index_sensor: sensor.uv_index
+  pressure_sensor: sensor.outdoor_pressure
   forecast_rows: 10
   hourly_rows: 8
   locale: en-GB
