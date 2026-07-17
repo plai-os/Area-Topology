@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.10";
+const CARD_VERSION = "1.3.11";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1087,8 +1087,10 @@ class AreaTopologyCard extends HTMLElement {
       : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
     const visibleGroups = groups.map((group) => ({
       ...group,
-      areas: group.areas.map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) })),
-    }));
+      areas: group.areas
+        .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
+        .filter((area) => area.displayDevices.length > 0),
+    })).filter((group) => group.areas.length > 0);
     const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.devices.length, 0), 0);
     return `<div class="lcars-dashboard">
       <div class="lcars-masthead">
