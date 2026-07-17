@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.3.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1491,13 +1491,14 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header { display:grid; grid-template-columns:90px 190px minmax(80px,1fr) auto; min-height:43px; align-items:stretch; text-transform:uppercase; }
     .lcars-elbow { border-radius:25px 0 0 0; background:var(--lcars-tone); }
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:16px; font-weight:900; text-transform:uppercase; cursor:pointer; }
-    .lcars-floor>header button ha-icon { --mdc-icon-size:19px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
+    .lcars-floor>header button ha-icon { --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px; border-left:18px solid var(--lcars-tone); }
-    .lcars-area { min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
+    .lcars-area-grid { --lcars-rail-width:18px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px; }
+    .lcars-area-grid::before { content:""; position:absolute; z-index:0; top:0; bottom:0; left:0; width:var(--lcars-rail-width); background:var(--lcars-tone); }
+    .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
-    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
-    .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:22px; }
+    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
     .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
@@ -1513,7 +1514,7 @@ class AreaTopologyCard extends HTMLElement {
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter { border-radius:12px; }.lcars-footer { margin-left:38px; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { --lcars-rail-width:10px; grid-template-columns:1fr; margin-left:38px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter { border-radius:12px; }.lcars-footer { margin-left:38px; } }
   `; }
 }
 
