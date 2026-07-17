@@ -1,10 +1,12 @@
-const CARD_VERSION = "0.5.2";
+const CARD_VERSION = "0.6.0";
 
 const DEFAULTS = {
   title: "Home topology",
   show_unassigned: false,
   show_only_labeled: true,
   show_entities: false,
+  show_status: true,
+  max_statuses: 3,
   map_height: "auto",
 };
 
@@ -277,9 +279,9 @@ class AreaTopologyCard extends HTMLElement {
         let deviceIndex = 0;
         let ring = 0;
         while (deviceIndex < displayedDevices.length) {
-          const radius = areaRadius + 245 + ring * 165;
+          const radius = areaRadius + 255 + ring * 190;
           const usableArc = sector * 0.72;
-          const capacity = Math.max(1, Math.floor(usableArc * radius / 235) + 1);
+          const capacity = Math.max(1, Math.floor(usableArc * radius / 270) + 1);
           const ringCount = Math.min(capacity, displayedDevices.length - deviceIndex);
           for (let slot = 0; slot < ringCount; slot += 1) {
             const offset = ringCount === 1 ? 0 : (slot / (ringCount - 1) - 0.5) * usableArc;
@@ -361,14 +363,74 @@ class AreaTopologyCard extends HTMLElement {
         }).join("")}</div>` : "";
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
     const deviceColor = safeColor(device.color);
+    const statuses = this._config.show_status ? this.deviceStatuses(device) : [];
     return `<article class="device node" data-device="${escapeHtml(device.id)}" title="Open ${escapeHtml(device.name)} settings" style="${this.nodeStyle(point, canvas)};--device-color:${deviceColor}">
       <div class="device-main">
         <span class="device-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
         <div class="device-copy"><h3>${escapeHtml(device.name)}</h3>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</div>
       </div>
+      ${statuses.length ? `<div class="statuses">${statuses.map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="status ${status.active ? "active" : ""}" title="${escapeHtml(status.name)}">
+        <ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.value)}</span>
+      </button>`).join("")}</div>` : ""}
       ${device.labels.length ? `<div class="labels">${device.labels.map((label) => `<span style="--label-color:${safeColor(label.color, deviceColor)}">${escapeHtml(label.name)}</span>`).join("")}</div>` : ""}
       ${entityRows}
     </article>`;
+  }
+
+  deviceStatuses(device) {
+    const statuses = [];
+    for (const entity of device.entities) {
+      const stateObj = this._hass?.states?.[entity.entity_id];
+      if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
+      const domain = entity.entity_id.split(".")[0];
+      const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
+      const status = this.statusForEntity(entity, stateObj, domain, deviceClass);
+      if (status) statuses.push(status);
+    }
+    statuses.sort((a, b) => a.priority - b.priority);
+    const limit = Math.max(1, Math.min(8, Number(this._config.max_statuses) || 3));
+    return statuses.slice(0, limit);
+  }
+
+  statusForEntity(entity, stateObj, domain, deviceClass) {
+    const on = stateObj.state === "on";
+    const formatted = () => this._hass?.formatEntityState?.(stateObj)
+      || `${stateObj.state}${stateObj.attributes.unit_of_measurement ? ` ${stateObj.attributes.unit_of_measurement}` : ""}`;
+    const common = {
+      entityId: entity.entity_id,
+      name: stateObj.attributes.friendly_name || entity.name || entity.original_name || entity.entity_id,
+    };
+
+    if (domain === "binary_sensor" && ["door", "garage_door", "opening", "window"].includes(deviceClass)) {
+      const label = deviceClass === "window" ? (on ? "Open" : "Closed") : (on ? "Open" : "Closed");
+      return { ...common, priority: 1, active: on, value: label, icon: on ? "mdi:door-open" : "mdi:door-closed" };
+    }
+    if (domain === "lock") {
+      const unlocked = stateObj.state === "unlocked";
+      return { ...common, priority: 1, active: unlocked, value: unlocked ? "Unlocked" : "Locked", icon: unlocked ? "mdi:lock-open-variant" : "mdi:lock" };
+    }
+    if (domain === "cover") {
+      const open = stateObj.state === "open";
+      return { ...common, priority: 1, active: open, value: open ? "Open" : "Closed", icon: open ? "mdi:window-open" : "mdi:window-closed" };
+    }
+    if (domain === "light") {
+      return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:lightbulb-on" : "mdi:lightbulb-outline" };
+    }
+    if (domain === "climate") {
+      const temperature = stateObj.attributes.current_temperature;
+      const unit = this._hass?.config?.unit_system?.temperature || "°";
+      return { ...common, priority: 3, active: stateObj.state !== "off", value: temperature == null ? stateObj.state : `${temperature}${unit}`, icon: "mdi:thermostat" };
+    }
+    if (domain === "sensor" && deviceClass === "temperature") {
+      return { ...common, priority: 3, active: false, value: formatted(), icon: "mdi:thermometer" };
+    }
+    if (domain === "sensor" && ["illuminance", "irradiance"].includes(deviceClass)) {
+      return { ...common, priority: 4, active: false, value: formatted(), icon: "mdi:brightness-5" };
+    }
+    if (domain === "sensor" && deviceClass === "humidity") {
+      return { ...common, priority: 5, active: false, value: formatted(), icon: "mdi:water-percent" };
+    }
+    return null;
   }
 
   styles() { return `
@@ -423,7 +485,12 @@ class AreaTopologyCard extends HTMLElement {
     .device:hover { box-shadow:0 0 0 4px color-mix(in srgb,var(--device-color) 10%,transparent),0 4px 13px rgba(0,0,0,.14); }
     .device-main { display:flex; align-items:flex-start; gap:10px; }
     .device-icon { width:34px; height:34px; margin-top:1px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
-    .device-copy { min-width:0; } .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
+    .device-copy { min-width:0; }
+    .statuses { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0 44px; }
+    .status { display:inline-flex; align-items:center; gap:3px; min-height:22px; padding:2px 6px; border:0; border-radius:7px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#eee); font:inherit; font-size:10px; cursor:pointer; }
+    .status.active { color:var(--state-active-color,var(--warning-color,#f9a825)); background:color-mix(in srgb,var(--state-active-color,var(--warning-color,#f9a825)) 15%,var(--card-background-color,#fff)); }
+    .status ha-icon { width:13px; height:13px; --mdc-icon-size:13px; }
+    .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
     .labels span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; color:var(--label-color); background:color-mix(in srgb,var(--label-color) 12%,var(--secondary-background-color,#eee)); font-size:10px; }
     .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
     .entities button { width:100%; border:0; background:none; color:var(--primary-text-color,#222); display:flex; justify-content:space-between; gap:8px; padding:5px 0; cursor:pointer; text-align:left; font:inherit; font-size:11px; }

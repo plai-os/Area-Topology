@@ -10,6 +10,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Filters for labelled and unassigned devices
 - Individual label toggles, with all labels selected initially
 - Label icons and colours
+- Live device status for lights, doors, windows, locks, covers, temperature, illuminance, humidity and climate
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
 
@@ -45,6 +46,8 @@ type: custom:area-topology-card
 title: My home
 show_unassigned: false
 show_entities: false
+show_status: true
+max_statuses: 3
 show_only_labeled: true
 map_height: auto
 ```
@@ -58,6 +61,8 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `title` | `Home topology` | Card heading |
 | `show_unassigned` | `false` | Include devices that are not assigned to an area initially |
 | `show_entities` | `false` | List each device's entities and current states |
+| `show_status` | `true` | Show compact live-status chips on device nodes |
+| `max_statuses` | `3` | Maximum number of status chips shown per device |
 | `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 
