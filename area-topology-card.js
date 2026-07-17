@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.4";
+const CARD_VERSION = "1.2.5";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -365,6 +365,11 @@ class AreaTopologyCard extends HTMLElement {
         this.render();
         return;
       }
+      const entityToggleId = event.target.closest("[data-entity-toggle]")?.dataset.entityToggle;
+      if (entityToggleId) {
+        this.toggleEntity(entityToggleId, event.target.closest("[data-entity-toggle]"));
+        return;
+      }
       const target = event.target.closest("[data-entity]");
       if (target) {
         this.dispatchEvent(new CustomEvent("hass-more-info", {
@@ -476,6 +481,25 @@ class AreaTopologyCard extends HTMLElement {
     } catch (error) {
       this._assignmentMessage = { type: "error", text: error?.message || "Could not assign device" };
       this.render();
+    }
+  }
+
+  async toggleEntity(entityId, control) {
+    if (!this._hass || control?.classList.contains("working")) return;
+    control?.classList.add("working");
+    control?.setAttribute("aria-busy", "true");
+    try {
+      await this._hass.callService("homeassistant", "toggle", {}, { entity_id: entityId });
+    } catch (error) {
+      console.error(`Could not toggle ${entityId}`, error);
+      this.dispatchEvent(new CustomEvent("hass-notification", {
+        bubbles: true,
+        composed: true,
+        detail: { message: error?.message || `Could not toggle ${entityId}` },
+      }));
+    } finally {
+      control?.classList.remove("working");
+      control?.removeAttribute("aria-busy");
     }
   }
 
@@ -1101,12 +1125,12 @@ class AreaTopologyCard extends HTMLElement {
         || (["switch", "fan", "media_player", "input_boolean"].includes(domain)
           ? { entityId: entity.entity_id, name: stateObj.attributes.friendly_name || entity.name || device.name, value: stateObj.state === "on" || stateObj.state === "playing" ? "On" : stateObj.state, icon: stateObj.attributes.icon || entity.icon || "mdi:toggle-switch", active: stateObj.state === "on" || stateObj.state === "playing", priority: 6 }
           : null);
-      if (status) statuses.push(status);
+      if (status) statuses.push({ ...status, toggleable: ["light", "switch", "fan", "input_boolean"].includes(domain) });
     }
     statuses.sort((a, b) => a.priority - b.priority);
     return `<div class="lcars-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" style="--lcars-device:${color}">
       <button class="lcars-device-name" data-device="${escapeHtml(device.id)}"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
-      <div class="lcars-values">${statuses.slice(0, 6).map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="${status.active ? "active" : ""}" title="${escapeHtml(status.name)}"><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b></button>`).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
+      <div class="lcars-values">${statuses.slice(0, 6).map((status) => `<button ${status.toggleable ? `data-entity-toggle="${escapeHtml(status.entityId)}"` : `data-entity="${escapeHtml(status.entityId)}"`} class="${status.active ? "active" : ""}" title="${status.toggleable ? `Toggle ${escapeHtml(status.name)}` : `Open ${escapeHtml(status.name)}`}"><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b></button>`).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
     </div>`;
   }
 
@@ -1129,7 +1153,7 @@ class AreaTopologyCard extends HTMLElement {
         <div class="device-copy"><h3>${escapeHtml(device.name)}</h3></div>
       </div>
       ${metadata ? `<small class="device-metadata">${escapeHtml(metadata)}</small>` : ""}
-      ${statuses.length ? `<div class="statuses">${statuses.map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="status ${status.active ? "active" : ""}" title="${escapeHtml(status.name)}">
+      ${statuses.length ? `<div class="statuses">${statuses.map((status) => `<button ${status.toggleable ? `data-entity-toggle="${escapeHtml(status.entityId)}"` : `data-entity="${escapeHtml(status.entityId)}"`} class="status ${status.active ? "active" : ""}" title="${status.toggleable ? `Toggle ${escapeHtml(status.name)}` : escapeHtml(status.name)}">
         <ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.value)}</span>
       </button>`).join("")}</div>` : ""}
       ${device.labels.length ? `<div class="labels">${device.labels.map((label) => {
@@ -1157,7 +1181,7 @@ class AreaTopologyCard extends HTMLElement {
             : domain === "sensor" && deviceClass
               ? `sensor:${deviceClass}`
               : domain;
-        statuses.push({ ...status, group });
+        statuses.push({ ...status, group, toggleable: ["light", "switch", "fan", "input_boolean"].includes(domain) });
       }
     }
     const representativeStatuses = [...statuses.reduce((groups, status) => {
@@ -1339,6 +1363,7 @@ class AreaTopologyCard extends HTMLElement {
     .statuses { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 0; }
     .status { display:inline-flex; align-items:center; gap:3px; min-height:22px; padding:2px 6px; border:0; border-radius:7px; color:var(--secondary-text-color,#727272); background:var(--secondary-background-color,#eee); font:inherit; font-size:10px; cursor:pointer; }
     .status.active { color:var(--state-active-color,var(--warning-color,#f9a825)); background:color-mix(in srgb,var(--state-active-color,var(--warning-color,#f9a825)) 15%,var(--card-background-color,#fff)); }
+    [data-entity-toggle].working { opacity:.55; pointer-events:none; }
     .status ha-icon { width:13px; height:13px; --mdc-icon-size:13px; }
     .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0; }
     .labels span { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:10px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
