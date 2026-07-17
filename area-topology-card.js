@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.5";
+const CARD_VERSION = "1.1.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -659,13 +659,12 @@ class AreaTopologyCard extends HTMLElement {
 
   renderTreeFloor(floor) {
     const collapsed = this._collapsedFloors.has(floor.id);
-    const hasFilteredDevices = floor.areas.some((area) => this.devicesForDisplay(area).length > 0);
     const mainAction = floor.id === "__no_floor__"
       ? `data-floor-toggle="${escapeHtml(floor.id)}"`
       : `data-floor-config="${escapeHtml(floor.id)}"`;
     return `<div class="tree-branch tree-floor-branch">
       <div class="tree-row tree-floor">
-        <button class="tree-toggle ${hasFilteredDevices ? "" : "empty"}" ${hasFilteredDevices ? `data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}"` : "disabled"}>${hasFilteredDevices ? (collapsed ? "+" : "−") : ""}</button>
+        <button class="tree-toggle" data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">${collapsed ? "+" : "−"}</button>
         <button class="tree-main" ${mainAction} title="${floor.id === "__no_floor__" ? `${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}` : `Open ${escapeHtml(floor.name)} settings`}">
           <span class="tree-node-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
           <span class="tree-copy"><strong>${escapeHtml(floor.name)}</strong><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"} · ${this.treeDeviceCount(floor.areas)}</small></span>
