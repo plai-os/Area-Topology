@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.6.5";
+const CARD_VERSION = "1.6.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1234,6 +1234,7 @@ class AreaTopologyCard extends HTMLElement {
             name: stateObj.attributes.friendly_name || entity.name || entity.original_name || "Recorded location",
             value: this._hass?.formatEntityState?.(stateObj) || stateObj.state,
             icon: "mdi:map-marker",
+            category: "location",
             active: false,
             priority: 1,
           }
@@ -1260,6 +1261,10 @@ class AreaTopologyCard extends HTMLElement {
         });
       }
     }
+    if (isMobile && !statuses.some((status) => status.category === "location")) {
+      const location = this.findMobileLocationStatus(device);
+      if (location) statuses.push(location);
+    }
     statuses.sort((a, b) => a.priority - b.priority);
     const visibleStatuses = this.dedupeLcarsStatuses(statuses);
     return `<div class="lcars-device" style="--lcars-device:${color}">
@@ -1277,6 +1282,45 @@ class AreaTopologyCard extends HTMLElement {
       if (!existing || status.domain === "light" || (status.adjustable && !existing.adjustable)) controls.set(key, status);
     }
     return [...controls.values()];
+  }
+
+  findMobileLocationStatus(device) {
+    const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const deviceKey = normalize(device.name);
+    if (!deviceKey) return null;
+    const candidates = Object.values(this._hass?.states || {}).filter((stateObj) => {
+      if (!stateObj?.entity_id || ["unknown", "unavailable"].includes(stateObj.state)) return false;
+      const domain = stateObj.entity_id.split(".")[0];
+      if (!["device_tracker", "person", "sensor"].includes(domain)) return false;
+      const text = normalize(`${stateObj.entity_id} ${stateObj.attributes?.friendly_name || ""}`);
+      const friendlyKey = normalize(stateObj.attributes?.friendly_name);
+      const nameMatches = text.includes(deviceKey) || (friendlyKey && deviceKey.includes(friendlyKey));
+      const isLocation = domain === "device_tracker" || domain === "person" || /(?:geocoded|recorded)location/i.test(text);
+      return nameMatches && isLocation;
+    }).sort((a, b) => {
+      const score = (stateObj) => {
+        const text = `${stateObj.entity_id} ${stateObj.attributes?.friendly_name || ""}`;
+        if (/(?:geocoded|recorded)[ _-]?location/i.test(text)) return 0;
+        if (stateObj.entity_id.startsWith("device_tracker.")) return 1;
+        return 2;
+      };
+      return score(a) - score(b);
+    });
+    const stateObj = candidates[0];
+    if (!stateObj) return null;
+    return {
+      entityId: stateObj.entity_id,
+      name: stateObj.attributes?.friendly_name || "Recorded location",
+      value: this._hass?.formatEntityState?.(stateObj) || stateObj.state,
+      icon: "mdi:map-marker",
+      category: "location",
+      domain: stateObj.entity_id.split(".")[0],
+      percentage: null,
+      adjustable: false,
+      toggleable: false,
+      active: false,
+      priority: 1,
+    };
   }
 
   renderLcarsStatus(status) {
