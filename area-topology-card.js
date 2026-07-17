@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.15.0";
-const BUILD_COMMIT = "11c3298";
+const CARD_VERSION = "1.15.1";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1272,7 +1272,7 @@ class AreaTopologyCard extends HTMLElement {
         <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : securitySelected ? this.renderLcarsSecurity(securityConfig, securityColor) : displayedFloorViews.map((group, index) => {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
-          <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
+          <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTOR${group.areas.length === 1 ? "" : "S"}</b></header>
           <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
         </section>`;
       }).join("")}<div class="lcars-footer" style="--lcars-footer-tone:${footerColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div>${this._standaloneLcars ? "</main></div>" : ""}` : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
@@ -1958,7 +1958,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-family:Impact,"Arial Narrow",sans-serif; font-size:20px; line-height:1.2; font-weight:400; letter-spacing:.025em; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
-    .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-size:12px; text-align:right; }
+    .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:var(--lcars-tone-contrast); background:var(--lcars-tone); font-family:Impact,"Arial Narrow",sans-serif; font-size:15px; font-weight:400; letter-spacing:.035em; text-align:right; }
     .lcars-area-grid { --lcars-area-tone:var(--lcars-tone); --lcars-area-contrast:var(--lcars-tone-contrast,#08080a); --lcars-area-rail:64px; --lcars-area-rail-gap:12px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); grid-auto-rows:4px; grid-auto-flow:row dense; align-items:start; column-gap:16px; row-gap:16px; margin-left:0; padding:14px 0 18px calc(var(--lcars-area-rail) + var(--lcars-area-rail-gap)); }
     .standalone-lcars .lcars-area-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .lcars-area-grid::before { content:""; position:absolute; top:0; bottom:-12px; left:0; width:var(--lcars-area-rail); background:var(--lcars-area-tone); }
