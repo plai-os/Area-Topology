@@ -5,6 +5,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 ## Features
 
 - Radial Home → Area → Device topology, with an automatic Floor level when multiple floors exist
+- Switchable spider-web and hierarchical tree layouts
 - Collision-aware multi-ring layout for larger installations
 - Expand/collapse floors, areas, or the entire map with space-aware reflow
 - Filters for labelled and unassigned devices
@@ -53,6 +54,7 @@ show_entities: false
 show_status: true
 max_statuses: 3
 topology_zoom: 1
+layout: web
 show_only_labeled: true
 map_height: auto
 ```
@@ -69,6 +71,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `show_status` | `true` | Show compact live-status chips on device nodes |
 | `max_statuses` | `3` | Maximum number of status chips shown per device |
 | `topology_zoom` | `1` | Initial topology zoom from `0.65` to `1.8` |
+| `layout` | `web` | Initial layout: `web` or `tree`; the header switch remembers later changes |
 | `show_only_labeled` | `true` | `true` initially hides unlabelled devices; `false` initially includes them |
 | `map_height` | `auto` | Fill the available screen height, or set a pixel value |
 

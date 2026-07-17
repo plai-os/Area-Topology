@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.7";
+const CARD_VERSION = "1.0.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -8,6 +8,7 @@ const DEFAULTS = {
   show_status: true,
   max_statuses: 3,
   topology_zoom: 1,
+  layout: "web",
   map_height: "auto",
 };
 
@@ -103,6 +104,7 @@ class AreaTopologyCard extends HTMLElement {
     this._data = null;
     this._collapsedAreas = new Set();
     this._collapsedFloors = new Set();
+    this._collapsedDevices = new Set();
   }
 
   setConfig(config) {
@@ -115,6 +117,7 @@ class AreaTopologyCard extends HTMLElement {
       this._labelsOnly = preferences.labelsOnly ?? this._config.show_only_labeled;
       this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
       this._unassignedSearch = preferences.unassignedSearch ?? "";
+      this._layoutMode = preferences.layoutMode === "tree" || (!preferences.layoutMode && this._config.layout === "tree") ? "tree" : "web";
     }
     if (this._zoom === undefined) this._zoom = Math.max(0.65, Math.min(1.8, Number(this._config.topology_zoom) || 1));
     this.render();
@@ -136,6 +139,7 @@ class AreaTopologyCard extends HTMLElement {
         labelsOnly: this._labelsOnly,
         unassignedLabelsOnly: this._unassignedLabelsOnly,
         unassignedSearch: this._unassignedSearch,
+        layoutMode: this._layoutMode,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -202,6 +206,7 @@ class AreaTopologyCard extends HTMLElement {
         this.captureViewportFocus();
         this._collapsedAreas.clear();
         this._collapsedFloors.clear();
+        this._collapsedDevices.clear();
         this.render();
         return;
       }
@@ -213,6 +218,12 @@ class AreaTopologyCard extends HTMLElement {
         } else {
           this._collapsedAreas = new Set(this._data?.map((area) => area.id) || []);
         }
+        this.render();
+        return;
+      }
+      if (action === "layout-web" || action === "layout-tree") {
+        this._layoutMode = action === "layout-tree" ? "tree" : "web";
+        this.savePreferences();
         this.render();
         return;
       }
@@ -281,6 +292,12 @@ class AreaTopologyCard extends HTMLElement {
       const floorConfigId = event.target.closest("[data-floor-config]")?.dataset.floorConfig;
       if (floorConfigId) {
         this.navigate(`/config/areas/floor/${encodeURIComponent(floorConfigId)}`);
+        return;
+      }
+      const deviceToggleId = event.target.closest("[data-device-toggle]")?.dataset.deviceToggle;
+      if (deviceToggleId) {
+        this._collapsedDevices.has(deviceToggleId) ? this._collapsedDevices.delete(deviceToggleId) : this._collapsedDevices.add(deviceToggleId);
+        this.render();
         return;
       }
       const target = event.target.closest("[data-entity]");
@@ -397,7 +414,7 @@ class AreaTopologyCard extends HTMLElement {
       : this._error
         ? `<div class="message error"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><div><strong>Could not load topology</strong><br>${escapeHtml(this._error)}</div></div>`
         : this._data
-          ? this.renderAreas()
+          ? (this._layoutMode === "tree" ? this.renderTree() : this.renderAreas())
           : '<div class="message">Waiting for Home Assistant…</div>';
 
     this.shadowRoot.innerHTML = `
@@ -407,13 +424,17 @@ class AreaTopologyCard extends HTMLElement {
           <div class="header-main">
             <div><h1>Home Topology</h1><p>${this.summary()}</p></div>
             ${this._data ? `<div class="header-actions">
-              <button data-topology-action="expand" title="Expand all areas"><span>＋</span> Expand all</button>
-              <button data-topology-action="collapse" title="Collapse to areas"><span>−</span> Collapse all</button>
-              <div class="zoom-controls" aria-label="Topology zoom">
+              <div class="layout-controls" aria-label="Topology layout">
+                <button class="${this._layoutMode === "web" ? "active" : ""}" data-topology-action="layout-web" title="Spider web layout"><ha-icon icon="mdi:graph-outline"></ha-icon> Web</button>
+                <button class="${this._layoutMode === "tree" ? "active" : ""}" data-topology-action="layout-tree" title="Tree layout"><ha-icon icon="mdi:file-tree-outline"></ha-icon> Tree</button>
+              </div>
+              <button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
+              <button data-topology-action="collapse" title="Collapse to the first hierarchy level"><span>−</span> Collapse all</button>
+              ${this._layoutMode === "web" ? `<div class="zoom-controls" aria-label="Topology zoom">
                 <button data-topology-action="zoom-out" title="Zoom out">−</button>
                 <button class="zoom-level" data-topology-action="zoom-reset" title="Reset zoom">${Math.round(this._zoom * 100)}%</button>
                 <button data-topology-action="zoom-in" title="Zoom in">＋</button>
-              </div>
+              </div>` : ""}
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
               <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
@@ -512,6 +533,93 @@ class AreaTopologyCard extends HTMLElement {
       areas: areasWithoutFloor,
     });
     return groups;
+  }
+
+  devicesForDisplay(area) {
+    const allLabelsSelected = this._selectedLabels?.size === this._labels?.length;
+    return area.devices.filter((device) => {
+      if (this._labelsOnly && !device.labels.length) return false;
+      if (allLabelsSelected) return true;
+      return device.labels.some((label) => this._selectedLabels?.has(label.label_id));
+    });
+  }
+
+  renderTree() {
+    const areas = this._data.filter((area) => area.id !== "__unassigned__");
+    if (!areas.length) return '<div class="message">No areas or devices found.</div>';
+    const branches = this.hasFloorLevel()
+      ? this.floorGroups().map((floor) => this.renderTreeFloor(floor)).join("")
+      : areas.map((area) => this.renderTreeArea(area)).join("");
+    const requestedHeight = Number(this._config.map_height);
+    const mapHeight = Number.isFinite(requestedHeight) && requestedHeight > 0
+      ? `${Math.max(360, Math.min(1400, requestedHeight))}px`
+      : "clamp(420px, calc(100vh - 230px), 1200px)";
+    return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree">
+      <div class="tree-row tree-home">
+        <span class="tree-node-icon"><ha-icon icon="mdi:home"></ha-icon></span>
+        <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong><small>${this.summary()}</small></div>
+      </div>
+      <div class="tree-children">${branches}</div>
+    </div></div>${this.renderUnassignedPanel()}</div>`;
+  }
+
+  renderTreeFloor(floor) {
+    const collapsed = this._collapsedFloors.has(floor.id);
+    const mainAction = floor.id === "__no_floor__"
+      ? `data-floor-toggle="${escapeHtml(floor.id)}"`
+      : `data-floor-config="${escapeHtml(floor.id)}"`;
+    return `<div class="tree-branch tree-floor-branch">
+      <div class="tree-row tree-floor">
+        <button class="tree-toggle" data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">${collapsed ? "+" : "−"}</button>
+        <button class="tree-main" ${mainAction} title="${floor.id === "__no_floor__" ? `${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}` : `Open ${escapeHtml(floor.name)} settings`}">
+          <span class="tree-node-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
+          <span class="tree-copy"><strong>${escapeHtml(floor.name)}</strong><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"}</small></span>
+        </button>
+      </div>
+      ${collapsed ? "" : `<div class="tree-children">${floor.areas.map((area) => this.renderTreeArea(area)).join("")}</div>`}
+    </div>`;
+  }
+
+  renderTreeArea(area) {
+    const collapsed = this._collapsedAreas.has(area.id);
+    const devices = this.devicesForDisplay(area);
+    return `<div class="tree-branch tree-area-branch">
+      <div class="tree-row tree-area" data-area-drop="${escapeHtml(area.id)}">
+        <button class="tree-toggle" data-area-toggle="${escapeHtml(area.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(area.name)}">${collapsed ? "+" : "−"}</button>
+        <button class="tree-main" data-area-config="${escapeHtml(area.id)}" title="Open ${escapeHtml(area.name)} settings">
+          <span class="tree-node-icon"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon></span>
+          <span class="tree-copy"><strong>${escapeHtml(area.name)}</strong><small>${devices.length} device${devices.length === 1 ? "" : "s"}</small></span>
+        </button>
+      </div>
+      ${collapsed ? "" : `<div class="tree-children">${devices.map((device) => this.renderTreeDevice(device)).join("")}</div>`}
+    </div>`;
+  }
+
+  renderTreeDevice(device) {
+    const collapsed = this._collapsedDevices.has(device.id);
+    const color = safeColor(device.color);
+    const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
+    const properties = device.entities.map((entity) => {
+      const stateObj = this._hass?.states?.[entity.entity_id];
+      const name = stateObj?.attributes?.friendly_name || entity.name || entity.original_name || entity.entity_id;
+      const value = stateObj ? (this._hass?.formatEntityState?.(stateObj) || stateObj.state) : "unavailable";
+      const icon = entity.icon || stateObj?.attributes?.icon || "mdi:circle-small";
+      return `<button class="tree-property" data-entity="${escapeHtml(entity.entity_id)}" title="Open ${escapeHtml(name)}">
+        <ha-icon icon="${escapeHtml(icon)}"></ha-icon><span><b>${escapeHtml(name)}</b><small>${escapeHtml(entity.entity_id)}</small></span><em>${escapeHtml(value)}</em>
+      </button>`;
+    }).join("");
+    return `<div class="tree-branch tree-device-branch" style="--device-color:${color}">
+      <div class="tree-row tree-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" data-device="${escapeHtml(device.id)}">
+        <button class="tree-toggle ${device.entities.length ? "" : "empty"}" ${device.entities.length ? `data-device-toggle="${escapeHtml(device.id)}"` : "disabled"} title="${collapsed ? "Expand" : "Collapse"} properties">${device.entities.length ? (collapsed ? "+" : "−") : ""}</button>
+        <span class="tree-node-icon"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon></span>
+        <span class="tree-copy"><strong>${escapeHtml(device.name)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}</span>
+        ${device.labels.length ? `<span class="tree-labels">${device.labels.map((label) => {
+          const labelColor = safeColor(label.color, color);
+          return `<span style="--label-color:${labelColor};--label-contrast:${contrastColor(labelColor)}">${escapeHtml(label.name)}</span>`;
+        }).join("")}</span>` : ""}
+      </div>
+      ${collapsed || !properties ? "" : `<div class="tree-children tree-properties">${properties}</div>`}
+    </div>`;
   }
 
   renderAreas() {
@@ -893,6 +1001,12 @@ class AreaTopologyCard extends HTMLElement {
     .header-actions button { display:flex; align-items:center; gap:5px; padding:7px 10px; border:1px solid var(--divider-color,#ddd); border-radius:9px; color:var(--primary-text-color,#222); background:var(--secondary-background-color,#f1f1f1); font:inherit; font-size:12px; cursor:pointer; }
     .header-actions button:hover { border-color:var(--at-accent); color:var(--at-accent); }
     .header-actions span { font-size:17px; line-height:10px; }
+    .layout-controls { display:flex; align-items:stretch; }
+    .header-actions .layout-controls button { padding:5px 8px; border-radius:0; }
+    .header-actions .layout-controls button:first-child { border-radius:9px 0 0 9px; }
+    .header-actions .layout-controls button+button { margin-left:-1px; border-radius:0 9px 9px 0; }
+    .header-actions .layout-controls button.active { position:relative; color:white; border-color:var(--at-accent); background:var(--at-accent); }
+    .layout-controls ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .zoom-controls { display:flex; align-items:stretch; }
     .header-actions .zoom-controls button { min-width:30px; padding:5px 8px; border-radius:0; font-size:15px; font-weight:600; justify-content:center; }
     .header-actions .zoom-controls button:first-child { border-radius:9px 0 0 9px; }
@@ -913,6 +1027,35 @@ class AreaTopologyCard extends HTMLElement {
     .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
     .workspace { display:flex; width:100%; min-width:0; }
+    .tree-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; padding:22px 28px 40px; background:color-mix(in srgb,var(--card-background-color,#fff) 96%,var(--at-accent)); }
+    .topology-tree { min-width:760px; color:var(--primary-text-color,#222); font-size:12px; }
+    .tree-children { position:relative; margin-left:19px; padding-left:25px; border-left:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
+    .tree-branch { position:relative; padding-top:8px; }
+    .tree-branch::before { content:""; position:absolute; top:30px; left:-25px; width:24px; border-top:1px solid color-mix(in srgb,var(--at-accent) 42%,var(--divider-color,#ddd)); }
+    .tree-row { position:relative; min-height:44px; display:flex; align-items:center; gap:8px; width:max-content; min-width:430px; max-width:900px; padding:5px 9px; border:1px solid transparent; border-radius:9px; }
+    .tree-home { padding:8px 11px; border-color:color-mix(in srgb,var(--at-accent) 55%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--at-accent) 9%,var(--card-background-color,#fff)); }
+    .tree-floor { border-color:color-mix(in srgb,var(--at-floor) 55%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--at-floor) 9%,var(--card-background-color,#fff)); }
+    .tree-area { border-color:color-mix(in srgb,var(--at-area) 55%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--at-area) 9%,var(--card-background-color,#fff)); }
+    .tree-area.drop-target { border-color:var(--success-color,#43a047); background:color-mix(in srgb,var(--success-color,#43a047) 22%,var(--card-background-color,#fff)); box-shadow:0 0 0 4px color-mix(in srgb,var(--success-color,#43a047) 15%,transparent); }
+    .tree-device { border-color:color-mix(in srgb,var(--device-color) 65%,var(--divider-color,#ddd)); background:color-mix(in srgb,var(--device-color) 9%,var(--card-background-color,#fff)); cursor:grab; }
+    .tree-device:hover { z-index:4; box-shadow:0 3px 12px color-mix(in srgb,var(--device-color) 22%,transparent); }
+    .tree-device:active { cursor:grabbing; } .tree-device.dragging { opacity:.42; }
+    .tree-toggle { display:grid; place-items:center; flex:0 0 22px; width:22px; height:22px; padding:0; border:1px solid var(--divider-color,#ddd); border-radius:6px; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); font:inherit; font-size:14px; cursor:pointer; }
+    .tree-toggle.empty { opacity:.25; cursor:default; }
+    .tree-main { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:0; border:0; color:inherit; background:none; text-align:left; font:inherit; cursor:pointer; }
+    .tree-node-icon { display:grid; place-items:center; flex:0 0 30px; width:30px; height:30px; border-radius:7px; color:var(--at-accent); background:color-mix(in srgb,currentColor 12%,var(--card-background-color,#fff)); }
+    .tree-floor .tree-node-icon { color:var(--at-floor); } .tree-area .tree-node-icon { color:var(--at-area); } .tree-device .tree-node-icon { color:var(--device-color); }
+    .tree-node-icon ha-icon { --mdc-icon-size:19px; }
+    .tree-copy { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
+    .tree-copy strong { font-size:12px; overflow-wrap:anywhere; } .tree-copy small { margin-top:2px; font-size:9px; }
+    .tree-labels { display:flex; flex-wrap:wrap; gap:4px; margin-left:auto; padding-left:14px; }
+    .tree-labels>span { padding:3px 7px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+    .tree-properties { padding-top:2px; }
+    .tree-property { position:relative; width:max-content; min-width:520px; max-width:900px; display:grid; grid-template-columns:22px minmax(220px,1fr) auto; align-items:center; gap:8px; margin-top:5px; padding:6px 10px; border:1px solid color-mix(in srgb,var(--device-color) 30%,var(--divider-color,#ddd)); border-radius:7px; color:var(--primary-text-color,#222); background:var(--card-background-color,#fff); text-align:left; font:inherit; cursor:pointer; }
+    .tree-property::before { content:""; position:absolute; top:50%; left:-26px; width:25px; border-top:1px solid color-mix(in srgb,var(--device-color) 42%,var(--divider-color,#ddd)); }
+    .tree-property ha-icon { color:var(--device-color); --mdc-icon-size:16px; }
+    .tree-property>span { min-width:0; } .tree-property b { display:block; font-size:10px; overflow-wrap:anywhere; } .tree-property small { margin-top:1px; font-size:8px; }
+    .tree-property em { color:var(--secondary-text-color,#727272); font-size:10px; font-style:normal; white-space:nowrap; }
     .topology-scroll { flex:1 1 auto; min-width:0; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
     .topology-canvas { position:relative; flex:none; }
     .topology { position:relative; min-width:1200px; min-height:1000px; overflow:hidden; transform:scale(var(--zoom)); transform-origin:0 0; }
