@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.5";
+const CARD_VERSION = "0.8.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -172,6 +172,11 @@ class AreaTopologyCard extends HTMLElement {
   connectedCallback() {
     if (this._eventsBound) return;
     this._eventsBound = true;
+    this.shadowRoot.addEventListener("scroll", (event) => {
+      if (event.target.classList?.contains("unassigned-list")) {
+        this._unassignedScrollTop = event.target.scrollTop;
+      }
+    }, true);
     this.shadowRoot.addEventListener("click", (event) => {
       const action = event.target.closest("[data-topology-action]")?.dataset.topologyAction;
       if (action === "expand") {
@@ -332,6 +337,8 @@ class AreaTopologyCard extends HTMLElement {
     if (!this.shadowRoot || !this._config) return;
     const oldScroller = this.shadowRoot.querySelector(".topology-scroll");
     const previousScroll = oldScroller ? { left: oldScroller.scrollLeft, top: oldScroller.scrollTop } : null;
+    const oldUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
+    const previousUnassignedScroll = oldUnassignedList?.scrollTop ?? this._unassignedScrollTop ?? null;
     const content = this._loading
       ? '<div class="message"><span class="spinner"></span>Reading Home Assistant registries…</div>'
       : this._error
@@ -363,17 +370,21 @@ class AreaTopologyCard extends HTMLElement {
         <div class="content">${content}</div>
       </ha-card>`;
     const newScroller = this.shadowRoot.querySelector(".topology-scroll");
-    if (newScroller) requestAnimationFrame(() => {
-      if (this._zoomFocus) {
+    const newUnassignedList = this.shadowRoot.querySelector(".unassigned-list");
+    if (newScroller || newUnassignedList) requestAnimationFrame(() => {
+      if (newScroller && this._zoomFocus) {
         newScroller.scrollLeft = this._zoomFocus.x * newScroller.scrollWidth - this._zoomFocus.focusX;
         newScroller.scrollTop = this._zoomFocus.y * newScroller.scrollHeight - this._zoomFocus.focusY;
         this._zoomFocus = null;
-      } else if (previousScroll) {
+      } else if (newScroller && previousScroll) {
         newScroller.scrollLeft = previousScroll.left;
         newScroller.scrollTop = previousScroll.top;
-      } else {
+      } else if (newScroller) {
         newScroller.scrollLeft = Math.max(0, (newScroller.scrollWidth - newScroller.clientWidth) / 2);
         newScroller.scrollTop = Math.max(0, (newScroller.scrollHeight - newScroller.clientHeight) / 2);
+      }
+      if (newUnassignedList && previousUnassignedScroll !== null) {
+        newUnassignedList.scrollTop = previousUnassignedScroll;
       }
     });
   }
