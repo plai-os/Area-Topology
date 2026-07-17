@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.12.3";
+const CARD_VERSION = "1.13.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -284,8 +284,14 @@ class AreaTopologyCard extends HTMLElement {
       const floorNavId = event.target.closest("[data-floor-nav]")?.dataset.floorNav;
       if (floorNavId) {
         if (this._standaloneLcars) {
-          this._lcarsSelectedFloor = floorNavId;
+          if (floorNavId === "__weather__") {
+            this._lcarsSelectedView = "weather";
+          } else {
+            this._lcarsSelectedView = "floor";
+            this._lcarsSelectedFloor = floorNavId;
+          }
           this.render();
+          if (floorNavId === "__weather__") this.loadLcarsWeatherForecast();
           return;
         }
         const floor = [...this.shadowRoot.querySelectorAll("[data-lcars-floor]")]
@@ -1233,10 +1239,13 @@ class AreaTopologyCard extends HTMLElement {
       ? (floorViews.some((group) => group.id === this._lcarsSelectedFloor) ? this._lcarsSelectedFloor : floorViews[0]?.id)
       : null;
     if (this._standaloneLcars) this._lcarsSelectedFloor = selectedFloorId;
+    const weatherConfig = this._standaloneLcars && this._config.weather?.entity ? this._config.weather : null;
+    const weatherSelected = Boolean(weatherConfig && this._lcarsSelectedView === "weather");
     const displayedFloorViews = this._standaloneLcars
-      ? floorViews.filter((group) => group.id === selectedFloorId)
+      ? floorViews.filter((group) => !weatherSelected && group.id === selectedFloorId)
       : floorViews;
-    const footerColor = displayedFloorViews[0]?.color || "#cc99cc";
+    const weatherColor = safeColor(weatherConfig?.color, "#66aacc");
+    const footerColor = weatherSelected ? weatherColor : (displayedFloorViews[0]?.color || "#cc99cc");
     const dateTime = this.lcarsDateTime();
     const headerColor = safeColor(this._config.header_color, "#263f4b");
     const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
@@ -1247,10 +1256,11 @@ class AreaTopologyCard extends HTMLElement {
       ${floorViews.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
           <div class="lcars-nav-cap"></div>
-          ${floorViews.map((group) => `<button class="${group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
+          ${floorViews.map((group) => `<button class="${!weatherSelected && group.id === selectedFloorId ? "active" : ""}" data-floor-nav="${escapeHtml(group.id)}" aria-pressed="${!weatherSelected && group.id === selectedFloorId}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Show ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
+          ${weatherConfig ? `<button class="${weatherSelected ? "active" : ""}" data-floor-nav="__weather__" aria-pressed="${weatherSelected}" style="--nav-color:${weatherColor};--nav-contrast:${contrastColor(weatherColor)}" title="Show weather"><span>${String(floorViews.length + 1).padStart(2, "0")}</span><b>WEATHER</b></button>` : ""}
           <div class="lcars-nav-foot"></div>
         </nav>
-        <main class="lcars-main">` : ""}${displayedFloorViews.map((group, index) => {
+        <main class="lcars-main">` : ""}${weatherSelected ? this.renderLcarsWeather(weatherConfig, weatherColor) : displayedFloorViews.map((group, index) => {
         const floorStyle = ` style="--lcars-tone:${group.color};--lcars-tone-contrast:${group.contrast}"`;
         return `<section class="lcars-floor lcars-tone-${index % 4}" data-lcars-floor="${escapeHtml(group.id)}"${floorStyle}>
           <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
@@ -1258,6 +1268,69 @@ class AreaTopologyCard extends HTMLElement {
         </section>`;
       }).join("")}<div class="lcars-footer" style="--lcars-footer-tone:${footerColor}"><span></span><b>VERSION ${CARD_VERSION}</b><i></i></div>${this._standaloneLcars ? "</main></div>" : ""}` : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
     </div>`;
+  }
+
+  async loadLcarsWeatherForecast() {
+    const entityId = this._config?.weather?.entity;
+    if (!entityId || this._weatherForecastEntity === entityId) return;
+    this._weatherForecastEntity = entityId;
+    try {
+      const result = await this._hass.callWS({
+        type: "call_service",
+        domain: "weather",
+        service: "get_forecasts",
+        service_data: { type: this._config.weather.hourly_forecast ? "hourly" : "daily" },
+        target: { entity_id: entityId },
+        return_response: true,
+      });
+      const response = result?.response || result;
+      this._weatherForecast = response?.[entityId]?.forecast || response?.forecast || [];
+      if (this._lcarsSelectedView === "weather") this.render();
+    } catch (error) {
+      console.warn("Could not load LCARS weather forecast", error);
+      this._weatherForecast = [];
+    }
+  }
+
+  renderLcarsWeather(config, color) {
+    const weather = this._hass?.states?.[config.entity];
+    if (!weather) return '<section class="lcars-weather-empty">WEATHER SYSTEM UNAVAILABLE</section>';
+    const sensorValue = (entityId, fallback = "—") => {
+      const stateObj = entityId ? this._hass?.states?.[entityId] : null;
+      return stateObj && !["unknown", "unavailable"].includes(stateObj.state) ? stateObj.state : fallback;
+    };
+    const temperature = sensorValue(config.temperature_sensor, weather.attributes?.temperature ?? "—");
+    const humidity = sensorValue(config.humidity_sensor, weather.attributes?.humidity ?? "—");
+    const apparent = sensorValue(config.apparent_sensor);
+    const aqi = sensorValue(config.aqi_sensor);
+    const sun = config.sun_entity ? this._hass?.states?.[config.sun_entity] : null;
+    const formatSunTime = (value) => value ? new Intl.DateTimeFormat(config.locale || "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: this._hass?.config?.time_zone }).format(new Date(value)) : null;
+    const sunrise = formatSunTime(sun?.attributes?.next_rising);
+    const sunset = formatSunTime(sun?.attributes?.next_setting);
+    const rows = Number(config.forecast_rows) || 10;
+    const forecast = (this._weatherForecast?.length ? this._weatherForecast : (weather.attributes?.forecast || [])).slice(0, rows);
+    const temperatures = forecast.flatMap((entry) => [Number(entry.templow ?? entry.temperature), Number(entry.temperature)]).filter(Number.isFinite);
+    const minScale = temperatures.length ? Math.min(...temperatures) : 0;
+    const maxScale = temperatures.length ? Math.max(...temperatures) : 30;
+    const range = Math.max(1, maxScale - minScale);
+    const conditionIcon = (condition) => ({ sunny: "mdi:weather-sunny", clear: "mdi:weather-night", cloudy: "mdi:weather-cloudy", partlycloudy: "mdi:weather-partly-cloudy", rainy: "mdi:weather-rainy", pouring: "mdi:weather-pouring", snowy: "mdi:weather-snowy", fog: "mdi:weather-fog", lightning: "mdi:weather-lightning" }[condition] || "mdi:weather-cloudy");
+    return `<section class="lcars-weather" style="--weather-tone:${color};--weather-contrast:${contrastColor(color)}">
+      <header><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon><strong>WEATHER</strong><i></i><b>${escapeHtml(String(weather.state).replaceAll("_", " "))}</b></header>
+      <div class="lcars-weather-current">
+        <ha-icon class="weather-main-icon" icon="${conditionIcon(weather.state)}"></ha-icon>
+        <div><small>CURRENT CONDITIONS</small><strong>${escapeHtml(temperature)}°C</strong><span>${escapeHtml(String(weather.state).replaceAll("_", " "))}</span></div>
+        <dl><div><dt>HUMIDITY</dt><dd>${escapeHtml(humidity)}%</dd></div>${apparent !== "—" ? `<div><dt>FEELS LIKE</dt><dd>${escapeHtml(apparent)}°C</dd></div>` : ""}${aqi !== "—" ? `<div><dt>AIR QUALITY</dt><dd>${escapeHtml(aqi)}</dd></div>` : ""}${sunrise ? `<div><dt>SUNRISE</dt><dd>${escapeHtml(sunrise)}</dd></div>` : ""}${sunset ? `<div><dt>SUNSET</dt><dd>${escapeHtml(sunset)}</dd></div>` : ""}</dl>
+      </div>
+      <div class="lcars-weather-forecast">${forecast.length ? forecast.map((entry) => {
+        const date = new Date(entry.datetime || entry.date || Date.now());
+        const day = new Intl.DateTimeFormat(config.locale || "en-GB", { weekday: "short", timeZone: this._hass?.config?.time_zone }).format(date);
+        const low = Number(entry.templow ?? entry.temperature);
+        const high = Number(entry.temperature);
+        const start = Number.isFinite(low) ? ((low - minScale) / range) * 100 : 0;
+        const end = Number.isFinite(high) ? ((high - minScale) / range) * 100 : start;
+        return `<div class="lcars-forecast-row"><b>${escapeHtml(day)}</b><ha-icon icon="${conditionIcon(entry.condition)}"></ha-icon><span>${Number.isFinite(low) ? `${low.toFixed(config.show_decimal === false ? 0 : 1)}°` : "—"}</span><i style="--forecast-start:${start}%;--forecast-end:${Math.max(start + 4, end)}%"></i><em>${Number.isFinite(high) ? `${high.toFixed(config.show_decimal === false ? 0 : 1)}°` : "—"}</em></div>`;
+      }).join("") : '<div class="lcars-weather-no-forecast">FORECAST DATA UNAVAILABLE</div>'}</div>
+    </section>`;
   }
 
   renderLcarsArea(area) {
@@ -1836,6 +1909,9 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
     .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:0 0 3px; }.lcars-footer span { height:9px; background:var(--lcars-footer-tone); }.lcars-footer b { color:var(--lcars-footer-tone); font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:var(--lcars-footer-tone); }
+    .lcars-weather { min-height:520px; color:#f5f1ff; }.lcars-weather>header { display:grid; grid-template-columns:28px auto minmax(50px,1fr) auto; align-items:center; gap:10px; height:48px; color:var(--weather-contrast); font-family:Impact,"Arial Narrow",sans-serif; font-size:22px; letter-spacing:.035em; }.lcars-weather>header>ha-icon,.lcars-weather>header>strong { align-self:stretch; display:flex; align-items:center; background:var(--weather-tone); }.lcars-weather>header>ha-icon { width:28px; padding-left:14px; }.lcars-weather>header>strong { padding:0 14px 0 4px; }.lcars-weather>header>i { align-self:end; margin-bottom:7px; border-bottom:8px solid var(--weather-tone); }.lcars-weather>header>b { align-self:end; padding:8px 16px; border-radius:18px 18px 0 0; color:var(--weather-contrast); background:var(--weather-tone); text-transform:uppercase; }
+    .lcars-weather-current { display:grid; grid-template-columns:170px minmax(220px,1fr) minmax(260px,.8fr); gap:22px; align-items:center; margin-top:14px; padding:28px; border-left:48px solid var(--weather-tone); background:#0b0b10; }.weather-main-icon { justify-self:center; color:var(--weather-tone); --mdc-icon-size:120px; }.lcars-weather-current small { color:var(--weather-tone); font-size:11px; font-weight:800; letter-spacing:.12em; }.lcars-weather-current strong { display:block; margin-top:5px; font-family:Impact,"Arial Narrow",sans-serif; font-size:68px; font-weight:400; line-height:1; }.lcars-weather-current>div>span { display:block; margin-top:7px; font-size:18px; text-transform:uppercase; }.lcars-weather-current dl { margin:0; }.lcars-weather-current dl>div { display:flex; justify-content:space-between; gap:20px; margin-top:7px; padding:10px 14px; border-radius:18px 0 0 18px; color:var(--weather-contrast); background:var(--weather-tone); }.lcars-weather-current dt { font-size:11px; font-weight:800; }.lcars-weather-current dd { margin:0; font-weight:800; }
+    .lcars-weather-forecast { margin-top:14px; padding:13px 18px; border:2px solid var(--weather-tone); border-radius:0 24px 24px 0; background:#0b0b10; }.lcars-forecast-row { display:grid; grid-template-columns:55px 28px 62px minmax(160px,1fr) 62px; align-items:center; gap:10px; min-height:42px; border-bottom:1px solid color-mix(in srgb,var(--weather-tone) 35%,transparent); }.lcars-forecast-row:last-child { border-bottom:0; }.lcars-forecast-row>b { font-family:Impact,"Arial Narrow",sans-serif; font-size:17px; font-weight:400; text-transform:uppercase; }.lcars-forecast-row ha-icon { color:var(--weather-tone); --mdc-icon-size:21px; }.lcars-forecast-row>span,.lcars-forecast-row>em { font-style:normal; text-align:right; }.lcars-forecast-row>i { position:relative; height:13px; border-radius:999px; background:#202936; }.lcars-forecast-row>i::after { content:""; position:absolute; top:0; bottom:0; left:var(--forecast-start); width:calc(var(--forecast-end) - var(--forecast-start)); border-radius:999px; background:var(--weather-tone); }.lcars-weather-no-forecast,.lcars-weather-empty { display:grid; place-items:center; min-height:350px; color:var(--weather-tone,#66aacc); font-family:Impact,"Arial Narrow",sans-serif; font-size:24px; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:#9999ff; font-family:Impact,"Arial Narrow",sans-serif; font-size:18px; letter-spacing:.04em; }
@@ -1850,6 +1926,7 @@ class AreaTopologyCard extends HTMLElement {
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     @media (max-width:1200px) { .standalone-lcars .lcars-area-grid { grid-template-columns:1fr; } }
+    @media (max-width:900px) { .lcars-weather-current { grid-template-columns:110px 1fr; border-left-width:24px; }.weather-main-icon { --mdc-icon-size:82px; }.lcars-weather-current dl { grid-column:1 / -1; }.lcars-weather-current strong { font-size:52px; } }
     @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; grid-template-rows:48px 42px; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-clock { grid-column:1 / 2; justify-content:flex-end; padding:8px 6px; font-size:18px; }.lcars-date { grid-column:2 / 4; justify-content:flex-start; padding:8px 10px; font-size:16px; }.lcars-end { grid-column:3; grid-row:1; }.lcars-body { display:block; }.lcars-floor-nav { position:sticky; top:0; flex-direction:row; overflow-x:auto; margin:0 -4px 8px; padding:6px 4px; background:#050507; }.lcars-nav-cap,.lcars-nav-foot { display:none; }.lcars-floor-nav button { flex:0 0 auto; grid-template-columns:38px auto; min-height:38px; }.lcars-floor-nav button span,.lcars-floor-nav button b { height:38px; }.lcars-floor-nav button span { font-size:19px; }.lcars-floor-nav button b { max-width:150px; font-size:12px; }.lcars-floor { scroll-margin-top:58px; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { --lcars-area-rail:22px; --lcars-area-rail-gap:8px; grid-template-columns:1fr; grid-auto-rows:auto; margin-left:0; }.lcars-area { grid-row:auto!important; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter,.lcars-standby { border-radius:12px; }.lcars-footer { margin-left:0; } }
   `; }
 }

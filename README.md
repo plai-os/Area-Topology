@@ -127,7 +127,21 @@ floor_colors:
 area_colors:
   Lounge: "#8F8FC4"
   Kitchen: "#A77F9F"
+weather:
+  entity: weather.pirateweather
+  sun_entity: sun.sun
+  temperature_sensor: sensor.outdoor_temp
+  humidity_sensor: sensor.outdoor_humidity
+  apparent_sensor: sensor.real_feel_temperature
+  aqi_sensor: sensor.air_quality_index
+  forecast_rows: 10
+  locale: en-GB
+  hourly_forecast: false
+  show_decimal: true
+  color: "#66AACC"
 ```
+
+Adding `weather.entity` creates a numbered `WEATHER` destination in the standalone LCARS navigation. The optional sensor entries override the matching values supplied by the weather entity. Forecasts are requested directly from Home Assistant using daily or hourly mode.
 
 An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
 
