@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.6.0";
+const CARD_VERSION = "0.6.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -19,9 +19,31 @@ const escapeHtml = (value = "") => String(value)
 
 const nameOf = (item, fallback) => item?.name_by_user || item?.name || fallback;
 
+const HA_COLORS = {
+  red: "#f44336", pink: "#e91e63", purple: "#9c27b0", "deep-purple": "#673ab7",
+  indigo: "#3f51b5", blue: "#2196f3", "light-blue": "#03a9f4", cyan: "#00bcd4",
+  teal: "#009688", green: "#4caf50", "light-green": "#8bc34a", lime: "#cddc39",
+  yellow: "#ffeb3b", amber: "#ffc107", orange: "#ff9800", "deep-orange": "#ff5722",
+  brown: "#795548", grey: "#9e9e9e", "light-grey": "#c7c7c7", "dark-grey": "#616161",
+  "blue-grey": "#607d8b", black: "#212121", white: "#ffffff",
+};
+
 const safeColor = (value, fallback = "var(--primary-color,#03a9f4)") => {
   const color = String(value || "").trim();
-  return /^(#[0-9a-f]{3,8}|[a-z][a-z0-9-]{0,30})$/i.test(color) ? color : fallback;
+  if (HA_COLORS[color.toLowerCase()]) return HA_COLORS[color.toLowerCase()];
+  return /^#[0-9a-f]{3,8}$/i.test(color) ? color : fallback;
+};
+
+const contrastColor = (color) => {
+  const match = /^#([0-9a-f]{6})$/i.exec(color);
+  if (!match) return "#ffffff";
+  const value = Number.parseInt(match[1], 16);
+  const channels = [value >> 16, (value >> 8) & 255, value & 255].map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  return luminance > 0.42 ? "#151515" : "#ffffff";
 };
 
 export function buildTopology(areas, devices, entities, labels, showUnassigned = true) {
@@ -251,7 +273,7 @@ class AreaTopologyCard extends HTMLElement {
       ${this._labels.map((label) => {
         const selected = this._selectedLabels?.has(label.label_id);
         const color = safeColor(label.color);
-        return `<button class="label-filter ${selected ? "selected" : ""}" data-label-toggle="${escapeHtml(label.label_id)}" aria-pressed="${selected}" style="--label-color:${color}">
+        return `<button class="label-filter ${selected ? "selected" : ""}" data-label-toggle="${escapeHtml(label.label_id)}" aria-pressed="${selected}" style="--label-color:${color};--label-contrast:${contrastColor(color)}">
           ${label.icon ? `<ha-icon icon="${escapeHtml(label.icon)}"></ha-icon>` : ""}<span>${escapeHtml(label.name)}</span>
         </button>`;
       }).join("")}
@@ -372,7 +394,10 @@ class AreaTopologyCard extends HTMLElement {
       ${statuses.length ? `<div class="statuses">${statuses.map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="status ${status.active ? "active" : ""}" title="${escapeHtml(status.name)}">
         <ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.value)}</span>
       </button>`).join("")}</div>` : ""}
-      ${device.labels.length ? `<div class="labels">${device.labels.map((label) => `<span style="--label-color:${safeColor(label.color, deviceColor)}">${escapeHtml(label.name)}</span>`).join("")}</div>` : ""}
+      ${device.labels.length ? `<div class="labels">${device.labels.map((label) => {
+        const color = safeColor(label.color, deviceColor);
+        return `<span style="--label-color:${color};--label-contrast:${contrastColor(color)}">${escapeHtml(label.name)}</span>`;
+      }).join("")}</div>` : ""}
       ${entityRows}
     </article>`;
   }
@@ -453,9 +478,10 @@ class AreaTopologyCard extends HTMLElement {
     .toggle-control.active .switch i { transform:translateX(13px); }
     .label-filters { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:13px; padding-top:11px; border-top:1px solid var(--divider-color,#ddd); }
     .filter-caption { margin-right:3px; color:var(--secondary-text-color,#727272); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
-    .label-filter { display:inline-flex; align-items:center; gap:5px; min-height:27px; padding:4px 9px; border:1px solid color-mix(in srgb,var(--label-color,var(--at-accent)) 45%,var(--divider-color,#ddd)); border-radius:999px; color:var(--secondary-text-color,#727272); background:var(--card-background-color,#fff); font:inherit; font-size:11px; cursor:pointer; opacity:.58; }
-    .label-filter.selected { color:var(--label-color,var(--at-accent)); background:color-mix(in srgb,var(--label-color,var(--at-accent)) 13%,var(--card-background-color,#fff)); opacity:1; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--label-color,var(--at-accent)) 24%,transparent); }
-    .label-filter.all { --label-color:var(--at-accent); font-weight:600; }
+    .label-filter { display:inline-flex; align-items:center; gap:5px; min-height:28px; padding:4px 10px; border:2px solid var(--label-color,var(--at-accent)); border-radius:999px; color:var(--label-color,var(--primary-text-color,#222)); background:transparent; font:inherit; font-size:11px; font-weight:600; cursor:pointer; opacity:.72; }
+    .label-filter:hover { opacity:1; }
+    .label-filter.selected { color:var(--label-contrast,#fff); background:var(--label-color,var(--at-accent)); opacity:1; box-shadow:0 1px 5px color-mix(in srgb,var(--label-color,var(--at-accent)) 38%,transparent); }
+    .label-filter.all { --label-color:var(--at-accent); --label-contrast:#fff; }
     .label-filter ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .content { padding:0; }
     .topology-scroll { width:100%; height:var(--map-height); overflow:auto; overscroll-behavior:contain; background:radial-gradient(circle at center,color-mix(in srgb,var(--at-accent) 8%,transparent),transparent 47%); scrollbar-color:color-mix(in srgb,var(--at-accent) 45%,transparent) transparent; }
@@ -491,7 +517,7 @@ class AreaTopologyCard extends HTMLElement {
     .status.active { color:var(--state-active-color,var(--warning-color,#f9a825)); background:color-mix(in srgb,var(--state-active-color,var(--warning-color,#f9a825)) 15%,var(--card-background-color,#fff)); }
     .status ha-icon { width:13px; height:13px; --mdc-icon-size:13px; }
     .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
-    .labels span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; color:var(--label-color); background:color-mix(in srgb,var(--label-color) 12%,var(--secondary-background-color,#eee)); font-size:10px; }
+    .labels span { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:10px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
     .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
     .entities button { width:100%; border:0; background:none; color:var(--primary-text-color,#222); display:flex; justify-content:space-between; gap:8px; padding:5px 0; cursor:pointer; text-align:left; font:inherit; font-size:11px; }
     .entities b { color:var(--secondary-text-color,#727272); font-weight:400; white-space:nowrap; }
