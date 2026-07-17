@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.8";
+const CARD_VERSION = "1.2.9";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -748,7 +748,9 @@ class AreaTopologyCard extends HTMLElement {
     const collapsed = !this._expandedTreeDevices.has(device.id);
     const color = safeColor(device.color);
     const metadata = [device.manufacturer, device.model].filter(Boolean).join(" · ");
-    const propertyEntities = this._config.tree_show_properties ? device.entities : [];
+    const propertyEntities = this._config.tree_show_properties
+      ? device.entities.filter((entity) => !this.isHiddenProperty(entity, this._hass?.states?.[entity.entity_id]))
+      : [];
     const properties = propertyEntities.map((entity) => {
       const stateObj = this._hass?.states?.[entity.entity_id];
       const name = stateObj?.attributes?.friendly_name || entity.name || entity.original_name || entity.entity_id;
@@ -1115,6 +1117,7 @@ class AreaTopologyCard extends HTMLElement {
     const isPlug = /\bplugs?\b/i.test(device.name) || device.labels.some((label) => /\bplugs?\b/i.test(label.name));
     for (const entity of device.entities) {
       const stateObj = this._hass?.states?.[entity.entity_id];
+      if (this.isHiddenProperty(entity, stateObj)) continue;
       if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
       const domain = entity.entity_id.split(".")[0];
       const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
@@ -1136,8 +1139,9 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderDevice(device, point, canvas) {
-    const entityRows = this._config.web_show_properties && device.entities.length
-      ? `<div class="entities">${device.entities.map((entity) => {
+    const visibleEntities = device.entities.filter((entity) => !this.isHiddenProperty(entity, this._hass?.states?.[entity.entity_id]));
+    const entityRows = this._config.web_show_properties && visibleEntities.length
+      ? `<div class="entities">${visibleEntities.map((entity) => {
           const state = this._hass?.states?.[entity.entity_id];
           return `<button data-entity="${escapeHtml(entity.entity_id)}"><span>${escapeHtml(state?.attributes?.friendly_name || entity.name || entity.original_name || entity.entity_id)}</span><b>${escapeHtml(state?.state || "unavailable")}</b></button>`;
         }).join("")}</div>` : "";
@@ -1166,6 +1170,7 @@ class AreaTopologyCard extends HTMLElement {
     const isPlug = /\bplugs?\b/i.test(device.name) || device.labels.some((label) => /\bplugs?\b/i.test(label.name));
     for (const entity of device.entities) {
       const stateObj = this._hass?.states?.[entity.entity_id];
+      if (this.isHiddenProperty(entity, stateObj)) continue;
       if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
       const domain = entity.entity_id.split(".")[0];
       const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
@@ -1189,6 +1194,16 @@ class AreaTopologyCard extends HTMLElement {
     representativeStatuses.sort((a, b) => a.priority - b.priority);
     const limit = Math.max(1, Math.min(8, Number(this._config.max_statuses) || 3));
     return representativeStatuses.slice(0, limit);
+  }
+
+  isHiddenProperty(entity, stateObj) {
+    const text = [
+      entity?.entity_id,
+      entity?.name,
+      entity?.original_name,
+      stateObj?.attributes?.friendly_name,
+    ].filter(Boolean).join(" ");
+    return /\bchild[ _-]?locks?(?:\b|_)/i.test(text);
   }
 
   statusForEntity(entity, stateObj, domain, deviceClass, isPlug = false) {
