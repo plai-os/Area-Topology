@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.7";
+const CARD_VERSION = "1.1.8";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -656,7 +656,7 @@ class AreaTopologyCard extends HTMLElement {
   treeDeviceCount(areas) {
     const total = areas.reduce((count, area) => count + area.devices.length, 0);
     const filtered = areas.reduce((count, area) => count + this.devicesForDisplay(area).length, 0);
-    return `${filtered} filtered · ${total} total device${total === 1 ? "" : "s"}`;
+    return `${total} total device${total === 1 ? "" : "s"} (${filtered} filtered)`;
   }
 
   renderTree() {
