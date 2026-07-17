@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.2.2";
+const CARD_VERSION = "1.2.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1361,19 +1361,19 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:16px; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { --mdc-icon-size:19px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:13px; margin-left:90px; padding:12px 0 5px 12px; border-left:18px solid var(--lcars-tone); }
+    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px 14px; border-left:18px solid var(--lcars-tone); }
     .lcars-area { min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
     .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
-    .lcars-area>header strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
+    .lcars-area>header strong { overflow:hidden; font-size:20px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:22px; }
     .lcars-area-temperature { display:flex; align-items:center; gap:5px; padding:4px; }.lcars-area-temperature button { display:flex; align-items:center; gap:3px; padding:5px 8px; border:0; border-radius:14px; color:#08080a; background:#ffcc99; font:inherit; cursor:pointer; }.lcars-area-temperature button ha-icon { --mdc-icon-size:15px; }.lcars-area-temperature button b { font-size:12px; white-space:nowrap; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
-    .lcars-devices { padding:7px 10px 10px; }.lcars-device { display:grid; grid-template-columns:minmax(125px,.8fr) minmax(175px,1.2fr); gap:6px; padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
-    .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:7px; padding:7px 10px; border:0; border-radius:16px 0 0 16px; color:#070709; background:var(--lcars-device); font:inherit; font-size:12px; font-weight:800; text-align:left; cursor:pointer; }
-    .lcars-device-name ha-icon { flex:0 0 17px; --mdc-icon-size:17px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lcars-values { min-width:0; display:flex; flex-direction:column; gap:4px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:16px minmax(70px,1fr) auto; align-items:center; gap:6px; padding:4px 9px; border:0; border-radius:0 12px 12px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:10px; text-align:left; cursor:pointer; }
-    .lcars-values button.active { color:#08080a; background:#ff9900; }.lcars-values button ha-icon { --mdc-icon-size:14px; }.lcars-values button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-values button b { font-size:11px; text-transform:uppercase; white-space:nowrap; }
-    .lcars-standby { padding:6px 10px; border-radius:0 13px 13px 0; color:#08080a; background:#9999ff; font-size:10px; font-weight:900; text-align:right; }
+    .lcars-devices { padding:9px 12px 12px; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
+    .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:9px; padding:10px 13px; border:0; border-radius:20px 0 0 20px; color:#070709; background:var(--lcars-device); font:inherit; font-size:15px; font-weight:800; text-align:left; cursor:pointer; }
+    .lcars-device-name ha-icon { flex:0 0 21px; --mdc-icon-size:21px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lcars-values { min-width:0; display:flex; flex-direction:column; gap:6px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:19px minmax(115px,1fr) auto; align-items:center; gap:8px; min-height:34px; padding:6px 12px; border:0; border-radius:0 17px 17px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:13px; text-align:left; cursor:pointer; }
+    .lcars-values button.active { color:#08080a; background:#ff9900; }.lcars-values button ha-icon { --mdc-icon-size:17px; }.lcars-values button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-values button b { font-size:14px; text-transform:uppercase; white-space:nowrap; }
+    .lcars-standby { padding:9px 13px; border-radius:0 17px 17px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; text-align:right; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
     .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px 90px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
