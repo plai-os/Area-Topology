@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.10.5";
+const CARD_VERSION = "1.10.6";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -464,7 +464,7 @@ class AreaTopologyCard extends HTMLElement {
 
   startLcarsClock() {
     if (this._lcarsClockTimer) return;
-    this._lcarsClockTimer = window.setInterval(() => this.updateLcarsClock(), 1000);
+    this._lcarsClockTimer = window.setInterval(() => this.updateLcarsClock(), 30000);
     this.updateLcarsClock();
   }
 
@@ -472,7 +472,7 @@ class AreaTopologyCard extends HTMLElement {
     const now = new Date();
     const timeZone = this._hass?.config?.time_zone || undefined;
     return {
-      time: new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone }).format(now),
+      time: new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone }).format(now),
       date: new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric", timeZone }).format(now),
     };
   }
