@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.5.1";
+const CARD_VERSION = "0.5.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -411,18 +411,18 @@ class AreaTopologyCard extends HTMLElement {
     .area { width:180px; min-height:72px; display:flex; align-items:center; padding:5px; border:2px solid var(--at-area); border-radius:999px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--at-area) 8%,var(--card-background-color,#fff)); box-shadow:0 5px 16px rgba(0,0,0,.12); z-index:2; font:inherit; text-align:left; }
     .area:hover { box-shadow:0 0 0 5px color-mix(in srgb,var(--at-area) 12%,transparent),0 5px 16px rgba(0,0,0,.14); }
     .area.collapsed { background:color-mix(in srgb,var(--at-area) 16%,var(--card-background-color,#fff)); }
-    .area-main { min-width:0; flex:1; display:flex; align-items:center; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .area-main { min-width:0; flex:1; display:flex; align-items:flex-start; gap:9px; padding:5px; border:0; color:inherit; background:none; font:inherit; text-align:left; cursor:pointer; }
     .area .toggle { display:grid; place-items:center; flex:0 0 24px; width:24px; height:24px; margin-right:4px; padding:0; border:0; border-radius:50%; color:white; background:var(--at-area); font:inherit; font-size:17px; line-height:1; cursor:pointer; }
     .area-icon,.device-icon { display:grid; place-items:center; flex:0 0 auto; border-radius:50%; }
     .area-icon { color:var(--at-area); background:color-mix(in srgb,var(--at-area) 16%,var(--card-background-color,#fff)); }
-    .area-icon { width:40px; height:40px; }
+    .area-icon { width:40px; height:40px; margin-top:1px; }
     h2,h3 { margin:0; font-weight:600; }
     h2 { font-size:16px; } h3 { font-size:14px; overflow-wrap:anywhere; }
     small { display:block; margin-top:3px; color:var(--secondary-text-color,#727272); line-height:1.25; }
     .device { width:170px; padding:10px; border:1px solid color-mix(in srgb,var(--device-color) 50%,var(--divider-color,#ddd)); border-radius:12px; color:var(--primary-text-color,#222); background:color-mix(in srgb,var(--device-color) 6%,var(--card-background-color,#fff)); box-shadow:0 3px 11px rgba(0,0,0,.1); cursor:pointer; }
     .device:hover { box-shadow:0 0 0 4px color-mix(in srgb,var(--device-color) 10%,transparent),0 4px 13px rgba(0,0,0,.14); }
-    .device-main { display:flex; align-items:center; gap:10px; }
-    .device-icon { width:34px; height:34px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
+    .device-main { display:flex; align-items:flex-start; gap:10px; }
+    .device-icon { width:34px; height:34px; margin-top:1px; color:var(--device-color); background:color-mix(in srgb,var(--device-color) 16%,var(--card-background-color,#fff)); } .device-icon ha-icon { --mdc-icon-size:20px; }
     .device-copy { min-width:0; } .labels { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0 0 44px; }
     .labels span { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; color:var(--label-color); background:color-mix(in srgb,var(--label-color) 12%,var(--secondary-background-color,#eee)); font-size:10px; }
     .entities { margin:9px 0 0 44px; border-top:1px solid var(--divider-color,#ddd); padding-top:5px; }
