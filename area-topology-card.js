@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.12.2";
+const CARD_VERSION = "1.12.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -917,7 +917,7 @@ class AreaTopologyCard extends HTMLElement {
       ? device.entities.filter((entity) => {
           const stateObj = this._hass?.states?.[entity.entity_id];
           return stateObj
-            && !["unavailable", "unknown"].includes(String(stateObj.state).toLowerCase())
+            && String(stateObj.state).toLowerCase() !== "unavailable"
             && !this.isHiddenProperty(entity, stateObj);
         })
       : [];
