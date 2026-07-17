@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.20.3";
-const BUILD_COMMIT = "6a8bb1d";
+const CARD_VERSION = "1.20.4";
+const BUILD_COMMIT = "pending";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1593,9 +1593,14 @@ class AreaTopologyCard extends HTMLElement {
       .fc .fc-col-header-cell { color:${contrast}; background:${color}; }
       .fc .fc-col-header-cell-cushion { padding:9px 6px!important; color:${contrast}!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px; font-weight:400; letter-spacing:.05em; text-transform:uppercase; }
       .fc .fc-daygrid-day-number,.fc .fc-list-day-text,.fc .fc-list-day-side-text,.fc .fc-timegrid-slot-label { color:#f5f1ff!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:15px; letter-spacing:.035em; }
+      .fc .fc-daygrid-day-frame { min-height:98px!important; }
+      .fc .fc-daygrid-day-events { min-height:66px!important; }
       .fc .fc-day-today { background:color-mix(in srgb,${color} 18%,#09090d)!important; }
       .fc .fc-day-today .fc-daygrid-day-number { display:inline-grid; place-items:center; min-width:32px; min-height:32px; border-radius:50%; color:${contrast}!important; background:${color}; }
       .fc .fc-event { padding:4px 8px!important; border:0!important; border-radius:14px!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:14px!important; font-weight:400!important; letter-spacing:.025em; }
+      .fc .fc-daygrid-event,.fc .fc-daygrid-dot-event { align-items:flex-start!important; white-space:normal!important; }
+      .fc .fc-event-main,.fc .fc-event-title,.fc .fc-event-title-container { min-width:0; overflow:visible!important; text-overflow:clip!important; white-space:normal!important; line-height:1.2!important; }
+      .fc .fc-daygrid-more-link { color:${color}!important; font-family:Impact,"Arial Narrow",sans-serif!important; font-size:14px; letter-spacing:.03em; text-transform:uppercase; }
       .fc .fc-list { border:2px solid ${color}!important; border-radius:0 22px 22px 0; overflow:hidden; }
       .fc .fc-list-table { border-bottom:2px solid ${color}!important; }
       .fc .fc-list-table tbody>tr:last-child>td { border-bottom:2px solid ${color}!important; }
@@ -2246,7 +2251,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-engineering-card>* { --graph-color-1:var(--engineering-chart)!important; --graph-color-2:var(--engineering-chart-secondary)!important; --graph-color-3:var(--engineering-chart-tertiary)!important; --accent-color:var(--engineering-chart)!important; --primary-color:var(--engineering-chart)!important; --state-icon-color:var(--engineering-chart)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#b9b2c8; --divider-color:color-mix(in srgb,var(--engineering-tone) 35%,#252531); color-scheme:dark; }
     .lcars-engineering>header,.lcars-engineering-panel>header { text-shadow:0 1px 2px rgba(0,0,0,.65); }
     .lcars-captains-log .lcars-engineering-panels { grid-template-columns:1fr; }
-    .lcars-captains-log-card { min-height:620px; }
+    .lcars-captains-log .lcars-engineering-panel,.lcars-captains-log-card { overflow:visible; }
+    .lcars-captains-log-card { min-height:760px; }
     .lcars-captains-log-card>* { --primary-color:var(--engineering-tone)!important; --accent-color:var(--engineering-tone)!important; --state-icon-color:var(--engineering-tone)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#c9c2d8; color-scheme:dark; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid #9999ff; border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; }
