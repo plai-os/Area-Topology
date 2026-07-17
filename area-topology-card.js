@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.3.7";
+const CARD_VERSION = "1.3.8";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1095,7 +1095,7 @@ class AreaTopologyCard extends HTMLElement {
         <div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
       </div>
       ${visibleGroups.length ? visibleGroups.map((group, index) => `<section class="lcars-floor lcars-tone-${index % 4}">
-        <header><span class="lcars-elbow"></span><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
+        <header><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
         <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
       </section>`).join("") : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
       <div class="lcars-footer"><span></span><b>AREA TOPOLOGY // LCARS ${CARD_VERSION}</b><i></i></div>
@@ -1487,16 +1487,14 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-readout { display:flex; align-items:center; justify-content:flex-end; padding:10px 20px; color:#ff9900; background:#050507; text-align:right; white-space:nowrap; }
     .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
     .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
-    .lcars-floor>header { display:grid; grid-template-columns:90px 190px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
-    .lcars-elbow { border-radius:25px 0 0 0; background:var(--lcars-tone); }
-    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
+    .lcars-floor>header { display:grid; grid-template-columns:280px minmax(80px,1fr) auto; height:48px; align-items:stretch; text-transform:uppercase; }
+    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; border-radius:25px 0 0 0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:18px; line-height:1.2; font-weight:900; text-transform:uppercase; cursor:pointer; }
     .lcars-floor>header button ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
     .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
-    .lcars-area-grid { --lcars-rail-width:18px; position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:90px; padding:14px 0 7px; }
-    .lcars-area-grid::before { content:""; position:absolute; z-index:0; top:0; bottom:0; left:0; width:var(--lcars-rail-width); background:var(--lcars-tone); }
+    .lcars-area-grid { position:relative; display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); align-items:start; gap:16px; margin-left:0; padding:14px 0 7px; }
     .lcars-area { position:relative; z-index:1; min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
     .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; height:48px; background:var(--lcars-tone); }
-    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 15px 7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
     .lcars-area>header strong { overflow:hidden; font-size:18px; line-height:1.2; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header>button>ha-icon { flex:0 0 20px; width:20px; height:20px; --mdc-icon-size:20px; }
     .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
     .lcars-devices { padding:9px 0 12px 8px; }.lcars-device-group { margin-top:12px; }.lcars-device-group:first-child { margin-top:0; }.lcars-device { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(250px,1.3fr); gap:8px; padding:9px 8px 9px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
@@ -1507,12 +1505,12 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-standby { padding:9px 13px; border-radius:0 17px 17px 0; color:#08080a; background:#9999ff; font-size:13px; font-weight:900; text-align:right; }
     .lcars-no-devices { display:block; padding:10px 12px; color:#77738a; font-size:9px; font-weight:800; letter-spacing:.08em; text-align:right; }
     .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
-    .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px 90px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
+    .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { --lcars-rail-width:10px; grid-template-columns:1fr; margin-left:38px; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter { border-radius:12px; }.lcars-footer { margin-left:38px; } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:minmax(190px,auto) 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:0; }.lcars-device { grid-template-columns:1fr; padding-right:0; }.lcars-device-name,.lcars-meter { border-radius:12px; }.lcars-footer { margin-left:0; } }
   `; }
 }
 
