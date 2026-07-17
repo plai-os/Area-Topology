@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.9.2";
+const CARD_VERSION = "0.9.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -467,12 +467,29 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   hasFloorLevel() {
-    return (this._floors?.length || 0) > 1;
+    return this.effectiveFloors().length > 1;
+  }
+
+  effectiveFloors() {
+    const floorsById = new Map((Array.isArray(this._floors) ? this._floors : []).map((floor) => [floor.floor_id, floor]));
+    for (const area of this._data || []) {
+      if (!area.floorId || floorsById.has(area.floorId)) continue;
+      const fallbackName = area.floorId
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+      floorsById.set(area.floorId, {
+        floor_id: area.floorId,
+        name: fallbackName,
+        icon: "mdi:layers-outline",
+        level: null,
+      });
+    }
+    return [...floorsById.values()];
   }
 
   floorGroups() {
     const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
-    const groups = (this._floors || []).map((floor) => ({
+    const groups = this.effectiveFloors().map((floor) => ({
       id: floor.floor_id,
       name: floor.name,
       icon: floor.icon || "mdi:layers-outline",
