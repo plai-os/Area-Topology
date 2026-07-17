@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.9";
+const CARD_VERSION = "1.2.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -126,7 +126,8 @@ class AreaTopologyCard extends HTMLElement {
       this._labelsOnly = preferences.labelsOnly ?? this._config.show_only_labeled;
       this._unassignedLabelsOnly = preferences.unassignedLabelsOnly ?? false;
       this._unassignedSearch = preferences.unassignedSearch ?? "";
-      this._layoutMode = preferences.layoutMode === "tree" || (!preferences.layoutMode && this._config.layout === "tree") ? "tree" : "web";
+      const requestedLayout = preferences.layoutMode || this._config.layout;
+      this._layoutMode = ["web", "tree", "lcars"].includes(requestedLayout) ? requestedLayout : "web";
       this._savedSelectedLabels = Array.isArray(preferences.selectedLabels) ? preferences.selectedLabels : null;
       this._savedCollapsedAreas = Array.isArray(preferences.collapsedAreas) ? preferences.collapsedAreas : null;
       this._savedCollapsedFloors = Array.isArray(preferences.collapsedFloors) ? preferences.collapsedFloors : null;
@@ -265,8 +266,8 @@ class AreaTopologyCard extends HTMLElement {
         this.render();
         return;
       }
-      if (action === "layout-web" || action === "layout-tree") {
-        this._layoutMode = action === "layout-tree" ? "tree" : "web";
+      if (["layout-web", "layout-tree", "layout-lcars"].includes(action)) {
+        this._layoutMode = action.replace("layout-", "");
         if (this._layoutMode === "tree") this.collapseTreeProperties();
         this.savePreferences();
         this.render();
@@ -514,7 +515,7 @@ class AreaTopologyCard extends HTMLElement {
       : this._error
         ? `<div class="message error"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><div><strong>Could not load topology</strong><br>${escapeHtml(this._error)}</div></div>`
         : this._data
-          ? (this._layoutMode === "tree" ? this.renderTree() : this.renderAreas())
+          ? (this._layoutMode === "tree" ? this.renderTree() : this._layoutMode === "lcars" ? this.renderLcars() : this.renderAreas())
           : '<div class="message">Waiting for Home Assistant…</div>';
 
     this.shadowRoot.innerHTML = `
@@ -527,14 +528,15 @@ class AreaTopologyCard extends HTMLElement {
               <div class="layout-controls" aria-label="Topology layout">
                 <button class="${this._layoutMode === "web" ? "active" : ""}" data-topology-action="layout-web" title="Spider web layout"><ha-icon icon="mdi:graph-outline"></ha-icon> Web</button>
                 <button class="${this._layoutMode === "tree" ? "active" : ""}" data-topology-action="layout-tree" title="Tree layout"><ha-icon icon="mdi:file-tree-outline"></ha-icon> Tree</button>
+                <button class="${this._layoutMode === "lcars" ? "active" : ""}" data-topology-action="layout-lcars" title="LCARS dashboard"><ha-icon icon="mdi:space-station"></ha-icon> LCARS</button>
               </div>
-              <button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
+              ${this._layoutMode === "lcars" ? "" : `<button data-topology-action="expand" title="Expand all nodes"><span>＋</span> Expand all</button>
               <button data-topology-action="collapse" title="Collapse to the first hierarchy level"><span>−</span> Collapse all</button>
               <div class="zoom-controls" aria-label="${this._layoutMode === "tree" ? "Tree text size" : "Topology zoom"}">
                 <button data-topology-action="zoom-out" title="${this._layoutMode === "tree" ? "Decrease text size" : "Zoom out"}">−</button>
                 <button class="zoom-level" data-topology-action="zoom-reset" title="${this._layoutMode === "tree" ? "Reset text size" : "Reset zoom"}">${Math.round(this.currentScale() * 100)}%</button>
                 <button data-topology-action="zoom-in" title="${this._layoutMode === "tree" ? "Increase text size" : "Zoom in"}">＋</button>
-              </div>
+              </div>`}
               <button class="toggle-control ${this._labelsOnly ? "active" : ""}" data-topology-action="labels" aria-pressed="${this._labelsOnly}" title="Show only devices with labels"><span class="switch"><i></i></span> Labelled only</button>
               <button class="toggle-control ${this._showUnassigned ? "active" : ""}" data-topology-action="unassigned" aria-pressed="${this._showUnassigned}" title="Show or hide unassigned devices"><span class="switch"><i></i></span> Unassigned</button>
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
@@ -1007,6 +1009,58 @@ class AreaTopologyCard extends HTMLElement {
     return `<line class="${className}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"${style}/>`;
   }
 
+  renderLcars() {
+    const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
+    const groups = this.hasFloorLevel()
+      ? this.floorGroups()
+      : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
+    const visibleGroups = groups.map((group) => ({
+      ...group,
+      areas: group.areas.map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
+        .filter((area) => area.displayDevices.length),
+    })).filter((group) => group.areas.length);
+    const activeCount = visibleGroups.reduce((count, group) => count + group.areas.reduce((areaCount, area) => areaCount + area.displayDevices.length, 0), 0);
+    return `<div class="lcars-dashboard">
+      <div class="lcars-masthead">
+        <div class="lcars-cap"></div><div class="lcars-title"><span>HOME CONTROL</span><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-readout">${activeCount.toString().padStart(3, "0")} DEVICES ONLINE</div><div class="lcars-end"></div>
+      </div>
+      ${visibleGroups.length ? visibleGroups.map((group, index) => `<section class="lcars-floor lcars-tone-${index % 4}">
+        <header><span class="lcars-elbow"></span><button ${group.id === "__home__" || group.id === "__no_floor__" ? "" : `data-floor-config="${escapeHtml(group.id)}"`}><ha-icon icon="${escapeHtml(group.icon || "mdi:layers-outline")}"></ha-icon>${escapeHtml(group.name)}</button><i></i><b>${group.areas.length} SECTORS</b></header>
+        <div class="lcars-area-grid">${group.areas.map((area) => this.renderLcarsArea(area)).join("")}</div>
+      </section>`).join("") : `<div class="lcars-empty">NO MATCHING SYSTEMS</div>`}
+      <div class="lcars-footer"><span></span><b>AREA TOPOLOGY // LCARS ${CARD_VERSION}</b><i></i></div>
+    </div>`;
+  }
+
+  renderLcarsArea(area) {
+    return `<article class="lcars-area" data-area-drop="${escapeHtml(area.id)}">
+      <header><button data-area-config="${escapeHtml(area.id)}"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon><strong>${escapeHtml(area.name)}</strong></button><span>${area.displayDevices.length.toString().padStart(2, "0")}</span></header>
+      <div class="lcars-devices">${area.displayDevices.map((device) => this.renderLcarsDevice(device)).join("")}</div>
+    </article>`;
+  }
+
+  renderLcarsDevice(device) {
+    const color = safeColor(device.color, "#ff9c5b");
+    const statuses = [];
+    const isPlug = /\bplugs?\b/i.test(device.name) || device.labels.some((label) => /\bplugs?\b/i.test(label.name));
+    for (const entity of device.entities) {
+      const stateObj = this._hass?.states?.[entity.entity_id];
+      if (!stateObj || ["unavailable", "unknown"].includes(stateObj.state)) continue;
+      const domain = entity.entity_id.split(".")[0];
+      const deviceClass = stateObj.attributes.device_class || entity.device_class || entity.original_device_class || "";
+      const status = this.statusForEntity(entity, stateObj, domain, deviceClass, isPlug)
+        || (["switch", "fan", "media_player", "input_boolean"].includes(domain)
+          ? { entityId: entity.entity_id, name: stateObj.attributes.friendly_name || entity.name || device.name, value: stateObj.state === "on" || stateObj.state === "playing" ? "On" : stateObj.state, icon: stateObj.attributes.icon || entity.icon || "mdi:toggle-switch", active: stateObj.state === "on" || stateObj.state === "playing", priority: 6 }
+          : null);
+      if (status) statuses.push(status);
+    }
+    statuses.sort((a, b) => a.priority - b.priority);
+    return `<div class="lcars-device" draggable="true" data-device-drag="${escapeHtml(device.id)}" style="--lcars-device:${color}">
+      <button class="lcars-device-name" data-device="${escapeHtml(device.id)}"><ha-icon icon="${escapeHtml(device.icon)}"></ha-icon><span>${escapeHtml(device.name)}</span></button>
+      <div class="lcars-values">${statuses.slice(0, 6).map((status) => `<button data-entity="${escapeHtml(status.entityId)}" class="${status.active ? "active" : ""}" title="${escapeHtml(status.name)}"><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b></button>`).join("") || `<span class="lcars-standby">SYSTEM READY</span>`}</div>
+    </div>`;
+  }
+
   nodeStyle(point, canvas) {
     return `--x:${point.x / canvas.width * 100}%;--y:${point.y / canvas.height * 100}%`;
   }
@@ -1088,6 +1142,11 @@ class AreaTopologyCard extends HTMLElement {
     if (domain === "switch" && (deviceClass === "outlet" || isPlug)) {
       return { ...common, priority: 2, active: on, value: on ? "On" : "Off", icon: on ? "mdi:power-plug" : "mdi:power-plug-off" };
     }
+    if (domain === "media_player") {
+      const volume = Number(stateObj.attributes.volume_level);
+      const playing = ["on", "playing", "paused", "idle"].includes(stateObj.state);
+      return { ...common, priority: 2, active: stateObj.state === "playing", value: Number.isFinite(volume) ? `${Math.round(volume * 100)}%` : (playing ? stateObj.state : "Off"), icon: Number.isFinite(volume) && volume === 0 ? "mdi:volume-mute" : "mdi:volume-high" };
+    }
     if (domain === "climate") {
       const temperature = stateObj.attributes.current_temperature;
       const unit = this._hass?.config?.unit_system?.temperature || "°";
@@ -1122,7 +1181,8 @@ class AreaTopologyCard extends HTMLElement {
     .layout-controls { display:flex; align-items:stretch; }
     .header-actions .layout-controls button { padding:5px 8px; border-radius:0; }
     .header-actions .layout-controls button:first-child { border-radius:9px 0 0 9px; }
-    .header-actions .layout-controls button+button { margin-left:-1px; border-radius:0 9px 9px 0; }
+    .header-actions .layout-controls button+button { margin-left:-1px; border-radius:0; }
+    .header-actions .layout-controls button:last-child { border-radius:0 9px 9px 0; }
     .header-actions .layout-controls button.active { position:relative; color:white; border-color:var(--at-accent); background:var(--at-accent); }
     .layout-controls ha-icon { width:15px; height:15px; --mdc-icon-size:15px; }
     .zoom-controls { display:flex; align-items:stretch; }
@@ -1246,11 +1306,38 @@ class AreaTopologyCard extends HTMLElement {
     .panel-labels { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
     .panel-labels>span { display:inline-flex; padding:2px 6px; border-radius:999px; color:var(--label-contrast,#fff); background:var(--label-color); font-size:9px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.2); }
     .panel-empty { padding:28px 10px; color:var(--secondary-text-color,#727272); text-align:center; font-size:12px; }
+    .lcars-dashboard { min-height:var(--map-height,680px); padding:18px; color:#f5f1ff; background:#050507; font-family:Arial Narrow,Roboto Condensed,Arial,sans-serif; }
+    .lcars-masthead { display:grid; grid-template-columns:90px minmax(260px,1fr) auto 42px; align-items:stretch; min-height:64px; margin-bottom:12px; text-transform:uppercase; }
+    .lcars-cap { border-radius:34px 0 0 34px; background:#9999ff; }
+    .lcars-title { display:flex; align-items:baseline; justify-content:flex-end; gap:18px; padding:10px 18px; color:#050507; background:#9999ff; }
+    .lcars-title span { font-size:13px; font-weight:900; letter-spacing:.12em; }.lcars-title strong { font-size:28px; line-height:1; }
+    .lcars-readout { padding:10px 20px; color:#ff9900; background:#050507; font-size:23px; font-weight:900; text-align:right; white-space:nowrap; }
+    .lcars-end { margin-left:10px; border-radius:0 34px 34px 0; background:#9999ff; }
+    .lcars-floor { --lcars-tone:#cc99cc; margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
+    .lcars-floor>header { display:grid; grid-template-columns:90px auto 1fr auto; min-height:43px; align-items:stretch; text-transform:uppercase; }
+    .lcars-elbow { border-radius:25px 0 0 0; background:var(--lcars-tone); }
+    .lcars-floor>header button { display:flex; align-items:center; gap:8px; padding:7px 15px; border:0; color:#08080a; background:var(--lcars-tone); font:inherit; font-size:16px; font-weight:900; text-transform:uppercase; cursor:pointer; }
+    .lcars-floor>header button ha-icon { --mdc-icon-size:19px; }.lcars-floor>header i { margin:0 10px 7px; border-bottom:8px solid var(--lcars-tone); }
+    .lcars-floor>header b { align-self:end; min-width:115px; padding:7px 16px; border-radius:20px 20px 0 0; color:#08080a; background:var(--lcars-tone); font-size:12px; text-align:right; }
+    .lcars-area-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:13px; margin-left:90px; padding:12px 0 5px 12px; border-left:18px solid var(--lcars-tone); }
+    .lcars-area { min-width:0; border:2px solid var(--lcars-tone); border-radius:0 20px 20px 0; overflow:hidden; background:#0b0b0f; }
+    .lcars-area.drop-target { box-shadow:0 0 0 4px #99ffcc; }.lcars-area>header { display:flex; min-height:42px; background:var(--lcars-tone); }
+    .lcars-area>header button { min-width:0; flex:1; display:flex; align-items:center; gap:8px; padding:7px 13px; border:0; color:#08080a; background:none; font:inherit; text-align:left; cursor:pointer; }
+    .lcars-area>header strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }.lcars-area>header ha-icon { --mdc-icon-size:20px; }
+    .lcars-area>header>span { display:grid; place-items:center; min-width:48px; margin-left:6px; border-radius:22px 0 0 22px; color:var(--lcars-tone); background:#050507; font-size:17px; font-weight:900; }
+    .lcars-devices { padding:7px 10px 10px; }.lcars-device { display:grid; grid-template-columns:minmax(125px,.8fr) minmax(175px,1.2fr); gap:6px; padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--lcars-device) 52%,transparent); }
+    .lcars-device:last-child { border-bottom:0; }.lcars-device-name { min-width:0; display:flex; align-items:center; gap:7px; padding:7px 10px; border:0; border-radius:16px 0 0 16px; color:#070709; background:var(--lcars-device); font:inherit; font-size:12px; font-weight:800; text-align:left; cursor:pointer; }
+    .lcars-device-name ha-icon { flex:0 0 17px; --mdc-icon-size:17px; }.lcars-device-name span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lcars-values { min-width:0; display:flex; flex-direction:column; gap:4px; }.lcars-values button { min-width:0; display:grid; grid-template-columns:16px minmax(70px,1fr) auto; align-items:center; gap:6px; padding:4px 9px; border:0; border-radius:0 12px 12px 0; color:#d9d2e9; background:#1b1722; font:inherit; font-size:10px; text-align:left; cursor:pointer; }
+    .lcars-values button.active { color:#08080a; background:#ff9900; }.lcars-values button ha-icon { --mdc-icon-size:14px; }.lcars-values button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lcars-values button b { font-size:11px; text-transform:uppercase; white-space:nowrap; }
+    .lcars-standby { padding:6px 10px; border-radius:0 13px 13px 0; color:#08080a; background:#9999ff; font-size:10px; font-weight:900; text-align:right; }
+    .lcars-empty { margin:45px 90px; padding:28px; border:3px solid #ff9900; border-radius:0 35px 35px 0; color:#ff9900; font-size:24px; font-weight:900; text-align:center; }
+    .lcars-footer { display:grid; grid-template-columns:1fr auto 80px; align-items:center; gap:10px; margin:19px 0 3px 90px; }.lcars-footer span { height:9px; background:#cc99cc; }.lcars-footer b { color:#cc99cc; font-size:10px; letter-spacing:.08em; }.lcars-footer i { height:24px; border-radius:0 15px 15px 0; background:#ff9900; }
     .message { min-height:160px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--secondary-text-color,#727272); text-align:center; }
     .message.error { color:var(--error-color,#db4437); }
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } }
+    @media (max-width:700px) { .header-main { align-items:flex-start; } .header-actions button { padding:7px; } .workspace { flex-direction:column; } .topology-scroll { width:100%; cursor:grab; } .unassigned-panel { width:100%; height:min(42vh,420px); border-left:0; border-top:1px solid var(--divider-color,#ddd); } .lcars-masthead { grid-template-columns:38px 1fr 28px; }.lcars-readout { display:none; }.lcars-title { justify-content:flex-start; }.lcars-title span { display:none; }.lcars-title strong { font-size:21px; }.lcars-floor>header { grid-template-columns:38px auto 1fr; }.lcars-floor>header b { display:none; }.lcars-area-grid { grid-template-columns:1fr; margin-left:38px; border-left-width:10px; }.lcars-device { grid-template-columns:1fr; }.lcars-device-name,.lcars-values button { border-radius:12px; }.lcars-footer { margin-left:38px; } }
   `; }
 }
 

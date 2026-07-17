@@ -5,7 +5,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 ## Features
 
 - Radial Home → Area → Device topology, with an automatic Floor level when multiple floors exist
-- Switchable spider-web and hierarchical tree layouts
+- Switchable spider-web, hierarchical tree, and LCARS dashboard layouts
 - Collision-aware multi-ring layout for larger installations
 - Expand/collapse floors, areas, or the entire map with space-aware reflow
 - Filters for labelled and unassigned devices
@@ -75,7 +75,7 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 | `show_unassigned` | `false` | Include devices that are not assigned to an area initially |
 | `show_only_labeled` | `true` | Initially show only devices that have labels |
 | `initial_label_selection` | `all` | Initial label filters: `all` or `none`; saved user choices take precedence later |
-| `layout` | `web` | Initial layout: `web` or `tree`; the header switch remembers later changes |
+| `layout` | `web` | Initial layout: `web`, `tree`, or `lcars`; the header switch remembers later changes |
 | `web_zoom` | `1` | Initial Web-view zoom from `0.65` to `1.8` |
 | `tree_font_scale` | `1` | Initial Tree-view font scale from `0.65` to `1.8` |
 | `web_show_properties` | `false` | Show entity/property rows on Web device cards |
@@ -90,6 +90,8 @@ Refresh the browser after updating the JavaScript. A query-string version is opt
 `topology_zoom` and `show_entities` remain supported as legacy aliases for `web_zoom` and `web_show_properties`.
 
 The card reads Home Assistant's floor, area, device, entity, and label registries through the authenticated frontend connection. No separate backend integration, token, or external service is required.
+
+The LCARS view groups live systems by floor and area. It prioritises useful readings such as temperature, humidity, illumination, battery, door/lock state, light and plug state, climate state, and media-player volume. Select `LCARS` in the header or set `layout: lcars` in YAML to make it the initial view.
 
 When Home Assistant has more than one floor, floor nodes are shown between Home and Area nodes. Floors and areas start expanded. Collapse all stops at floors when that level is available; otherwise it stops at areas. The canvas grows into additional device rings as needed and scrolls in both directions.
 
