@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.4.5";
+const CARD_VERSION = "1.5.0";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -125,7 +125,8 @@ class AreaTopologyCard extends HTMLElement {
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
     this._config.web_show_properties = config.web_show_properties ?? config.show_entities ?? false;
-    const preferenceKey = `area-topology-card:${window.location.pathname}:${this._config.title}`;
+    const cardPreferenceType = this._standaloneLcars ? "lcars-home-card" : "area-topology-card";
+    const preferenceKey = `${cardPreferenceType}:${window.location.pathname}:${this._config.title}`;
     if (this._preferenceKey !== preferenceKey) {
       this._preferenceKey = preferenceKey;
       const preferences = this.loadPreferences();
@@ -201,7 +202,11 @@ class AreaTopologyCard extends HTMLElement {
       ]);
       this._labels = labels;
       this._floors = floors;
-      if (!this._selectedLabels) {
+      if (this._standaloneLcars) {
+        this._selectedLabels = new Set(labels
+          .filter((label) => this.matchesConfiguredItem("labels", label.label_id, label.name))
+          .map((label) => label.label_id));
+      } else if (!this._selectedLabels) {
         const availableLabelIds = new Set(labels.map((label) => label.label_id));
         this._selectedLabels = this._savedSelectedLabels
           ? new Set(this._savedSelectedLabels.filter((labelId) => availableLabelIds.has(labelId)))
@@ -619,8 +624,8 @@ class AreaTopologyCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>${this.styles()}</style>
-      <ha-card>
-        <div class="header">
+      <ha-card class="${this._standaloneLcars ? "standalone-lcars" : ""}">
+        ${this._standaloneLcars ? "" : `<div class="header">
           <div class="header-main">
             <div><h1>Home Topology <span class="version">v${CARD_VERSION}</span></h1><p>${this.summary()}</p></div>
             ${this._data ? `<div class="header-actions">
@@ -641,7 +646,7 @@ class AreaTopologyCard extends HTMLElement {
             </div>` : '<ha-icon icon="mdi:graph-outline"></ha-icon>'}
           </div>
           ${this.renderLabelFilters()}
-        </div>
+        </div>`}
         <div class="content">${content}</div>
       </ha-card>`;
     const newScroller = this.shadowRoot.querySelector(".topology-scroll");
@@ -1119,9 +1124,12 @@ class AreaTopologyCard extends HTMLElement {
     const groups = this.hasFloorLevel()
       ? this.floorGroups()
       : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
-    const visibleGroups = groups.map((group) => ({
+    const visibleGroups = groups
+      .filter((group) => !this._standaloneLcars || this.matchesConfiguredItem("floors", group.id, group.name))
+      .map((group) => ({
       ...group,
       areas: group.areas
+        .filter((area) => !this._standaloneLcars || this.matchesConfiguredItem("areas", area.id, area.name))
         .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
         .filter((area) => area.displayDevices.length > 0),
     })).filter((group) => group.areas.length > 0);
@@ -1161,6 +1169,13 @@ class AreaTopologyCard extends HTMLElement {
       groups.get(id).devices.push(device);
     }
     return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  matchesConfiguredItem(configKey, id, name) {
+    const configured = this._config?.[configKey];
+    if (!Array.isArray(configured)) return true;
+    const values = new Set(configured.map((value) => String(value).trim().toLowerCase()));
+    return values.has(String(id || "").toLowerCase()) || values.has(String(name || "").toLowerCase());
   }
 
   renderLcarsDevice(device) {
@@ -1575,11 +1590,40 @@ class AreaTopologyCard extends HTMLElement {
 }
 
 if (!customElements.get("area-topology-card")) customElements.define("area-topology-card", AreaTopologyCard);
+
+class LcarsHomeCard extends AreaTopologyCard {
+  setConfig(config) {
+    this._standaloneLcars = true;
+    super.setConfig({
+      ...config,
+      layout: "lcars",
+      show_only_labeled: true,
+      show_unassigned: false,
+      initial_label_selection: "all",
+    });
+    this._layoutMode = "lcars";
+    this._labelsOnly = true;
+    this._showUnassigned = false;
+    this.render();
+  }
+
+  static getStubConfig() {
+    return { title: "Home" };
+  }
+}
+
+if (!customElements.get("lcars-home-card")) customElements.define("lcars-home-card", LcarsHomeCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "area-topology-card",
   name: "Area Topology",
   description: "A network-style map of Home Assistant areas and devices.",
+  preview: true,
+});
+window.customCards.push({
+  type: "lcars-home-card",
+  name: "LCARS Home Dashboard",
+  description: "A standalone LCARS dashboard for labelled Home Assistant devices.",
   preview: true,
 });
 console.info(`%c AREA-TOPOLOGY-CARD %c v${CARD_VERSION} `, "color:white;background:#03a9f4;font-weight:bold", "color:#03a9f4;background:#eee");

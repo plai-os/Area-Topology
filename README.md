@@ -95,6 +95,30 @@ The card reads Home Assistant's floor, area, device, entity, and label registrie
 
 The LCARS view groups live systems by floor and area. It prioritises useful readings such as temperature, humidity, illumination, battery, door/lock state, light and plug state, climate state, and media-player volume. Select `LCARS` in the header or set `layout: lcars` in YAML to make it the initial view.
 
+## Standalone LCARS dashboard card
+
+The same JavaScript resource also provides `custom:lcars-home-card`. This independent card renders only the LCARS dashboard, without the Home Topology header, layout controls, label toolbar, or unassigned panel. It always shows labelled devices only and always excludes unassigned devices.
+
+Omit `labels`, `floors`, or `areas` to include all entries of that type. When supplied, each option is a YAML list and accepts either the visible Home Assistant name or registry ID.
+
+```yaml
+type: custom:lcars-home-card
+title: Sarn
+labels:
+  - Alexa
+  - Lamps
+  - Climate
+floors:
+  - Ground Floor
+  - Loft Floor
+areas:
+  - Lounge
+  - Kitchen
+  - Bedroom
+```
+
+An explicitly empty list selects no entries, which is useful while building a dashboard configuration incrementally.
+
 When Home Assistant has more than one floor, floor nodes are shown between Home and Area nodes. Floors and areas start expanded. Collapse all stops at floors when that level is available; otherwise it stops at areas. The canvas grows into additional device rings as needed and scrolls in both directions.
 
 Clicking an area name opens its Home Assistant area settings. Use the small `+`/`−` button to expand or collapse it. Clicking a device opens that device's configuration page.
