@@ -76,6 +76,6 @@ sh sync-to-home-assistant.sh /path/to/home-assistant/config
 
 The script updates `www/area-topology-card.js`. Keep the dashboard resource URL as `/local/area-topology-card.js`; it does not need to change for each release. Hard-refresh Home Assistant after syncing.
 
-## Later: HACS packaging
+## Updates
 
-The card is deliberately kept as one distributable JavaScript file, which is the shape HACS expects for a frontend repository. When ready, add a GitHub release workflow, repository metadata, and HACS validation without changing the local installation model.
+When a new version is available, update the card from HACS and refresh Home Assistant. Development installations can continue using the local sync script above.
