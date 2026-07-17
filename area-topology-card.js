@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.1.2";
+const CARD_VERSION = "1.1.3";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -631,6 +631,12 @@ class AreaTopologyCard extends HTMLElement {
     });
   }
 
+  treeDeviceCount(areas) {
+    const total = areas.reduce((count, area) => count + area.devices.length, 0);
+    const filtered = areas.reduce((count, area) => count + this.devicesForDisplay(area).length, 0);
+    return `${filtered} filtered · ${total} total device${total === 1 ? "" : "s"}`;
+  }
+
   renderTree() {
     const areas = this._data.filter((area) => area.id !== "__unassigned__");
     if (!areas.length) return '<div class="message">No areas or devices found.</div>';
@@ -645,7 +651,7 @@ class AreaTopologyCard extends HTMLElement {
     return `<div class="workspace" style="--map-height:${mapHeight}"><div class="tree-scroll"><div class="topology-tree" style="--tree-font:${14 * treeScale}px;--tree-small:${11 * treeScale}px;--tree-label:${10 * treeScale}px;--tree-property:${12 * treeScale}px;--tree-id:${10 * treeScale}px">
       <div class="tree-row tree-home">
         <span class="tree-node-icon"><ha-icon icon="mdi:home"></ha-icon></span>
-        <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong></div>
+        <div class="tree-copy"><strong>${escapeHtml(this._config.title)}</strong><small>${this.treeDeviceCount(areas)}</small></div>
       </div>
       <div class="tree-children">${branches}</div>
     </div></div>${this.renderUnassignedPanel()}</div>`;
@@ -661,7 +667,7 @@ class AreaTopologyCard extends HTMLElement {
         <button class="tree-toggle" data-floor-toggle="${escapeHtml(floor.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}">${collapsed ? "+" : "−"}</button>
         <button class="tree-main" ${mainAction} title="${floor.id === "__no_floor__" ? `${collapsed ? "Expand" : "Collapse"} ${escapeHtml(floor.name)}` : `Open ${escapeHtml(floor.name)} settings`}">
           <span class="tree-node-icon"><ha-icon icon="${escapeHtml(floor.icon)}"></ha-icon></span>
-          <span class="tree-copy"><strong>${escapeHtml(floor.name)}</strong><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"}</small></span>
+          <span class="tree-copy"><strong>${escapeHtml(floor.name)}</strong><small>${floor.areas.length} area${floor.areas.length === 1 ? "" : "s"} · ${this.treeDeviceCount(floor.areas)}</small></span>
         </button>
       </div>
       ${collapsed ? "" : `<div class="tree-children">${floor.areas.map((area) => this.renderTreeArea(area)).join("")}</div>`}
@@ -676,7 +682,7 @@ class AreaTopologyCard extends HTMLElement {
         <button class="tree-toggle" data-area-toggle="${escapeHtml(area.id)}" title="${collapsed ? "Expand" : "Collapse"} ${escapeHtml(area.name)}">${collapsed ? "+" : "−"}</button>
         <button class="tree-main" data-area-config="${escapeHtml(area.id)}" title="Open ${escapeHtml(area.name)} settings">
           <span class="tree-node-icon"><ha-icon icon="${escapeHtml(area.icon)}"></ha-icon></span>
-          <span class="tree-copy"><strong>${escapeHtml(area.name)}</strong><small>${devices.length} device${devices.length === 1 ? "" : "s"}</small></span>
+          <span class="tree-copy"><strong>${escapeHtml(area.name)}</strong><small>${this.treeDeviceCount([area])}</small></span>
         </button>
       </div>
       ${collapsed ? "" : `<div class="tree-children">${devices.map((device) => this.renderTreeDevice(device)).join("")}</div>`}
