@@ -1,4 +1,4 @@
-const CARD_VERSION = "0.8.1";
+const CARD_VERSION = "0.8.2";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -250,12 +250,6 @@ class AreaTopologyCard extends HTMLElement {
       const deviceId = event.dataTransfer.getData("text/plain");
       if (deviceId) this.assignDeviceToArea(deviceId, area.dataset.areaDrop);
     });
-    this.shadowRoot.addEventListener("wheel", (event) => {
-      const scroller = event.target.closest(".topology-scroll");
-      if (!scroller || Math.abs(event.deltaY) < 2) return;
-      event.preventDefault();
-      this.setZoom(this._zoom + (event.deltaY < 0 ? 0.1 : -0.1), event.clientX, event.clientY);
-    }, { passive: false });
     this.render();
   }
 

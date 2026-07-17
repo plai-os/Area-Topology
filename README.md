@@ -14,7 +14,7 @@ A dependency-free Home Assistant dashboard card that groups devices by area and 
 - Live device status for lights, doors, windows, locks, covers, temperature, illuminance, humidity and climate
 - Direct links to Home Assistant area and device settings
 - Full-height, two-direction scrolling canvas
-- Header and mouse-wheel zoom controls
+- Header zoom controls
 
 ## Install with HACS
 
