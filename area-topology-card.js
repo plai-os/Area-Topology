@@ -1,4 +1,4 @@
-const CARD_VERSION = "1.8.0";
+const CARD_VERSION = "1.8.1";
 
 const DEFAULTS = {
   title: "Home topology",
@@ -1152,7 +1152,6 @@ class AreaTopologyCard extends HTMLElement {
       </div>
       ${floorViews.length ? `${this._standaloneLcars ? `<div class="lcars-body">
         <nav class="lcars-floor-nav" aria-label="Floor navigation">
-          <div class="lcars-nav-cap"></div>
           ${floorViews.map((group) => `<button data-floor-nav="${escapeHtml(group.id)}" style="--nav-color:${group.color};--nav-contrast:${group.contrast}" title="Go to ${escapeHtml(group.name)}"><span>${group.number}</span><b>${escapeHtml(group.name)}</b></button>`).join("")}
           <div class="lcars-nav-foot"></div>
         </nav>
@@ -1709,9 +1708,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-body { display:grid; grid-template-columns:210px minmax(0,1fr); gap:18px; align-items:start; }
     .lcars-main { min-width:0; }
     .lcars-floor-nav { position:sticky; top:12px; z-index:12; align-self:start; display:flex; flex-direction:column; gap:7px; padding:0 0 8px; }
-    .lcars-nav-cap,.lcars-nav-foot { height:72px; background:#263c48; border-top:28px solid #7893a4; box-sizing:border-box; }
-    .lcars-nav-cap { border-radius:0 30px 0 0; }
-    .lcars-nav-foot { margin-top:4px; border-top:0; border-bottom:28px solid #7893a4; border-radius:0 0 30px 0; }
+    .lcars-nav-foot { height:72px; margin-top:4px; border-bottom:28px solid #7893a4; border-radius:0 0 30px 0; background:#263c48; box-sizing:border-box; }
     .lcars-floor-nav button { display:grid; grid-template-columns:58px minmax(0,1fr); gap:5px; min-height:54px; padding:0; border:0; color:var(--nav-contrast); background:transparent; font:inherit; text-align:left; cursor:pointer; }
     .lcars-floor-nav button:hover { filter:brightness(1.12); transform:translateX(3px); }
     .lcars-floor-nav button span,.lcars-floor-nav button b { min-width:0; display:flex; align-items:center; height:54px; background:var(--nav-color); box-sizing:border-box; }
