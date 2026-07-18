@@ -219,6 +219,7 @@ class AreaTopologyCard extends HTMLElement {
       this._loadedForConnection = hass.connection;
       this.loadRegistries();
     } else if (this._data) {
+      this.refreshLcarsLiveStatuses();
       if (this._standaloneLcars && this._lcarsPopupEntity) {
         const chart = this.shadowRoot?.querySelector("[data-lcars-history] > *");
         if (chart) chart.hass = hass;
@@ -640,11 +641,21 @@ class AreaTopologyCard extends HTMLElement {
 
   async toggleEntity(entityId, control) {
     if (!this._hass || control?.classList.contains("working")) return;
+    const stateObj = this._hass.states?.[entityId];
+    const domain = entityId.split(".")[0];
+    const wasOn = ["on", "playing", "open", "unlocked"].includes(String(stateObj?.state || "").toLowerCase());
+    const service = wasOn ? "turn_off" : "turn_on";
     control?.classList.add("working");
     control?.setAttribute("aria-busy", "true");
+    this.updateLcarsToggleControl(control, !wasOn, domain);
     try {
-      await this._hass.callService("homeassistant", "toggle", {}, { entity_id: entityId });
+      if (["light", "switch", "fan", "input_boolean"].includes(domain)) {
+        await this._hass.callService(domain, service, {}, { entity_id: entityId });
+      } else {
+        await this._hass.callService("homeassistant", "toggle", {}, { entity_id: entityId });
+      }
     } catch (error) {
+      this.updateLcarsToggleControl(control, wasOn, domain);
       console.error(`Could not toggle ${entityId}`, error);
       this.dispatchEvent(new CustomEvent("hass-notification", {
         bubbles: true,
@@ -654,6 +665,56 @@ class AreaTopologyCard extends HTMLElement {
     } finally {
       control?.classList.remove("working");
       control?.removeAttribute("aria-busy");
+    }
+  }
+
+  updateLcarsToggleControl(control, isOn, domain) {
+    if (!control) return;
+    control.classList.toggle("active", isOn);
+    control.style.setProperty("--level", isOn ? "100%" : "0%");
+    const value = control.querySelector("b");
+    if (value) value.textContent = isOn ? "ON" : "OFF";
+    const icon = control.querySelector("ha-icon");
+    if (icon && domain === "light") icon.setAttribute("icon", isOn ? "mdi:lightbulb-on" : "mdi:lightbulb-outline");
+    if (icon && domain === "switch") icon.setAttribute("icon", isOn ? "mdi:power-plug" : "mdi:power-plug-off");
+  }
+
+  refreshLcarsLiveStatuses() {
+    for (const meter of this.shadowRoot?.querySelectorAll("[data-lcars-status-entity]") || []) {
+      const entityId = meter.dataset.lcarsStatusEntity;
+      const stateObj = this._hass?.states?.[entityId];
+      if (!stateObj) continue;
+      const domain = entityId.split(".")[0];
+      let registryEntity;
+      let owningDevice;
+      for (const area of this._data || []) {
+        for (const device of area.devices || []) {
+          const match = device.entities?.find((entity) => entity.entity_id === entityId);
+          if (match) { registryEntity = match; owningDevice = device; break; }
+        }
+        if (registryEntity) break;
+      }
+      const deviceClass = stateObj.attributes?.device_class || registryEntity?.device_class || registryEntity?.original_device_class || "";
+      const isPlug = owningDevice && (/\bplugs?\b/i.test(owningDevice.name) || owningDevice.labels?.some((label) => /\bplugs?\b/i.test(label.name)));
+      let status = registryEntity ? this.statusForEntity(registryEntity, stateObj, domain, deviceClass, isPlug) : null;
+      if (!status && ["light", "switch", "fan", "input_boolean"].includes(domain)) {
+        const active = stateObj.state === "on";
+        status = { active, value: active ? "On" : "Off", icon: stateObj.attributes?.icon || (domain === "light" ? (active ? "mdi:lightbulb-on" : "mdi:lightbulb-outline") : (active ? "mdi:toggle-switch" : "mdi:toggle-switch-off")) };
+      }
+      if (!status) continue;
+      meter.classList.toggle("active", Boolean(status.active));
+      const value = meter.querySelector("b");
+      if (value) value.textContent = String(status.value).toUpperCase();
+      const icon = meter.querySelector("ha-icon");
+      if (icon && status.icon) icon.setAttribute("icon", status.icon);
+      const percentage = Number(/^\s*(\d+(?:\.\d+)?)%\s*$/.exec(String(status.value))?.[1]);
+      if (Number.isFinite(percentage)) {
+        meter.style.setProperty("--level", `${Math.max(0, Math.min(100, percentage))}%`);
+        const slider = meter.querySelector("[data-entity-level]");
+        if (slider && document.activeElement !== slider) slider.value = percentage;
+      } else if (["light", "switch", "fan", "input_boolean"].includes(domain)) {
+        meter.style.setProperty("--level", status.active ? "100%" : "0%");
+      }
     }
   }
 
@@ -2388,7 +2449,7 @@ class AreaTopologyCard extends HTMLElement {
         ? ` data-entity-toggle="${escapeHtml(status.entityId)}"`
         : ` data-entity="${escapeHtml(status.entityId)}"`;
     const title = status.adjustable ? "" : ` title="${status.toggleable ? "Toggle" : "Open"} ${escapeHtml(status.name)}"`;
-    return `<${element}${action} class="lcars-meter ${status.active ? "active" : ""} ${status.percentage == null ? "" : "percentage"} ${status.batteryBand ? `battery battery-${status.batteryBand}` : ""} ${status.temperatureBand ? `temperature temp-${status.temperatureBand}` : ""} ${status.adjustable ? "adjustable" : ""}"${meterStyle}${title}><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b>${interaction}</${element}>`;
+    return `<${element}${action} data-lcars-status-entity="${escapeHtml(status.entityId)}" class="lcars-meter ${status.active ? "active" : ""} ${status.percentage == null ? "" : "percentage"} ${status.batteryBand ? `battery battery-${status.batteryBand}` : ""} ${status.temperatureBand ? `temperature temp-${status.temperatureBand}` : ""} ${status.adjustable ? "adjustable" : ""}"${meterStyle}${title}><ha-icon icon="${escapeHtml(status.icon)}"></ha-icon><span>${escapeHtml(status.name)}</span><b>${escapeHtml(status.value)}</b>${interaction}</${element}>`;
   }
 
   temperatureBand(stateObj, domain, deviceClass) {
