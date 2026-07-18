@@ -1390,6 +1390,7 @@ class AreaTopologyCard extends HTMLElement {
       const temperatureEntityId = view.temperature_sensor || this._activeLcarsViewConfig?.temperature_sensor || this._config?.weather?.temperature_sensor;
       const temperatureState = temperatureEntityId ? this._hass?.states?.[temperatureEntityId] : null;
       if (temperatureState && !["unknown", "unavailable", ""].includes(temperatureState.state)) value = temperatureState.state;
+      if (value === undefined && this._lcarsCurrentWeatherTemperature !== undefined) value = this._lcarsCurrentWeatherTemperature;
     }
     if (value === undefined) value = config.value ?? fallback;
     const numeric = Number(value);
@@ -1647,6 +1648,7 @@ class AreaTopologyCard extends HTMLElement {
       return stateObj && !["unknown", "unavailable"].includes(stateObj.state) ? stateObj.state : fallback;
     };
     const temperature = sensorValue(config.temperature_sensor, weather.attributes?.temperature ?? "—");
+    this._lcarsCurrentWeatherTemperature = temperature !== "—" ? temperature : undefined;
     const humidity = sensorValue(config.humidity_sensor, weather.attributes?.humidity ?? "—");
     const apparent = sensorValue(config.apparent_sensor, weather.attributes?.apparent_temperature ?? "—");
     const aqi = sensorValue(config.aqi_sensor);
