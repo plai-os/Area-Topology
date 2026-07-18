@@ -1319,7 +1319,32 @@ class AreaTopologyCard extends HTMLElement {
     const legacy = legacyKey && this._config[legacyKey] && typeof this._config[legacyKey] === "object" ? this._config[legacyKey] : {};
     const source = view.source && typeof view.source === "object" ? view.source : {};
     const merged = { ...legacy, ...source, ...(view.config || {}), ...view };
-    const sections = Array.isArray(view.sections) ? view.sections.filter((section) => section && section.hidden !== true) : [];
+    let sections = Array.isArray(view.sections) ? view.sections.filter((section) => section && section.hidden !== true) : [];
+    if (String(view.id || "").toLowerCase() === "bridge") {
+      sections = sections.map((section) => {
+        const entity = section.entity || section.camera || section.source?.entity;
+        return String(entity || "").toLowerCase() === "camera.c110_mainstream" && String(section.title || "").toLowerCase() === "escape pod"
+          ? { ...section, title: "Main Viewer" }
+          : section;
+      });
+    }
+    if (String(view.id || "").toLowerCase() === "environmental" && !sections.some((section) => String(section.id || "").toLowerCase() === "waste_management")) {
+      sections = [{
+        id: "waste_management",
+        type: "devices",
+        title: "Waste Management",
+        icon: "mdi:recycle",
+        device_title: "Collection Schedule",
+        device_icon: "mdi:trash-can-outline",
+        color: "#7A9E8E",
+        entities: [
+          "sensor.waste_collection_schedule_recycling_and_food_waste",
+          "sensor.waste_collection_schedule_garden_waste",
+          "sensor.waste_collection_schedule_general_rubbish",
+        ],
+      }, ...sections];
+    }
+    merged.sections = sections;
     if (["floor", "areas", "bridge"].includes(type)) {
       const configuredAreas = sections.filter((section) => ["area", "devices"].includes(String(section.type || "area").toLowerCase())).map((section) => section.area || section.source?.area || section.title).filter(Boolean);
       if (configuredAreas.length) merged.areas = configuredAreas;
@@ -2701,7 +2726,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-engineering-card>* { --graph-color-1:var(--engineering-chart)!important; --graph-color-2:var(--engineering-chart-secondary)!important; --graph-color-3:var(--engineering-chart-tertiary)!important; --accent-color:var(--engineering-chart)!important; --primary-color:var(--engineering-chart)!important; --state-icon-color:var(--engineering-chart)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#b9b2c8; --divider-color:color-mix(in srgb,var(--engineering-tone) 35%,#252531); color-scheme:dark; }
     .lcars-engineering>header,.lcars-engineering-panel>header { text-shadow:0 1px 2px rgba(0,0,0,.65); }
     .lcars-captains-log .lcars-engineering-panels { grid-template-columns:1fr; }
-    .lcars-captains-log .lcars-engineering-panel,.lcars-captains-log-card { overflow:visible; }
+    .lcars-captains-log .lcars-engineering-panel { overflow:hidden; }
+    .lcars-captains-log-card { overflow:visible; }
     .lcars-captains-log-card { min-height:760px; }
     .lcars-captains-log-card>* { --primary-color:var(--engineering-tone)!important; --accent-color:var(--engineering-tone)!important; --state-icon-color:var(--engineering-tone)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#c9c2d8; color-scheme:dark; }
     .lcars-bridge { --bridge-rail:94px; --bridge-gap:16px; --bridge-title-gap:40px; color:#f5f1ff; background:#050507; }.lcars-bridge>header { position:relative; min-height:78px; display:flex; align-items:center; gap:22px; padding:0 24px 0 calc(var(--bridge-rail) + var(--bridge-title-gap) + 28px); overflow:hidden; border-radius:36px 36px 0 0; color:#fff; background:var(--bridge-tone); font-family:var(--lcars-font); font-size:27px; font-weight:400; line-height:1; letter-spacing:.025em; text-transform:uppercase; }.lcars-bridge>header::before { content:""; position:absolute; top:0; bottom:0; left:var(--bridge-rail); width:var(--bridge-title-gap); background:#050507; }.lcars-bridge>header strong { margin-right:auto; color:#fff; font-size:40px; font-weight:400; line-height:1; }.lcars-bridge>header span { color:#fff; white-space:nowrap; }.lcars-bridge>header span:nth-of-type(2),.lcars-bridge>header span:nth-of-type(3) { color:#fff; }.lcars-bridge>header i { width:9px; height:9px; border-radius:50%; background:#fff; }.lcars-bridge>header b { margin-left:auto; color:#fff; font-size:36px; font-weight:400; line-height:1; }
@@ -2726,7 +2752,7 @@ class AreaTopologyCard extends HTMLElement {
     .spinner { width:22px; height:22px; border:2px solid var(--divider-color,#ddd); border-top-color:var(--at-accent); border-radius:50%; animation:spin .8s linear infinite; }
     .lcars-bridge { --bridge-gap:23px; --bridge-title-gap:48px; }
     .lcars-bridge>header::before { left:calc(var(--bridge-rail) + 36px); width:calc(var(--bridge-title-gap) - 36px); }
-    .lcars-bridge-shell>aside b:first-child,.lcars-bridge-shell>aside b:last-child { position:relative; z-index:2; border-radius:0; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); }
+    .lcars-bridge-shell>aside b:first-child,.lcars-bridge-shell>aside b:last-child { position:relative; z-index:2; overflow:visible; border-radius:0; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); }
     .lcars-bridge-shell>aside b:first-child::before { content:""; position:absolute; top:0; left:100%; width:36px; height:36px; background:radial-gradient(circle 36px at 100% 100%,#050507 0 35px,var(--bridge-tone) 36px); }
     .lcars-bridge-shell>aside b:last-child::before { content:""; position:absolute; bottom:0; left:100%; width:36px; height:36px; background:radial-gradient(circle 36px at 100% 0,#050507 0 35px,var(--bridge-tone) 36px); }
     .lcars-bridge-grid { z-index:3; padding-top:var(--bridge-gap); padding-bottom:var(--bridge-gap); }

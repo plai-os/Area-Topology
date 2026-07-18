@@ -341,7 +341,7 @@ views:
     sections:
       - id: waste_collection
         type: devices
-        title: Waste Collection
+        title: Waste Management
         icon: mdi:recycle
         device_title: Collection Schedule
         device_icon: mdi:trash-can-outline
