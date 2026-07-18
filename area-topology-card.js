@@ -1591,6 +1591,7 @@ class AreaTopologyCard extends HTMLElement {
         const id = String(view.id || "").trim().toLowerCase();
         const title = String(view.title || "").trim().toLowerCase();
         if (id === "environmental" || title === "environmental") return { ...view, title: "Environment" };
+        if (id === "general" || title === "general") return { ...view, title: "Sick Bay" };
         if (title === "west wing") return { ...view, title: "Habitat" };
         return view;
       });
