@@ -280,7 +280,7 @@ bridge:
   # last_activity_sensor: sensor.car_camera_last_activity
 menus:
   - id: environmental
-    title: Environmental
+    title: Environment
     icon: mdi:leaf
     color: "#7A9E8E"
     labels:

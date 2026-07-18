@@ -328,7 +328,7 @@ views:
           - calendar.sarn_powys_gmail_com
 
   - id: environmental
-    title: Environmental
+    title: Environment
     type: dashboard
     icon: mdi:leaf
     color: "#7A9E8E"

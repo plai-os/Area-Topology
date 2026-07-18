@@ -1319,6 +1319,7 @@ class AreaTopologyCard extends HTMLElement {
     const legacy = legacyKey && this._config[legacyKey] && typeof this._config[legacyKey] === "object" ? this._config[legacyKey] : {};
     const source = view.source && typeof view.source === "object" ? view.source : {};
     const merged = { ...legacy, ...source, ...(view.config || {}), ...view };
+    if (String(view.id || "").toLowerCase() === "environmental") merged.title = "Environment";
     let sections = Array.isArray(view.sections) ? view.sections.filter((section) => section && section.hidden !== true) : [];
     if (String(view.id || "").toLowerCase() === "bridge") {
       sections = sections.map((section) => {
