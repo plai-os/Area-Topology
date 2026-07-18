@@ -11,6 +11,7 @@ views:
     type: dashboard
     default: true
     color: "#6F99A8"
+    section_layout: primary
     primary_section: lounge
     motion_sensor: binary_sensor.car_camera_motion
     recording_sensor: binary_sensor.car_camera_recording
@@ -28,6 +29,60 @@ views:
         type: camera
         title: Escape Pod
         entity: camera.c110_mainstream
+
+  - id: general
+    title: General
+    type: dashboard
+    color: "#B58AAD"
+    section_layout: balanced
+    primary_section: infrastructure
+    sections:
+      - id: infrastructure
+        type: devices
+        title: Infrastructure
+        labels: [Routers, Computers, Powerstations]
+      - id: services
+        type: devices
+        title: Services
+        labels: [Service, Speaker Group]
+      - id: mobile_devices
+        type: devices
+        title: Mobile Devices
+        labels: [Mobiles]
+
+  - id: shuttle_bay
+    title: Shuttle Bay
+    type: dashboard
+    color: "#C58A69"
+    section_layout: primary
+    primary_section: garage
+    motion_sensor: binary_sensor.car_camera_motion
+    recording_sensor: binary_sensor.car_camera_recording
+    last_activity_sensor: sensor.car_camera_last_activity
+    sections:
+      - id: garage
+        type: area
+        title: Garage
+        area: Garage
+      - id: car
+        type: camera
+        title: Car
+        entity: camera.c110_mainstream
+
+  - id: deep_space
+    title: Deep Space
+    type: dashboard
+    color: "#B88768"
+    primary_section: front
+    sections:
+      - id: front
+        type: area
+        title: Front Garden
+        area: Front Garden
+      - id: rear
+        type: area
+        title: Rear Garden
+        area: Rear Garden
 
   - id: west_wing
     title: West Wing
@@ -48,27 +103,8 @@ views:
         title: Bathroom
         area: Bathroom
 
-  - id: outside
-    title: Outside
-    type: dashboard
-    color: "#B88768"
-    primary_section: front
-    sections:
-      - id: front
-        type: area
-        title: Front Garden
-        area: Front Garden
-      - id: rear
-        type: area
-        title: Rear Garden
-        area: Rear Garden
-      - id: garage
-        type: area
-        title: Garage
-        area: Garage
-
-  - id: roof
-    title: Roof
+  - id: warp_engines
+    title: Warp Engines
     type: dashboard
     color: "#8F90C2"
     primary_section: loft
@@ -77,25 +113,6 @@ views:
         type: area
         title: Loft
         area: Loft
-
-  - id: general
-    title: General
-    type: dashboard
-    color: "#B58AAD"
-    primary_section: infrastructure
-    sections:
-      - id: infrastructure
-        type: devices
-        title: Infrastructure
-        labels: [Routers, Computers, Powerstations]
-      - id: services
-        type: devices
-        title: Services
-        labels: [Service, Speaker Group]
-      - id: mobile_devices
-        type: devices
-        title: Mobile Devices
-        labels: [Mobiles]
 
   - id: weather
     title: Weather

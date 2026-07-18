@@ -108,7 +108,7 @@ LCARS views bundle the unchanged freeware **LCARS GTJ3** webfont by GTJLCARS.de 
 
 Use the ordered `views:` list for new dashboards. Every entry becomes one numbered LCARS destination and uses the same BRIDGE command-frame geometry, rail, footer, typography, spacing, and colour system. The first view is selected initially unless another entry has `default: true`. The selected view is remembered when navigating into Home Assistant and returning.
 
-The standard view type is `dashboard`. Its `sections:` are independent layout modules and can select an HA area, query devices by label/property, name explicit devices, or place a camera. Floors and areas are selectors only; they do not determine navigation or parent/child layout.
+The standard view type is `dashboard`. Its `sections:` are independent layout modules and can select an HA area, query devices by label/property, name explicit devices, or place a camera. Floors and areas are selectors only; they do not determine navigation or parent/child layout. Dashboards use `section_layout: balanced` by default, distributing sections between both columns according to their content. Use `section_layout: primary` for the deliberate BRIDGE composition, or set `column: left` / `column: right` on individual sections to pin their placement.
 
 Supported view types are:
 
