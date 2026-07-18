@@ -2,6 +2,7 @@ type: custom:lcars-home-card
 title: 32 Maesderw, Sarn, Powys
 header_color: "#263F4B"
 datetime_color: "#FF9900"
+kiosk_height: 100vh
 
 # The ordered menu is the dashboard structure. Home Assistant areas and labels are
 # selectors inside sections; they do not create or constrain the navigation tree.
