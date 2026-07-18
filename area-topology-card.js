@@ -1321,13 +1321,23 @@ class AreaTopologyCard extends HTMLElement {
     const merged = { ...legacy, ...source, ...(view.config || {}), ...view };
     if (String(view.id || "").toLowerCase() === "environmental") merged.title = "Environment";
     let sections = Array.isArray(view.sections) ? view.sections.filter((section) => section && section.hidden !== true) : [];
-    if (String(view.id || "").toLowerCase() === "bridge") {
+    if (["bridge", "security"].includes(String(view.id || "").toLowerCase())) {
       sections = sections.map((section) => {
         const entity = section.entity || section.camera || section.source?.entity;
         return String(entity || "").toLowerCase() === "camera.c110_mainstream"
-          ? { ...section, title: "Main Viewer" }
+          ? { ...section, title: "Main Viewer", name: "Main Viewer" }
           : section;
       });
+    }
+    if (String(view.id || "").toLowerCase() === "security" && !sections.some((section) => String(section.id || "").toLowerCase() === "shields")) {
+      sections = [{
+        id: "shields",
+        type: "devices",
+        title: "Shields",
+        icon: "mdi:shield-home",
+        color: "#B56B7A",
+        labels: ["Door Sensors"],
+      }, ...sections];
     }
     if (String(view.id || "").toLowerCase() === "environmental" && !sections.some((section) => String(section.id || "").toLowerCase() === "waste_management")) {
       sections = [{
@@ -1540,7 +1550,13 @@ class AreaTopologyCard extends HTMLElement {
     })).filter((group) => group.areas.length);
     const views = this._config.views
       .filter((view) => view?.id && view?.title && view.hidden !== true)
-      .map((view) => String(view.title).trim().toLowerCase() === "west wing" ? { ...view, title: "Habitat" } : view);
+      .map((view) => {
+        const id = String(view.id || "").trim().toLowerCase();
+        const title = String(view.title || "").trim().toLowerCase();
+        if (id === "environmental" || title === "environmental") return { ...view, title: "Environment" };
+        if (title === "west wing") return { ...view, title: "Habitat" };
+        return view;
+      });
     if (!views.length) return '<div class="lcars-empty">NO CONFIGURED VIEWS</div>';
     const requestedId = String(this._lcarsSelectedView || "").replace(/^view:/, "");
     const selected = views.find((view) => view.id === requestedId) || views.find((view) => view.default) || views[0];
@@ -1768,10 +1784,12 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   renderLcarsSecurity(config, color) {
+    const dashboard = this.lcarsDashboardGroup(config);
+    const areas = dashboard.group.areas;
     const cameras = config.cameras.filter((camera) => camera?.entity);
     return `<section class="lcars-security" style="--security-tone:${color};--security-contrast:${contrastColor(color)}">
-      <header><ha-icon icon="mdi:cctv"></ha-icon><strong>SECURITY</strong><i></i><b>${cameras.length} CAMERA${cameras.length === 1 ? "" : "S"}</b></header>
-      <div class="lcars-security-grid"><div class="lcars-camera-grid">${cameras.map((camera) => {
+      <header><ha-icon icon="mdi:cctv"></ha-icon><strong>SECURITY</strong><i></i><b>${areas.length + cameras.length} SECTOR${areas.length + cameras.length === 1 ? "" : "S"}</b></header>
+      <div class="lcars-security-grid">${areas.length ? `<div class="lcars-area-grid">${areas.map((area) => this.renderLcarsArea(area)).join("")}</div>` : ""}<div class="lcars-camera-grid">${cameras.map((camera) => {
         const stateObj = this._hass?.states?.[camera.entity];
         const name = camera.name || stateObj?.attributes?.friendly_name || camera.entity;
         return `<article class="lcars-camera-panel"><header><ha-icon icon="${escapeHtml(stateObj?.attributes?.icon || "mdi:cctv")}"></ha-icon><strong>${escapeHtml(name)}</strong>${camera.show_state === false ? "" : `<b data-camera-state="${escapeHtml(camera.entity)}">${escapeHtml(stateObj?.state || "unavailable")}</b>`}</header><div class="lcars-camera-card" data-lcars-camera="${escapeHtml(camera.entity)}"></div></article>`;
@@ -1968,7 +1986,7 @@ class AreaTopologyCard extends HTMLElement {
 
   renderLcarsBridgeCamera(camera, config) {
     const stateObj = this._hass?.states?.[camera.entity];
-    const name = camera.name || stateObj?.attributes?.friendly_name || "SURVEILLANCE";
+    const name = String(camera.entity || "").toLowerCase() === "camera.c110_mainstream" ? "Main Viewer" : (camera.name || stateObj?.attributes?.friendly_name || "SURVEILLANCE");
     const cameraDevice = (this._data || []).flatMap((area) => area.devices || []).find((device) => device.entities?.some((entity) => entity.entity_id === camera.entity));
     const findDetectionEntity = (configured, phrases) => {
       if (configured && this._hass?.states?.[configured]) return configured;

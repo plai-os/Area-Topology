@@ -221,6 +221,11 @@ views:
       middle_color: "#B56B7A"
       middle_text_color: "#FFFFFF"
     sections:
+      - id: shields
+        type: devices
+        title: Shields
+        icon: mdi:shield-home
+        labels: [Door Sensors]
       - id: escape_pod
         type: camera
         title: Escape Pod
