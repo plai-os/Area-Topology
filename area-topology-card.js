@@ -1473,10 +1473,10 @@ class AreaTopologyCard extends HTMLElement {
   lcarsRailMiddlePosition(config = {}) {
     const rail = config.rail && typeof config.rail === "object" ? config.rail : {};
     const explicit = Number(rail.middle_position ?? config.rail_middle_position);
-    if (Number.isFinite(explicit)) return Math.max(15, Math.min(85, explicit));
+    if (Number.isFinite(explicit)) return Math.max(5, Math.min(95, explicit));
     const views = (this._config?.views || []).filter((view) => view?.id && view?.title && view.hidden !== true);
     const index = Math.max(0, views.findIndex((view) => String(view.id) === String(config.id)));
-    return views.length > 1 ? Math.round(15 + (index * 70 / (views.length - 1))) : 50;
+    return views.length > 1 ? Math.round(5 + (index * 90 / (views.length - 1))) : 50;
   }
 
   lcarsDashboardGroup(config) {
