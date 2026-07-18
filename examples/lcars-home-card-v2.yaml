@@ -355,6 +355,7 @@ views:
         title: Environmental Systems
         labels: [Climate]
         exclude_labels: [Appliances]
+        exclude_devices: [Kettle, Radiator]
         properties: [temperature, humidity, illuminance, climate]
       - id: appliances
         type: devices
