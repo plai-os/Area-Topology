@@ -1375,7 +1375,10 @@ class AreaTopologyCard extends HTMLElement {
     const entityId = config.entity || (source === "weather"
       ? (view.entity || this._activeLcarsViewConfig?.entity || this._config?.weather?.entity)
       : "");
-    const stateObj = entityId ? this._hass?.states?.[entityId] : null;
+    let stateObj = entityId ? this._hass?.states?.[entityId] : null;
+    if (!stateObj && source === "weather") {
+      stateObj = Object.entries(this._hass?.states || {}).find(([id, candidate]) => id.startsWith("weather.") && candidate)?.[1] || null;
+    }
     let value;
     if (stateObj) {
       value = config.attribute ? stateObj.attributes?.[config.attribute] : stateObj.state;
@@ -1505,7 +1508,9 @@ class AreaTopologyCard extends HTMLElement {
         .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
         .filter((area) => area.displayDevices.length),
     })).filter((group) => group.areas.length);
-    const views = this._config.views.filter((view) => view?.id && view?.title && view.hidden !== true);
+    const views = this._config.views
+      .filter((view) => view?.id && view?.title && view.hidden !== true)
+      .map((view) => String(view.title).trim().toLowerCase() === "west wing" ? { ...view, title: "Habitat" } : view);
     if (!views.length) return '<div class="lcars-empty">NO CONFIGURED VIEWS</div>';
     const requestedId = String(this._lcarsSelectedView || "").replace(/^view:/, "");
     const selected = views.find((view) => view.id === requestedId) || views.find((view) => view.default) || views[0];
