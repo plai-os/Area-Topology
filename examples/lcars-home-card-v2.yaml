@@ -370,7 +370,7 @@ views:
         labels: [Appliances]
 
   - id: computer_core
-    title: Computer Core
+    title: Core
     type: dashboard
     icon: mdi:server
     color: "#8B7AAE"

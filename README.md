@@ -291,7 +291,7 @@ menus:
       - illuminance
       - climate
   - id: computer_core
-    title: Computer Core
+    title: Core
     icon: mdi:server
     color: "#8B7AAE"
     labels:
