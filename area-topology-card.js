@@ -2888,8 +2888,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge>header { overflow:visible; }
     .lcars-status-ribbon { position:absolute; z-index:8; bottom:-23px; left:35%; display:grid; grid-template-columns:minmax(145px,1fr) minmax(155px,1fr) minmax(145px,1fr); width:min(520px,42vw); height:46px; padding:5px; border-radius:25px; background:#050507; transform:translateX(-50%); pointer-events:none; }
     .lcars-status-ribbon span { display:flex; align-items:center; justify-content:center; min-width:0; padding:5px 18px 2px; overflow:hidden; color:#fff!important; font-family:var(--lcars-font); font-size:25px; font-weight:400; line-height:1; letter-spacing:.025em; text-overflow:ellipsis; white-space:nowrap; }
-    .lcars-status-ribbon .sectors { border-radius:22px 0 0 22px; color:#fff!important; background:#9aa36b; }
-    .lcars-status-ribbon .online { margin-left:5px; background:#8f89c4; }
+    .lcars-status-ribbon .sectors { border-radius:22px 0 0 22px; color:#fff!important; background:var(--bridge-tone); }
+    .lcars-status-ribbon .online { margin-left:5px; background:var(--bridge-node-tone,var(--bridge-tone)); }
     .lcars-status-ribbon .offline { margin-left:5px; border-radius:0 22px 22px 0; background:#555962; }
     .lcars-bridge-grid { padding-top:calc(var(--bridge-gap) + 18px); }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
