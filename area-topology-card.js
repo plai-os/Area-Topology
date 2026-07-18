@@ -1424,7 +1424,8 @@ class AreaTopologyCard extends HTMLElement {
     }
     const railMiddleColor = safeColor(rail.middle_color || view.rail_middle_color, color);
     const railMiddleContrast = safeColor(rail.middle_text_color || view.rail_middle_text_color, contrastColor(railMiddleColor));
-    return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast}">
+    const railMiddlePosition = this.lcarsRailMiddlePosition(view);
+    return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr">
       <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong><span>${escapeHtml(status)}</span></header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
@@ -1467,6 +1468,15 @@ class AreaTopologyCard extends HTMLElement {
     if (config.label) output = `${config.label}${config.separator ?? " "}${output}`;
     if (config.uppercase !== false) output = output.toUpperCase();
     return output;
+  }
+
+  lcarsRailMiddlePosition(config = {}) {
+    const rail = config.rail && typeof config.rail === "object" ? config.rail : {};
+    const explicit = Number(rail.middle_position ?? config.rail_middle_position);
+    if (Number.isFinite(explicit)) return Math.max(15, Math.min(85, explicit));
+    const views = (this._config?.views || []).filter((view) => view?.id && view?.title && view.hidden !== true);
+    const index = Math.max(0, views.findIndex((view) => String(view.id) === String(config.id)));
+    return views.length > 1 ? Math.round(32 + (index * 36 / (views.length - 1))) : 50;
   }
 
   lcarsDashboardGroup(config) {
@@ -1994,12 +2004,13 @@ class AreaTopologyCard extends HTMLElement {
     const defaultNodeColor = String(config.type || "").toLowerCase() === "bridge" ? "#9999ff" : color;
     const railMiddleColor = safeColor(rail.middle_color || config.rail_middle_color, defaultNodeColor);
     const railMiddleContrast = safeColor(rail.middle_text_color || config.rail_middle_text_color, contrastColor(railMiddleColor));
+    const railMiddlePosition = this.lcarsRailMiddlePosition(config);
     const wasRenderingBridge = this._renderingBridge;
     this._renderingBridge = true;
     const primaryHtml = leftSections.map((area) => this.renderLcarsArea(area)).join("");
     const secondaryHtml = rightSections.map((area) => this.renderLcarsArea(area)).join("");
     this._renderingBridge = wasRenderingBridge;
-    return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
+    return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr;--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
       <header><strong>${escapeHtml(bridgeTitle)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}</header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
@@ -2792,6 +2803,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge .lcars-standby.offline { color:#f5f1ff; background:#555962; text-shadow:0 1px 2px #000; }.bridge-active .lcars-footer { grid-template-columns:minmax(0,1fr) auto 92px; gap:12px; margin:0; }.bridge-active .lcars-footer span { position:relative; height:42px; margin-left:110px; background:var(--lcars-footer-tone); }.bridge-active .lcars-footer span::before { content:""; position:absolute; top:0; bottom:0; left:-110px; width:94px; border-radius:0 0 0 30px; background:var(--lcars-footer-tone); }.bridge-active .lcars-footer b { color:#d9d2e9; font-family:var(--lcars-font); font-size:16px; font-weight:400; }.bridge-active .lcars-footer i { height:42px; border-radius:0 24px 24px 0; }
     .lcars-bridge-camera { overflow:hidden; border:7px solid var(--bridge-tone); border-radius:36px; background:#050507; }.lcars-bridge-camera>header { display:grid; grid-template-columns:25px 1fr auto; align-items:center; gap:9px; min-height:68px; padding:0 20px; color:var(--bridge-tone); background:#050507; font-family:var(--lcars-font); font-size:34px; line-height:1; letter-spacing:.02em; text-transform:uppercase; }.lcars-bridge-camera>header strong,.lcars-bridge-camera>header b { font-weight:500; }.lcars-bridge-camera>header b { color:#d9d2e9; font-size:20px; }.lcars-bridge-feed { position:relative; }.lcars-bridge-feed .lcars-camera-card { min-height:310px; }.lcars-bridge-feed>i { position:absolute; width:28px; height:28px; border-color:var(--bridge-tone); border-style:solid; pointer-events:none; }.lcars-bridge-feed>i:nth-of-type(1) { top:12px; left:12px; border-width:3px 0 0 3px; }.lcars-bridge-feed>i:nth-of-type(2) { top:12px; right:12px; border-width:3px 3px 0 0; }.lcars-bridge-feed>i:nth-of-type(3) { bottom:12px; left:12px; border-width:0 0 3px 3px; }.lcars-bridge-feed>i:nth-of-type(4) { right:12px; bottom:12px; border-width:0 3px 3px 0; }.lcars-bridge-camera>footer { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; padding:5px; background:var(--bridge-tone); }.lcars-bridge-camera>footer span { min-width:0; padding:9px 5px; overflow:hidden; color:#d9d2e9; background:#0b0b10; font-family:var(--lcars-font); font-size:17px; font-weight:500; line-height:1; letter-spacing:.02em; text-align:center; text-overflow:ellipsis; white-space:nowrap; }.lcars-bridge-camera>footer.live-detection { grid-template-columns:repeat(2,minmax(0,1fr)); }.lcars-bridge-camera>footer.live-detection span { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-right:14px; padding-left:14px; text-align:left; }.lcars-bridge-camera>footer.live-detection b { color:#fff; font:inherit; }
     .lcars-bridge button,.lcars-bridge span,.lcars-bridge strong,.lcars-bridge b,.lcars-bridge-camera span,.lcars-bridge-camera strong,.lcars-bridge-camera b { font-family:var(--lcars-font); font-weight:400; }
+    .lcars-bridge-shell>aside { grid-template-rows:74px minmax(0,var(--bridge-node-before,50fr)) 96px minmax(0,var(--bridge-node-after,50fr)) 74px; }
     .lcars-bridge-shell>aside i { background:color-mix(in srgb,var(--bridge-tone) 34%,#050507); }
     .lcars-bridge-shell>aside b:nth-of-type(2) { font-weight:400; }
     .lcars-bridge>header strong { font-size:82px; }
