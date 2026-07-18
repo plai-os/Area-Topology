@@ -11,6 +11,12 @@ views:
     type: dashboard
     default: true
     color: "#6F99A8"
+    rail:
+      top: 32
+      middle: MAESDERW
+      bottom: SY16 4BD
+      middle_color: "#6F99A8"
+      middle_text_color: "#FFFFFF"
     section_layout: primary
     primary_section: lounge
     motion_sensor: binary_sensor.car_camera_motion
@@ -34,6 +40,12 @@ views:
     title: General
     type: dashboard
     color: "#B58AAD"
+    rail:
+      top: MJ-32
+      middle: SYSTEMS
+      bottom: MJ-32
+      middle_color: "#B58AAD"
+      middle_text_color: "#FFFFFF"
     section_layout: balanced
     primary_section: infrastructure
     sections:
@@ -54,6 +66,12 @@ views:
     title: Shuttle Bay
     type: dashboard
     color: "#C58A69"
+    rail:
+      top: 0003 MOJ
+      middle: PEUGEOT
+      bottom: 0003 MOJ
+      middle_color: "#C58A69"
+      middle_text_color: "#FFFFFF"
     section_layout: primary
     primary_section: garage
     motion_sensor: binary_sensor.car_camera_motion
@@ -73,21 +91,35 @@ views:
     title: Deep Space
     type: dashboard
     color: "#B88768"
+    rail:
+      top: MJ-32
+      middle: SENSOR ARRAY
+      bottom: MJ-32
+      middle_color: "#B88768"
+      middle_text_color: "#FFFFFF"
     primary_section: front
     sections:
       - id: front
         type: area
         title: Front Garden
         area: Front Garden
+        column: left
       - id: rear
         type: area
         title: Rear Garden
         area: Rear Garden
+        column: left
 
   - id: west_wing
     title: West Wing
     type: dashboard
     color: "#9B8F5A"
+    rail:
+      top: MJ-32
+      middle: HABITAT
+      bottom: MJ-32
+      middle_color: "#9B8F5A"
+      middle_text_color: "#FFFFFF"
     primary_section: bedroom
     sections:
       - id: bedroom
@@ -107,6 +139,12 @@ views:
     title: Warp Engines
     type: dashboard
     color: "#8F90C2"
+    rail:
+      top: MJ-32
+      middle: PROPULSION
+      bottom: MJ-32
+      middle_color: "#8F90C2"
+      middle_text_color: "#FFFFFF"
     primary_section: loft
     sections:
       - id: loft
@@ -115,9 +153,27 @@ views:
         area: Loft
 
   - id: weather
-    title: Weather
+    title: Life Support
     type: weather
     color: "#66AACC"
+    rail:
+      top:
+        entity: sensor.outdoor_temp
+        decimals: 1
+        fallback: "--"
+      middle:
+        source: weather
+        uppercase: true
+        fallback: UNKNOWN
+      bottom:
+        source: weather
+        attribute: wind_gust_speed
+        label: GUSTS
+        unit: km/h
+        decimals: 1
+        fallback: "--"
+      middle_color: "#66AACC"
+      middle_text_color: "#FFFFFF"
     entity: weather.pirateweather
     sun_entity: sun.sun
     temperature_sensor: sensor.outdoor_temp
@@ -156,6 +212,12 @@ views:
     title: Security
     type: security
     color: "#B56B7A"
+    rail:
+      top: MJ-32
+      middle: TACTICAL
+      bottom: MJ-32
+      middle_color: "#B56B7A"
+      middle_text_color: "#FFFFFF"
     sections:
       - id: escape_pod
         type: camera
@@ -170,6 +232,12 @@ views:
     title: Engineering
     type: engineering
     color: "#FF9966"
+    rail:
+      top: MJ-32
+      middle: POWER
+      bottom: MJ-32
+      middle_color: "#FF9966"
+      middle_text_color: "#FFFFFF"
     chart_color: "#FF9966"
     chart_secondary_color: "#9999FF"
     chart_tertiary_color: "#FFCC99"
@@ -230,6 +298,12 @@ views:
     title: Captain's Log
     type: calendar
     color: "#C090B8"
+    rail:
+      top: MJ-32
+      middle: RECORDS
+      bottom: MJ-32
+      middle_color: "#C090B8"
+      middle_text_color: "#FFFFFF"
     initial_view: listWeek
     sections:
       - type: calendar
@@ -248,6 +322,12 @@ views:
     type: dashboard
     icon: mdi:leaf
     color: "#7A9E8E"
+    rail:
+      top: MJ-32
+      middle: LIFE SUPPORT
+      bottom: MJ-32
+      middle_color: "#7A9E8E"
+      middle_text_color: "#FFFFFF"
     sections:
       - id: environment
         type: devices
@@ -260,6 +340,12 @@ views:
     type: dashboard
     icon: mdi:server
     color: "#8B7AAE"
+    rail:
+      top: MJ-32
+      middle: DATA CORE
+      bottom: MJ-32
+      middle_color: "#8B7AAE"
+      middle_text_color: "#FFFFFF"
     sections:
       - id: computer_systems
         type: devices
