@@ -1409,6 +1409,23 @@ class AreaTopologyCard extends HTMLElement {
       const areaTarget = String(section.area || section.source?.area || "").trim().toLowerCase();
       const sourceArea = areaTarget ? allAreas.find((area) => [area.id, area.name].some((value) => String(value || "").trim().toLowerCase() === areaTarget)) : null;
       let displayDevices = sourceArea ? this.devicesForDisplay(sourceArea) : allAreas.flatMap((area) => this.devicesForDisplay(area));
+      const configuredEntities = Array.isArray(section.entities) ? section.entities.filter(Boolean) : [];
+      if (configuredEntities.length) {
+        const entityColor = safeColor(section.device_color || section.color || config.color, "#7a9e8e");
+        displayDevices = [{
+          id: `__section_entities_${section.id || index}`,
+          name: section.device_title || section.device_name || section.title || "SYSTEM STATUS",
+          icon: section.device_icon || section.icon || "mdi:calendar-clock",
+          color: entityColor,
+          manufacturer: "",
+          model: "",
+          labels: [{ label_id: `__section_${section.id || index}`, name: section.label || section.title || "Status", icon: section.icon || "mdi:calendar-clock", color: entityColor }],
+          entities: configuredEntities.map((entityId) => {
+            const stateObj = this._hass?.states?.[entityId];
+            return { entity_id: entityId, name: stateObj?.attributes?.friendly_name || entityId, icon: stateObj?.attributes?.icon, device_class: stateObj?.attributes?.device_class };
+          }),
+        }];
+      }
       const explicitDevices = Array.isArray(section.devices) ? new Set(section.devices.map((value) => String(value).trim().toLowerCase())) : null;
       if (explicitDevices?.size) displayDevices = displayDevices.filter((device) => [device.id, device.name].some((value) => explicitDevices.has(String(value || "").trim().toLowerCase())));
       if (Array.isArray(section.labels) || Array.isArray(section.properties)) displayDevices = displayDevices.filter((device) => this.deviceMatchesCustomMenu(device, section));
@@ -2429,6 +2446,14 @@ class AreaTopologyCard extends HTMLElement {
     if (domain === "sensor" && deviceClass === "humidity") {
       return { ...common, priority: 5, active: false, value: formatted(), icon: "mdi:water-percent" };
     }
+    if (domain === "sensor" && (["date", "timestamp"].includes(deviceClass) || entity.entity_id.includes("waste_collection_schedule_"))) {
+      const lowerName = common.name.toLowerCase();
+      const icon = lowerName.includes("recycl") ? "mdi:recycle"
+        : lowerName.includes("garden") ? "mdi:flower"
+          : lowerName.includes("rubbish") ? "mdi:trash-can-outline"
+            : (stateObj.attributes.icon || entity.icon || "mdi:calendar-clock");
+      return { ...common, priority: 5, active: false, value: formatted(), icon };
+    }
     return null;
   }
 
@@ -2645,6 +2670,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-weather-grid { position:relative; padding:14px 0 18px 76px; }.lcars-weather-grid::before { content:""; position:absolute; top:0; bottom:-12px; left:0; width:64px; background:var(--weather-tone); }
     .lcars-weather-current dt { display:flex; align-items:center; gap:7px; }.lcars-weather-current dt ha-icon { --mdc-icon-size:17px; }
     .lcars-weather-current { display:grid; grid-template-columns:150px minmax(200px,.55fr) minmax(620px,1.8fr); gap:22px; align-items:center; padding:28px; border:2px solid var(--weather-tone); border-radius:0 22px 22px 0; background:#0b0b10; }.weather-main-icon { justify-self:center; color:var(--weather-tone); --mdc-icon-size:120px; }.lcars-weather-current small { color:var(--weather-tone); font-size:11px; font-weight:800; letter-spacing:.12em; }.lcars-weather-current strong { display:block; margin-top:5px; font-family:var(--lcars-font); font-size:68px; font-weight:400; line-height:1; }.lcars-weather-current>div>span { display:block; margin-top:7px; font-family:var(--lcars-font); font-size:18px; text-transform:uppercase; }.lcars-weather-current dl { margin:0; }.lcars-weather-current dl>div { min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:20px; margin-top:7px; padding:10px 16px; box-sizing:border-box; border-radius:18px 0 0 18px; color:var(--weather-contrast); background:var(--weather-tone); }.lcars-weather-current dt,.lcars-weather-current dd { font-family:var(--lcars-font); font-size:19px; font-weight:400; letter-spacing:.035em; white-space:nowrap; }.lcars-weather-current dd { margin:0; }
+    .lcars-weather-current dt,.lcars-weather-current dd { font-weight:400; letter-spacing:.065em; -webkit-font-smoothing:antialiased; text-shadow:none; }.lcars-weather-current dt { font-size:20px; }.lcars-weather-current dd { margin:0; font-size:19px; letter-spacing:.045em; }
     .lcars-weather-panels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:16px; }.lcars-weather-panel { min-width:0; overflow:hidden; border:2px solid var(--weather-tone); border-radius:0 22px 22px 0; background:#0b0b10; }.lcars-weather-panel>header { display:flex; align-items:center; gap:9px; min-height:48px; padding:0 16px; color:var(--weather-contrast); background:var(--weather-tone); font-family:var(--lcars-font); font-size:20px; letter-spacing:.035em; }.lcars-weather-panel>header ha-icon { --mdc-icon-size:21px; }.lcars-weather-panel>div { padding:8px 16px 12px; }.lcars-forecast-row { display:grid; grid-template-columns:52px 25px 52px minmax(90px,1fr) 52px; align-items:center; gap:8px; min-height:42px; border-bottom:1px solid color-mix(in srgb,var(--weather-tone) 35%,transparent); }.lcars-forecast-row:last-child { border-bottom:0; }.lcars-forecast-row>b { font-family:var(--lcars-font); font-size:17px; font-weight:400; text-transform:uppercase; }.lcars-forecast-row ha-icon { color:var(--weather-tone); --mdc-icon-size:21px; }.lcars-forecast-row ha-icon.weather-sun,.weather-main-icon.weather-sun { color:var(--lcars-datetime,#ff9900); }.lcars-forecast-row>span,.lcars-forecast-row>em { font-style:normal; text-align:right; }.lcars-forecast-row>i { position:relative; height:13px; border-radius:999px; background:#202936; }.lcars-forecast-row>i::after { content:""; position:absolute; top:0; bottom:0; left:var(--forecast-start); width:calc(var(--forecast-end) - var(--forecast-start)); border-radius:999px; background:linear-gradient(90deg,var(--forecast-start-color,#123a8c),var(--forecast-end-color,#d32f2f)); }.lcars-weather-no-forecast,.lcars-weather-empty { display:grid; place-items:center; min-height:350px; color:var(--weather-tone,#66aacc); font-family:var(--lcars-font); font-size:24px; }.lcars-weather-panel .lcars-weather-no-forecast { min-height:260px; }
     .lcars-weather-history-panels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:16px; }.lcars-weather-history-panel { min-width:0; overflow:hidden; border:2px solid var(--weather-tone); border-radius:0 22px 22px 0; background:#0b0b10; }.lcars-weather-history-panel>header { display:flex; align-items:center; gap:9px; min-height:48px; padding:0 16px; color:var(--weather-contrast); background:var(--weather-tone); font-family:var(--lcars-font); font-size:20px; font-weight:400; letter-spacing:.035em; }.lcars-weather-history-panel>header ha-icon { --mdc-icon-size:21px; }.lcars-weather-history-card { min-height:330px; overflow:hidden; background:#050507; }.lcars-weather-history-card>* { display:block; --ha-card-border-width:0; --ha-card-border-radius:0; --ha-card-box-shadow:none; --graph-color-1:var(--weather-tone)!important; --graph-color-2:#9999ff!important; --graph-color-3:#ff9966!important; --accent-color:var(--weather-tone)!important; --primary-color:var(--weather-tone)!important; --card-background-color:#0b0b10!important; --ha-card-background:#0b0b10!important; --primary-text-color:#f5f1ff; --secondary-text-color:#c9c2d8; color-scheme:dark; }.lcars-weather-history-error { display:grid; place-items:center; min-height:330px; color:var(--weather-tone); font-family:var(--lcars-font); font-size:20px; }
     .lcars-security { color:#f5f1ff; }.lcars-security>header { display:grid; grid-template-columns:48px 232px minmax(50px,1fr) auto; align-items:stretch; height:48px; color:var(--security-contrast); font-family:var(--lcars-font); font-size:22px; letter-spacing:.035em; }.lcars-security>header>ha-icon,.lcars-security>header>strong { display:flex; align-items:center; background:var(--security-tone); }.lcars-security>header>ha-icon { width:auto; padding-left:14px; border-radius:25px 0 0 0; }.lcars-security>header>strong { padding:0 14px 0 4px; }.lcars-security>header>i { align-self:end; margin:0 10px 7px; border-bottom:8px solid var(--security-tone); }.lcars-security>header>b { align-self:end; padding:8px 16px; border-radius:18px 18px 0 0; color:var(--security-contrast); background:var(--security-tone); text-transform:uppercase; }

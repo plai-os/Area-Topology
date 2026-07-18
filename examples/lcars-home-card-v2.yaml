@@ -339,6 +339,17 @@ views:
       middle_color: "#7A9E8E"
       middle_text_color: "#FFFFFF"
     sections:
+      - id: waste_collection
+        type: devices
+        title: Waste Collection
+        icon: mdi:recycle
+        device_title: Collection Schedule
+        device_icon: mdi:trash-can-outline
+        color: "#7A9E8E"
+        entities:
+          - sensor.waste_collection_schedule_recycling_and_food_waste
+          - sensor.waste_collection_schedule_garden_waste
+          - sensor.waste_collection_schedule_general_rubbish
       - id: environment
         type: devices
         title: Environmental Systems
