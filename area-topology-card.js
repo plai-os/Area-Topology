@@ -2808,6 +2808,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge-primary { display:flex; flex-direction:column; gap:16px; }
     @keyframes spin { to { transform:rotate(360deg); } }
     @media (max-width:1200px) { .standalone-lcars .lcars-area-grid { grid-template-columns:1fr; } }
+    .lcars-area>header>button[data-area-config] { padding-top:10px; padding-bottom:4px; }
+    .lcars-area-reading { padding-top:8px; padding-bottom:2px; }
     .lcars-meter { grid-template-columns:26px minmax(115px,1fr) auto; }
     .lcars-meter ha-icon,.lcars-area-reading ha-icon,.lcars-forecast-row ha-icon,.tree-property ha-icon { --mdc-icon-size:24px!important; }
     .lcars-meter b,.lcars-standby,.lcars-area-reading b,.lcars-bridge-camera>footer span,.lcars-bridge-camera>footer b,.lcars-engineering-metrics span { font-size:24px!important; }
