@@ -2914,7 +2914,7 @@ class AreaTopologyCard extends HTMLElement {
     .bridge-active .lcars-footer span { margin-left:142px; }
     .bridge-active .lcars-footer span::before { left:-142px; width:130px; }
     .lcars-bridge .lcars-standby:not(.offline) { color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.65); }
-    .lcars-unified-grid { display:block; padding:var(--bridge-gap) 0; }
+    .lcars-unified-grid { display:block; padding:calc(var(--bridge-gap) + 18px) 0 var(--bridge-gap); }
     .lcars-unified-content { min-width:0; }
     .lcars-unified-content>.lcars-floor { margin-top:0; }
     .lcars-unified-content>.lcars-weather>header,.lcars-unified-content>.lcars-security>header,.lcars-unified-content>.lcars-engineering>header,.lcars-unified-content>.lcars-floor>header { display:none; }
