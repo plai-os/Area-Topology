@@ -2794,7 +2794,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge button,.lcars-bridge span,.lcars-bridge strong,.lcars-bridge b,.lcars-bridge-camera span,.lcars-bridge-camera strong,.lcars-bridge-camera b { font-family:var(--lcars-font); font-weight:400; }
     .lcars-bridge-shell>aside i { background:color-mix(in srgb,var(--bridge-tone) 34%,#050507); }
     .lcars-bridge-shell>aside b:nth-of-type(2) { font-weight:400; }
-    .lcars-bridge>header strong { font-size:82px; }
+    .lcars-bridge>header strong { font-size:92px; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { --lcars-font:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif; width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid var(--popup-menu-tone); border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; font-family:var(--lcars-font); }
     .lcars-popup,.lcars-popup button,.lcars-popup span,.lcars-popup strong,.lcars-popup b,.lcars-popup small,.lcars-popup h2 { font-family:var(--lcars-font); font-weight:400; }
