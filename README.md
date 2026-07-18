@@ -117,7 +117,7 @@ Supported view types are:
 - `calendar`: one or more calendar entity sections.
 - `devices`: discover devices by `labels` and/or entity `properties`, independent of their floor.
 
-Every view accepts `id`, `title`, `type`, `color`, `icon`, `hidden`, `default`, and optional rail labels (`rail_top`, `rail_middle`, `rail_bottom`). View-specific settings can be written directly on the view or nested under `config:`. Use `sections:` when content needs explicit placement rather than automatic floor/area discovery. Section order is display order; set `hidden: true` to temporarily remove one without deleting its configuration.
+Every view accepts `id`, `title`, `type`, `color`, `icon`, `hidden`, and `default`. Its rail is independently configurable with `rail.top`, `rail.middle`, `rail.bottom`, `rail.middle_color`, and `rail.middle_text_color`; the older flat aliases such as `rail_middle` remain supported. View-specific settings can be written directly on the view or nested under `config:`. Use `sections:` when content needs explicit placement rather than automatic floor/area discovery. Section order is display order; set `hidden: true` to temporarily remove one without deleting its configuration.
 
 The complete reorganised example is in [`examples/lcars-home-card-v2.yaml`](examples/lcars-home-card-v2.yaml). Existing `floors`, `weather`, `security`, `engineering`, `captains_log`, `bridge`, and `menus` configurations remain supported when `views:` is omitted.
 

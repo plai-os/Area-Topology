@@ -230,6 +230,12 @@ views:
     icon: mdi:account-group
     color: "#B48A78"
     labels: [Mobiles]
+    rail:
+      top: MJ-32
+      middle: PERSONNEL
+      bottom: MJ-32
+      middle_color: "#B48A78"
+      middle_text_color: "#FFFFFF"
 
 label_colors:
   Alexa: "#9B8F5A"
