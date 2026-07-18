@@ -1372,14 +1372,11 @@ class AreaTopologyCard extends HTMLElement {
     if (typeof config !== "object") return String(config);
     const fallback = config.fallback ?? config.default ?? "—";
     const source = String(config.source || "").toLowerCase();
-    const configuredWeatherTemperature = source === "weather" && config.attribute === "temperature" ? view.temperature_sensor : "";
-    const entityId = config.entity || configuredWeatherTemperature || (source === "weather" ? view.entity : "");
+    const entityId = config.entity || (source === "weather" ? view.entity : "");
     const stateObj = entityId ? this._hass?.states?.[entityId] : null;
     let value;
     if (stateObj) {
-      value = configuredWeatherTemperature && entityId === configuredWeatherTemperature
-        ? stateObj.state
-        : (config.attribute ? stateObj.attributes?.[config.attribute] : stateObj.state);
+      value = config.attribute ? stateObj.attributes?.[config.attribute] : stateObj.state;
       if (["unknown", "unavailable", null, undefined, ""].includes(value)) value = undefined;
     }
     if (value === undefined) value = config.value ?? fallback;
