@@ -38,7 +38,7 @@ views:
         entity: camera.c110_mainstream
 
   - id: general
-    title: General
+    title: Sick Bay
     type: dashboard
     color: "#B58AAD"
     rail:
