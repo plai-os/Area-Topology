@@ -855,10 +855,37 @@ class AreaTopologyCard extends HTMLElement {
       });
       chart.hass = this._hass;
       host.append(chart);
+      this.styleLcarsPopupContent(chart);
     } catch (error) {
       console.error("Could not load LCARS history graph", error);
       if (host.isConnected) host.innerHTML = '<div class="lcars-history-error">HISTORY DATA UNAVAILABLE</div>';
     }
+  }
+
+  styleLcarsPopupContent(card) {
+    const css = `
+      @font-face { font-family:"LCARS GTJ3"; src:url("${LCARS_FONT_DATA}") format("woff2"); font-style:normal; font-weight:400; font-display:swap; }
+      :host,ha-card,.card-content,* { --primary-font-family:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif; --paper-font-common-base_-_font-family:var(--primary-font-family); font-family:var(--primary-font-family)!important; font-weight:400!important; }
+      svg text,.chart text,text { font-family:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif!important; font-weight:400!important; letter-spacing:.025em; }
+      h1,h2,h3,.name,.state,.value,.header { font-family:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif!important; font-weight:400!important; text-transform:uppercase; }
+    `;
+    const apply = (root) => {
+      if (!root) return;
+      if (!root.querySelector?.("style[data-lcars-popup-font]")) {
+        const style = document.createElement("style");
+        style.dataset.lcarsPopupFont = "";
+        style.textContent = css;
+        root.append(style);
+      }
+      for (const element of root.querySelectorAll?.("*") || []) if (element.shadowRoot) apply(element.shadowRoot);
+      if (!root.__lcarsPopupFontObserver) {
+        root.__lcarsPopupFontObserver = new MutationObserver(() => {
+          for (const element of root.querySelectorAll?.("*") || []) if (element.shadowRoot) apply(element.shadowRoot);
+        });
+        root.__lcarsPopupFontObserver.observe(root, { childList:true, subtree:true });
+      }
+    };
+    apply(card.shadowRoot || card);
   }
 
   layoutLcarsAreas() {
@@ -2766,8 +2793,9 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge-camera { overflow:hidden; border:7px solid var(--bridge-tone); border-radius:36px; background:#050507; }.lcars-bridge-camera>header { display:grid; grid-template-columns:25px 1fr auto; align-items:center; gap:9px; min-height:68px; padding:0 20px; color:var(--bridge-tone); background:#050507; font-family:var(--lcars-font); font-size:34px; line-height:1; letter-spacing:.02em; text-transform:uppercase; }.lcars-bridge-camera>header strong,.lcars-bridge-camera>header b { font-weight:500; }.lcars-bridge-camera>header b { color:#d9d2e9; font-size:20px; }.lcars-bridge-feed { position:relative; }.lcars-bridge-feed .lcars-camera-card { min-height:310px; }.lcars-bridge-feed>i { position:absolute; width:28px; height:28px; border-color:var(--bridge-tone); border-style:solid; pointer-events:none; }.lcars-bridge-feed>i:nth-of-type(1) { top:12px; left:12px; border-width:3px 0 0 3px; }.lcars-bridge-feed>i:nth-of-type(2) { top:12px; right:12px; border-width:3px 3px 0 0; }.lcars-bridge-feed>i:nth-of-type(3) { bottom:12px; left:12px; border-width:0 0 3px 3px; }.lcars-bridge-feed>i:nth-of-type(4) { right:12px; bottom:12px; border-width:0 3px 3px 0; }.lcars-bridge-camera>footer { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; padding:5px; background:var(--bridge-tone); }.lcars-bridge-camera>footer span { min-width:0; padding:9px 5px; overflow:hidden; color:#d9d2e9; background:#0b0b10; font-family:var(--lcars-font); font-size:17px; font-weight:500; line-height:1; letter-spacing:.02em; text-align:center; text-overflow:ellipsis; white-space:nowrap; }.lcars-bridge-camera>footer.live-detection { grid-template-columns:repeat(2,minmax(0,1fr)); }.lcars-bridge-camera>footer.live-detection span { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-right:14px; padding-left:14px; text-align:left; }.lcars-bridge-camera>footer.live-detection b { color:#fff; font:inherit; }
     .lcars-bridge button,.lcars-bridge span,.lcars-bridge strong,.lcars-bridge b,.lcars-bridge-camera span,.lcars-bridge-camera strong,.lcars-bridge-camera b { font-family:var(--lcars-font); font-weight:400; }
     .lcars-bridge-shell>aside b:nth-of-type(2) { font-weight:400; }
+    .lcars-bridge>header strong { font-size:72px; }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
-    .lcars-popup { width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid var(--popup-menu-tone); border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; font-family:var(--lcars-font); }
+    .lcars-popup { --lcars-font:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif; width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid var(--popup-menu-tone); border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; font-family:var(--lcars-font); }
     .lcars-popup,.lcars-popup button,.lcars-popup span,.lcars-popup strong,.lcars-popup b,.lcars-popup small,.lcars-popup h2 { font-family:var(--lcars-font); font-weight:400; }
     .lcars-popup-top { display:grid; grid-template-columns:1fr auto 54px; align-items:center; height:48px; color:#fff; background:var(--popup-menu-tone); font-family:var(--lcars-font); font-size:18px; letter-spacing:.04em; }
     .lcars-popup-top span { padding:0 15px; }.lcars-popup-top button { align-self:stretch; border:0; border-radius:0 25px 25px 0; color:#fff; background:var(--popup-menu-tone); font:inherit; font-size:27px; cursor:pointer; }
