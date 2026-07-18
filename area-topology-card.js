@@ -1621,7 +1621,8 @@ class AreaTopologyCard extends HTMLElement {
       <div class="lcars-body"><nav class="lcars-floor-nav" aria-label="LCARS navigation"><div class="lcars-nav-cap"></div>${views.map((view, index) => {
         const config = this.lcarsViewConfig(view, String(view.type || "floor").toLowerCase());
         const color = safeColor(view.color || config.color, ["#6f99a8", "#9b8f5a", "#b88768", "#8f90c2"][index % 4]);
-        return `<button class="${view.id === selected.id ? "active" : ""}" data-floor-nav="__view_${escapeHtml(view.id)}__" aria-pressed="${view.id === selected.id}" style="--nav-color:${color};--nav-contrast:${contrastColor(color)}" title="Show ${escapeHtml(view.title)}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(view.title)}</b></button>`;
+        const menuTextColor = safeColor(view.menu_text_color || config.menu_text_color, view.id === "warp_engines" ? "#ffffff" : contrastColor(color));
+        return `<button class="${view.id === selected.id ? "active" : ""}" data-floor-nav="__view_${escapeHtml(view.id)}__" aria-pressed="${view.id === selected.id}" style="--nav-color:${color};--nav-contrast:${menuTextColor}" title="Show ${escapeHtml(view.title)}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(view.title)}</b></button>`;
       }).join("")}<div class="lcars-nav-foot"></div><div class="lcars-kiosk-qr" style="--qr-tone:${selectedColor};--qr-contrast:${contrastColor(selectedColor)}" title="Join ${escapeHtml(wifiName)}"><span>WI-FI ACCESS</span><img src="${escapeHtml(wifiQrUrl)}" alt="QR code to join ${escapeHtml(wifiName)}"><b>SCAN TO JOIN</b></div></nav><main class="lcars-main">${content}<div class="lcars-footer" style="--lcars-footer-tone:${selectedColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div></main></div>
     </div>`;
   }

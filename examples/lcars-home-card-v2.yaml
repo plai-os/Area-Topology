@@ -139,6 +139,7 @@ views:
     title: Warp Engines
     type: dashboard
     color: "#8F90C2"
+    menu_text_color: "#FFFFFF"
     rail:
       top: MJ-32
       middle: PROPULSION
