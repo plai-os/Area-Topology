@@ -1353,9 +1353,12 @@ class AreaTopologyCard extends HTMLElement {
     const railTopConfig = rail.top ?? view.rail_top ?? "MJ-32";
     const railMiddleConfig = rail.middle ?? view.rail_middle ?? "DATA MODE";
     const railBottomConfig = rail.bottom ?? view.rail_bottom ?? railTopConfig;
-    const railTop = this.lcarsRailValue(railTopConfig, view);
+    let railTop = this.lcarsRailValue(railTopConfig, view);
     const railMiddle = this.lcarsRailValue(railMiddleConfig, view);
     const railBottom = this.lcarsRailValue(railBottomConfig, view);
+    if (["weather", "life_support"].includes(String(view.type || "").toLowerCase()) && ["--", "—"].includes(String(railTop).trim()) && this._lcarsCurrentWeatherTemperature !== undefined) {
+      railTop = `${this._lcarsCurrentWeatherTemperature} °C`;
+    }
     const railMiddleColor = safeColor(rail.middle_color || view.rail_middle_color, color);
     const railMiddleContrast = safeColor(rail.middle_text_color || view.rail_middle_text_color, contrastColor(railMiddleColor));
     return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast}">
