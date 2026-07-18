@@ -21,9 +21,8 @@ views:
       middle_text_color: "#FFFFFF"
     section_layout: primary
     primary_section: lounge
-    motion_sensor: binary_sensor.car_camera_motion
-    recording_sensor: binary_sensor.car_camera_recording
-    last_activity_sensor: sensor.car_camera_last_activity
+    cell_motion_sensor: binary_sensor.c110_cell_motion_detection
+    person_detection_sensor: binary_sensor.c110_person_detection
     sections:
       - id: lounge
         type: area
@@ -76,9 +75,8 @@ views:
       middle_text_color: "#FFFFFF"
     section_layout: primary
     primary_section: garage
-    motion_sensor: binary_sensor.car_camera_motion
-    recording_sensor: binary_sensor.car_camera_recording
-    last_activity_sensor: sensor.car_camera_last_activity
+    cell_motion_sensor: binary_sensor.c110_cell_motion_detection
+    person_detection_sensor: binary_sensor.c110_person_detection
     sections:
       - id: garage
         type: area
@@ -237,9 +235,17 @@ views:
     type: engineering
     color: "#FF9966"
     rail:
-      top: MJ-32
-      middle: POWER
-      bottom: MJ-32
+      top:
+        entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+        label: POWER
+        decimals: 0
+        fallback: "--"
+      middle: OCTOPUS
+      bottom:
+        entity: sensor.sarn_32_maesderw_sarn
+        label: SOLAR
+        decimals: 1
+        fallback: "--"
       middle_color: "#FF9966"
       middle_text_color: "#FFFFFF"
     chart_color: "#FF9966"
