@@ -111,7 +111,7 @@ views:
         column: left
 
   - id: west_wing
-    title: West Wing
+    title: Habitat
     type: dashboard
     color: "#9B8F5A"
     rail:
