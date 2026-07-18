@@ -34,7 +34,7 @@ views:
         area: Kitchen
       - id: escape_pod
         type: camera
-        title: Escape Pod
+        title: Main Viewer
         entity: camera.c110_mainstream
 
   - id: general
