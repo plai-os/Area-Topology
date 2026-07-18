@@ -1487,8 +1487,9 @@ class AreaTopologyCard extends HTMLElement {
     const railMiddleContrast = safeColor(rail.middle_text_color || view.rail_middle_text_color, contrastColor(railMiddleColor));
     const railMiddlePosition = this.lcarsRailMiddlePosition(view);
     const connectivity = this.lcarsOverallConnectivity();
+    const sectors = Array.isArray(view.sections) ? view.sections.length : 0;
     return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr">
-      <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong><span>${escapeHtml(status)}</span>${this.renderLcarsStatusRibbon(connectivity.online, connectivity.offline)}</header>
+      <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong>${this.renderLcarsStatusRibbon(sectors, connectivity.online, connectivity.offline)}</header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
         <div class="lcars-bridge-grid lcars-unified-grid"><div class="lcars-unified-content">${inner}</div></div>
@@ -1550,8 +1551,8 @@ class AreaTopologyCard extends HTMLElement {
     };
   }
 
-  renderLcarsStatusRibbon(online, offline) {
-    return `<div class="lcars-status-ribbon" aria-label="System status"><span class="nominal"><i></i>NOMINAL</span><span class="online">${online} ONLINE</span><span class="offline">${offline} OFFLINE</span></div>`;
+  renderLcarsStatusRibbon(sectors, online, offline) {
+    return `<div class="lcars-status-ribbon" aria-label="System status"><span class="sectors">${sectors} SECTOR${sectors === 1 ? "" : "S"}</span><span class="online">${online} ONLINE</span><span class="offline">${offline} OFFLINE</span></div>`;
   }
 
   lcarsDashboardGroup(config) {
@@ -2088,7 +2089,7 @@ class AreaTopologyCard extends HTMLElement {
     const secondaryHtml = rightSections.map((area) => this.renderLcarsArea(area)).join("");
     this._renderingBridge = wasRenderingBridge;
     return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr;--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
-      <header><strong>${escapeHtml(bridgeTitle)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}${this.renderLcarsStatusRibbon(online, offline)}</header>
+      <header><strong>${escapeHtml(bridgeTitle)}</strong>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}${this.renderLcarsStatusRibbon(group.areas.length, online, offline)}</header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
         <div class="lcars-bridge-grid">
@@ -2887,8 +2888,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge>header { overflow:visible; }
     .lcars-status-ribbon { position:absolute; z-index:8; bottom:-23px; left:50%; display:grid; grid-template-columns:minmax(145px,1fr) minmax(155px,1fr) minmax(145px,1fr); width:min(520px,42vw); height:46px; padding:5px; border-radius:25px; background:#050507; transform:translateX(-50%); pointer-events:none; }
     .lcars-status-ribbon span { display:flex; align-items:center; justify-content:center; min-width:0; padding:5px 18px 2px; overflow:hidden; color:#fff!important; font-family:var(--lcars-font); font-size:25px; font-weight:400; line-height:1; letter-spacing:.025em; text-overflow:ellipsis; white-space:nowrap; }
-    .lcars-status-ribbon .nominal { gap:12px; border-radius:22px 0 0 22px; color:#fff!important; background:#9aa36b; }
-    .lcars-status-ribbon .nominal i { width:9px; height:9px; flex:0 0 9px; border-radius:50%; background:#fff; }
+    .lcars-status-ribbon .sectors { border-radius:22px 0 0 22px; color:#fff!important; background:#9aa36b; }
     .lcars-status-ribbon .online { margin-left:5px; background:#8f89c4; }
     .lcars-status-ribbon .offline { margin-left:5px; border-radius:0 22px 22px 0; background:#555962; }
     .lcars-bridge-grid { padding-top:calc(var(--bridge-gap) + 18px); }
