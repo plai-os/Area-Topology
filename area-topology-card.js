@@ -1651,6 +1651,28 @@ class AreaTopologyCard extends HTMLElement {
     return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsCustomMenu(config), "SYSTEM DIRECTORY");
   }
 
+  lcarsNavigationIcon(view = {}) {
+    const configured = view.menu_icon || view.navigation_icon || view.icon;
+    if (configured) return String(configured);
+    const key = `${view.id || ""} ${view.title || view.name || ""}`.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const icons = [
+      [/captain|log|calendar/, "mdi:calendar-month-outline"],
+      [/shuttle|garage|car/, "mdi:car"],
+      [/deep space|outside|garden/, "mdi:tree-outline"],
+      [/life support|weather|climate/, "mdi:weather-partly-cloudy"],
+      [/warp|power|energy/, "mdi:lightning-bolt"],
+      [/security|shield/, "mdi:shield-outline"],
+      [/engineering/, "mdi:tools"],
+      [/sick|medical|health/, "mdi:medical-bag"],
+      [/environment|recycl|waste/, "mdi:leaf"],
+      [/computer|core|network/, "mdi:desktop-tower-monitor"],
+      [/personnel|people|mobile/, "mdi:account"],
+      [/habitat|west wing|floor|bedroom/, "mdi:bed"],
+      [/bridge|command|home/, "mdi:seat"],
+    ];
+    return icons.find(([pattern]) => pattern.test(key))?.[1] || "mdi:circle-outline";
+  }
+
   renderLcarsFromViews() {
     const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
     const groups = this.hasFloorLevel() ? this.floorGroups() : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
@@ -1698,7 +1720,7 @@ class AreaTopologyCard extends HTMLElement {
         const config = this.lcarsViewConfig(view, String(view.type || "floor").toLowerCase());
         const color = safeColor(view.color || config.color, ["#6f99a8", "#9b8f5a", "#b88768", "#8f90c2"][index % 4]);
         const menuTextColor = safeColor(view.menu_text_color || config.menu_text_color, view.id === "warp_engines" ? "#ffffff" : contrastColor(color));
-        return `<button class="${view.id === selected.id ? "active" : ""}" data-floor-nav="__view_${escapeHtml(view.id)}__" aria-pressed="${view.id === selected.id}" style="--nav-color:${color};--nav-contrast:${menuTextColor}" title="Show ${escapeHtml(view.title)}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(view.title)}</b></button>`;
+        return `<button class="${view.id === selected.id ? "active" : ""}" data-floor-nav="__view_${escapeHtml(view.id)}__" aria-pressed="${view.id === selected.id}" style="--nav-color:${color};--nav-contrast:${menuTextColor}" title="Show ${escapeHtml(view.title)}"><span class="lcars-nav-icon"><ha-icon icon="${escapeHtml(this.lcarsNavigationIcon(view))}"></ha-icon></span><b>${escapeHtml(view.title)}</b></button>`;
       }).join("")}<div class="lcars-nav-foot"></div><div class="lcars-kiosk-qr" style="--qr-tone:${selectedColor};--qr-contrast:${contrastColor(selectedColor)}" title="Join ${escapeHtml(wifiName)}"><span>WI-FI ACCESS</span><img src="${escapeHtml(wifiQrUrl)}" alt="QR code to join ${escapeHtml(wifiName)}"><b>SCAN TO JOIN</b></div></nav><main class="lcars-main">${content}<div class="lcars-footer" style="--lcars-footer-tone:${selectedColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div></main></div>
     </div>`;
   }
@@ -2823,6 +2845,8 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor-nav button.active b { box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--nav-contrast) 55%,transparent); }
     .lcars-floor-nav button span,.lcars-floor-nav button b { min-width:0; display:flex; align-items:center; height:54px; background:var(--nav-color); box-sizing:border-box; }
     .lcars-floor-nav button span { justify-content:center; padding-top:2px; border-radius:28px 0 0 28px; font-family:var(--lcars-font); font-size:31px; font-weight:400; letter-spacing:.015em; line-height:1; text-indent:3px; }
+    .lcars-floor-nav button .lcars-nav-icon { padding-top:0; text-indent:0; }
+    .lcars-floor-nav button .lcars-nav-icon ha-icon { width:32px; height:32px; color:currentColor; --mdc-icon-size:32px; }
     .lcars-floor-nav button b { padding:2px 10px 0; overflow:hidden; font-family:var(--lcars-font); font-size:31px; font-weight:400; letter-spacing:.01em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
     .lcars-floor { --lcars-tone:#cc99cc; --lcars-tone-contrast:#08080a; margin-top:14px; scroll-margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-main>.lcars-floor:first-child { margin-top:0; }
