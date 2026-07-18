@@ -2846,7 +2846,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-floor-nav button span,.lcars-floor-nav button b { min-width:0; display:flex; align-items:center; height:54px; background:var(--nav-color); box-sizing:border-box; }
     .lcars-floor-nav button span { justify-content:center; padding-top:2px; border-radius:28px 0 0 28px; font-family:var(--lcars-font); font-size:31px; font-weight:400; letter-spacing:.015em; line-height:1; text-indent:3px; }
     .lcars-floor-nav button .lcars-nav-icon { padding-top:0; text-indent:0; }
-    .lcars-floor-nav button .lcars-nav-icon ha-icon { width:32px; height:32px; color:currentColor; --mdc-icon-size:32px; }
+    .lcars-floor-nav button .lcars-nav-icon ha-icon { width:32px; height:32px; color:currentColor; transform:translateX(3px); --mdc-icon-size:32px; }
     .lcars-floor-nav button b { padding:2px 10px 0; overflow:hidden; font-family:var(--lcars-font); font-size:31px; font-weight:400; letter-spacing:.01em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
     .lcars-floor { --lcars-tone:#cc99cc; --lcars-tone-contrast:#08080a; margin-top:14px; scroll-margin-top:14px; }.lcars-tone-1 { --lcars-tone:#ff9966; }.lcars-tone-2 { --lcars-tone:#ffcc99; }.lcars-tone-3 { --lcars-tone:#9999ff; }
     .lcars-main>.lcars-floor:first-child { margin-top:0; }
