@@ -1486,8 +1486,9 @@ class AreaTopologyCard extends HTMLElement {
     const railMiddleColor = safeColor(rail.middle_color || view.rail_middle_color, color);
     const railMiddleContrast = safeColor(rail.middle_text_color || view.rail_middle_text_color, contrastColor(railMiddleColor));
     const railMiddlePosition = this.lcarsRailMiddlePosition(view);
+    const connectivity = this.lcarsOverallConnectivity();
     return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr">
-      <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong><span>${escapeHtml(status)}</span></header>
+      <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong><span>${escapeHtml(status)}</span>${this.renderLcarsStatusRibbon(connectivity.online, connectivity.offline)}</header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
         <div class="lcars-bridge-grid lcars-unified-grid"><div class="lcars-unified-content">${inner}</div></div>
@@ -1538,6 +1539,19 @@ class AreaTopologyCard extends HTMLElement {
     const views = (this._config?.views || []).filter((view) => view?.id && view?.title && view.hidden !== true);
     const index = Math.max(0, views.findIndex((view) => String(view.id) === String(config.id)));
     return views.length > 1 ? Math.round(5 + (index * 90 / (views.length - 1))) : 50;
+  }
+
+  lcarsOverallConnectivity() {
+    const devices = [...new Map((this._data || []).flatMap((area) => area.devices || []).map((device) => [device.id, device])).values()];
+    const states = devices.map((device) => this.lcarsDeviceConnectivity(device));
+    return {
+      online: states.filter((state) => state === "online").length,
+      offline: states.filter((state) => state === "offline").length,
+    };
+  }
+
+  renderLcarsStatusRibbon(online, offline) {
+    return `<div class="lcars-status-ribbon" aria-label="System status"><span class="nominal"><i></i>NOMINAL</span><span class="online">${online} ONLINE</span><span class="offline">${offline} OFFLINE</span></div>`;
   }
 
   lcarsDashboardGroup(config) {
@@ -2074,7 +2088,7 @@ class AreaTopologyCard extends HTMLElement {
     const secondaryHtml = rightSections.map((area) => this.renderLcarsArea(area)).join("");
     this._renderingBridge = wasRenderingBridge;
     return `<section class="lcars-bridge" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)};--bridge-node-tone:${railMiddleColor};--bridge-node-contrast:${railMiddleContrast};--bridge-node-before:${railMiddlePosition}fr;--bridge-node-after:${100 - railMiddlePosition}fr;--lcars-area-tone:${color};--lcars-area-contrast:${contrastColor(color)}">
-      <header><strong>${escapeHtml(bridgeTitle)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}</header>
+      <header><strong>${escapeHtml(bridgeTitle)}</strong><span>${group.areas.length} SECTORS</span><i></i><span>${online} SYSTEMS ONLINE</span><i></i><span>${offline} OFFLINE</span>${temperature ? `<b>${escapeHtml(temperature.value)}</b>` : ""}${this.renderLcarsStatusRibbon(online, offline)}</header>
       <div class="lcars-bridge-shell">
         <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
         <div class="lcars-bridge-grid">
@@ -2870,6 +2884,14 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge-shell>aside i { background:color-mix(in srgb,var(--bridge-tone) 34%,#050507); }
     .lcars-bridge-shell>aside b:nth-of-type(2) { font-weight:400; }
     .lcars-bridge>header strong { font-size:82px; }
+    .lcars-bridge>header { overflow:visible; }
+    .lcars-status-ribbon { position:absolute; z-index:8; bottom:-23px; left:50%; display:grid; grid-template-columns:minmax(145px,1fr) minmax(155px,1fr) minmax(145px,1fr); width:min(520px,42vw); height:46px; padding:5px; border-radius:25px; background:#050507; transform:translateX(-50%); pointer-events:none; }
+    .lcars-status-ribbon span { display:flex; align-items:center; justify-content:center; min-width:0; padding:5px 18px 2px; overflow:hidden; color:#fff!important; font-family:var(--lcars-font); font-size:25px; font-weight:400; line-height:1; letter-spacing:.025em; text-overflow:ellipsis; white-space:nowrap; }
+    .lcars-status-ribbon .nominal { gap:12px; border-radius:22px 0 0 22px; color:#fff!important; background:#9aa36b; }
+    .lcars-status-ribbon .nominal i { width:9px; height:9px; flex:0 0 9px; border-radius:50%; background:#fff; }
+    .lcars-status-ribbon .online { margin-left:5px; background:#8f89c4; }
+    .lcars-status-ribbon .offline { margin-left:5px; border-radius:0 22px 22px 0; background:#555962; }
+    .lcars-bridge-grid { padding-top:calc(var(--bridge-gap) + 18px); }
     .lcars-popup-backdrop { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(3px); }
     .lcars-popup { --lcars-font:"LCARS GTJ3","Helvetica LT Std Ultra Compressed","Arial Narrow",sans-serif; width:min(820px,calc(100vw - 44px)); max-height:calc(100vh - 44px); overflow:auto; color:#eee8fa; background:#07070a; border:3px solid var(--popup-menu-tone); border-radius:0 34px 34px 0; box-shadow:0 18px 70px #000; font-family:var(--lcars-font); }
     .lcars-popup,.lcars-popup button,.lcars-popup span,.lcars-popup strong,.lcars-popup b,.lcars-popup small,.lcars-popup h2 { font-family:var(--lcars-font); font-weight:400; }
@@ -2888,7 +2910,7 @@ class AreaTopologyCard extends HTMLElement {
     .lcars-bridge-shell>aside b:first-child,.lcars-bridge-shell>aside b:last-child { position:relative; z-index:2; overflow:visible; border-radius:0; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); }
     .lcars-bridge-shell>aside b:first-child::before { content:""; position:absolute; top:0; left:100%; width:36px; height:36px; background:radial-gradient(circle 36px at 100% 100%,#050507 0 35px,var(--bridge-tone) 36px); }
     .lcars-bridge-shell>aside b:last-child::before { content:""; position:absolute; bottom:0; left:100%; width:36px; height:36px; background:radial-gradient(circle 36px at 100% 0,#050507 0 35px,var(--bridge-tone) 36px); }
-    .lcars-bridge-grid { z-index:3; padding-top:var(--bridge-gap); padding-bottom:var(--bridge-gap); }
+    .lcars-bridge-grid { z-index:3; padding-top:calc(var(--bridge-gap) + 18px); padding-bottom:var(--bridge-gap); }
     .bridge-active .lcars-footer span { margin-left:142px; }
     .bridge-active .lcars-footer span::before { left:-142px; width:130px; }
     .lcars-bridge .lcars-standby:not(.offline) { color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.65); }
