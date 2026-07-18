@@ -1,5 +1,5 @@
-const CARD_VERSION = "1.25.23";
-const BUILD_COMMIT = "dcbf7ab";
+const CARD_VERSION = "1.26.0";
+const BUILD_COMMIT = "pending";
 const LCARS_FONT_DATA = "data:font/woff2;base64,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";
 
 let lcarsFontPromise;
@@ -171,6 +171,7 @@ class AreaTopologyCard extends HTMLElement {
       this._savedExpandedTreeDevices = Array.isArray(preferences.expandedTreeDevices) ? preferences.expandedTreeDevices : null;
       this._savedWebZoom = Number.isFinite(Number(preferences.webZoom)) ? Number(preferences.webZoom) : null;
       this._savedTreeScale = Number.isFinite(Number(preferences.treeScale)) ? Number(preferences.treeScale) : null;
+      this._lcarsSelectedView = preferences.lcarsSelectedView || this._lcarsSelectedView;
     }
     if (this._webZoom === undefined) this._webZoom = Math.max(0.65, Math.min(1.8, this._savedWebZoom ?? (Number(config.web_zoom ?? config.topology_zoom) || 1)));
     if (this._treeScale === undefined) this._treeScale = Math.max(0.65, Math.min(1.8, this._savedTreeScale ?? (Number(this._config.tree_font_scale) || 1)));
@@ -200,6 +201,7 @@ class AreaTopologyCard extends HTMLElement {
         expandedTreeDevices: [...this._expandedTreeDevices],
         webZoom: this._webZoom,
         treeScale: this._treeScale,
+        lcarsSelectedView: this._lcarsSelectedView,
       }));
     } catch (_error) {
       // Storage can be unavailable in restricted browser modes; the card still works for this visit.
@@ -218,6 +220,13 @@ class AreaTopologyCard extends HTMLElement {
         const stateObj = hass.states?.[this._lcarsPopupEntity];
         const value = this.shadowRoot?.querySelector("[data-lcars-popup-value]");
         if (stateObj && value) value.textContent = hass.formatEntityState?.(stateObj) || stateObj.state;
+      } else if (this._standaloneLcars && String(this._lcarsSelectedView || "").startsWith("view:")) {
+        for (const card of this.shadowRoot?.querySelectorAll(".lcars-camera-card > *,.lcars-engineering-card > *,.lcars-captains-log-card > *,.lcars-weather-history-card > *") || []) card.hass = hass;
+        for (const value of this.shadowRoot?.querySelectorAll("[data-camera-state]") || []) value.textContent = hass.states?.[value.dataset.cameraState]?.state || "unavailable";
+        for (const value of this.shadowRoot?.querySelectorAll("[data-engineering-metric]") || []) {
+          const metric = this._activeLcarsViewConfig?.metrics?.[Number(value.dataset.engineeringMetric)];
+          if (metric) value.textContent = this.engineeringMetricValue(metric);
+        }
       } else if (this._standaloneLcars && this._lcarsSelectedView === "weather") {
         for (const card of this.shadowRoot?.querySelectorAll(".lcars-weather-history-card > *") || []) card.hass = hass;
       } else if (this._standaloneLcars && ["security", "engineering", "captains_log", "bridge"].includes(this._lcarsSelectedView)) {
@@ -317,7 +326,9 @@ class AreaTopologyCard extends HTMLElement {
       const floorNavId = event.target.closest("[data-floor-nav]")?.dataset.floorNav;
       if (floorNavId) {
         if (this._standaloneLcars) {
-          if (floorNavId.startsWith("__menu_") && floorNavId.endsWith("__")) {
+          if (floorNavId.startsWith("__view_") && floorNavId.endsWith("__")) {
+            this._lcarsSelectedView = `view:${floorNavId.slice(7, -2)}`;
+          } else if (floorNavId.startsWith("__menu_") && floorNavId.endsWith("__")) {
             this._lcarsSelectedView = `menu:${floorNavId.slice(7, -2)}`;
           } else if (["__weather__", "__security__", "__engineering__", "__captains_log__", "__bridge__"].includes(floorNavId)) {
             this._lcarsSelectedView = floorNavId.slice(2, -2);
@@ -325,8 +336,9 @@ class AreaTopologyCard extends HTMLElement {
             this._lcarsSelectedView = "floor";
             this._lcarsSelectedFloor = floorNavId;
           }
+          this.savePreferences();
           this.render();
-          if (floorNavId === "__weather__") this.loadLcarsWeatherForecast();
+          if (floorNavId === "__weather__" || (floorNavId.startsWith("__view_") && String(this._activeLcarsView?.type || "").toLowerCase() === "weather")) this.loadLcarsWeatherForecast();
           return;
         }
         const floor = [...this.shadowRoot.querySelectorAll("[data-lcars-floor]")]
@@ -734,6 +746,7 @@ class AreaTopologyCard extends HTMLElement {
     this.configureLcarsEngineeringCards();
     this.configureLcarsCaptainsLogCard();
     this.configureLcarsWeatherCards();
+    if (String(this._activeLcarsView?.type || "").toLowerCase() === "weather" && this._weatherForecastEntity !== this._activeLcarsViewConfig?.entity) this.loadLcarsWeatherForecast();
     if (this.shadowRoot.querySelector(".lcars-area-grid")) requestAnimationFrame(() => this.layoutLcarsAreas());
     if (previousPageScroll.length) requestAnimationFrame(() => requestAnimationFrame(() => this.restoreAncestorScroll(previousPageScroll)));
     if (newScroller || newTreeScroller || newUnassignedList) requestAnimationFrame(() => {
@@ -1285,7 +1298,116 @@ class AreaTopologyCard extends HTMLElement {
     return `<line class="${className}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"${style}/>`;
   }
 
+  lcarsViewConfig(view, type) {
+    const legacyKey = { weather: "weather", security: "security", engineering: "engineering", calendar: "captains_log", bridge: "bridge" }[type];
+    const legacy = legacyKey && this._config[legacyKey] && typeof this._config[legacyKey] === "object" ? this._config[legacyKey] : {};
+    const source = view.source && typeof view.source === "object" ? view.source : {};
+    const merged = { ...legacy, ...source, ...(view.config || {}), ...view };
+    const sections = Array.isArray(view.sections) ? view.sections.filter((section) => section && section.hidden !== true) : [];
+    if (["floor", "areas", "bridge"].includes(type)) {
+      const configuredAreas = sections.filter((section) => ["area", "devices"].includes(String(section.type || "area").toLowerCase())).map((section) => section.area || section.source?.area || section.title).filter(Boolean);
+      if (configuredAreas.length) merged.areas = configuredAreas;
+      const cameraSection = sections.find((section) => String(section.type || "").toLowerCase() === "camera");
+      if (cameraSection) merged.camera = cameraSection.entity || cameraSection.camera || cameraSection.source?.entity;
+    }
+    if (["security", "cameras"].includes(type)) {
+      const cameras = sections.filter((section) => String(section.type || "camera").toLowerCase() === "camera").map((section) => ({ ...section, ...(section.source || {}), entity: section.entity || section.camera || section.source?.entity }));
+      if (cameras.length) merged.cameras = cameras;
+    }
+    if (type === "weather") {
+      const panels = sections.filter((section) => ["card", "panel", "graph"].includes(String(section.type || "card").toLowerCase())).map((section) => ({ ...section, ...(section.card || {}), ...(section.source || {}) }));
+      if (panels.length) merged.panels = panels;
+    }
+    if (["engineering", "cards"].includes(type)) {
+      const metrics = sections.filter((section) => String(section.type || "").toLowerCase() === "metric").map((section) => ({ ...section, ...(section.source || {}) }));
+      const panels = sections.filter((section) => ["card", "panel", "graph"].includes(String(section.type || "card").toLowerCase())).map((section) => ({ ...section, ...(section.card || {}), ...(section.source || {}) }));
+      if (metrics.length) merged.metrics = metrics;
+      if (panels.length) merged.panels = panels;
+    }
+    if (["calendar", "captains_log"].includes(type)) {
+      const entities = sections.flatMap((section) => section.entities || (section.entity ? [section.entity] : [])).filter(Boolean);
+      if (entities.length) merged.entities = entities;
+    }
+    return merged;
+  }
+
+  renderLcarsUnifiedCommand(view, inner, status = "SYSTEMS") {
+    const color = safeColor(view.color, "#6f99a8");
+    const railTop = view.rail_top || "MJ-32";
+    const railMiddle = view.rail_middle || "DATA NODE";
+    const railBottom = view.rail_bottom || railTop;
+    return `<section class="lcars-bridge lcars-unified-command" style="--bridge-tone:${color};--bridge-contrast:${contrastColor(color)}">
+      <header><strong>${escapeHtml(view.title || view.id || "SYSTEM")}</strong><span>${escapeHtml(status)}</span></header>
+      <div class="lcars-bridge-shell">
+        <aside><b>${escapeHtml(railTop)}</b><i></i><b>${escapeHtml(railMiddle)}</b><i></i><b>${escapeHtml(railBottom)}</b></aside>
+        <div class="lcars-bridge-grid lcars-unified-grid"><div class="lcars-unified-content">${inner}</div></div>
+      </div>
+    </section>`;
+  }
+
+  renderConfiguredLcarsView(view, floorViews) {
+    const type = String(view.type || "floor").toLowerCase();
+    const config = this.lcarsViewConfig(view, type);
+    const color = safeColor(view.color || config.color, "#6f99a8");
+    const floorTarget = String(config.floor || config.source_floor || view.floor || "").trim().toLowerCase();
+    const group = floorViews.find((entry) => [entry.id, entry.name].some((value) => String(value || "").trim().toLowerCase() === floorTarget));
+    if (["floor", "areas", "bridge"].includes(type)) {
+      let source = group || floorViews[0];
+      if (source && Array.isArray(config.areas) && config.areas.length) {
+        const areaOrder = config.areas.map((value) => String(value).trim().toLowerCase());
+        const orderedAreas = source.areas.filter((area) => areaOrder.some((value) => [area.id, area.name].some((candidate) => String(candidate || "").trim().toLowerCase() === value))).sort((a, b) => {
+          const indexOf = (area) => areaOrder.findIndex((value) => [area.id, area.name].some((candidate) => String(candidate || "").trim().toLowerCase() === value));
+          return indexOf(a) - indexOf(b);
+        });
+        source = { ...source, areas: orderedAreas };
+      }
+      const securityView = (this._config.views || []).find((entry) => ["security", "cameras"].includes(String(entry?.type || "").toLowerCase()));
+      const securityConfig = securityView ? this.lcarsViewConfig(securityView, String(securityView.type).toLowerCase()) : this._config.security;
+      return this.renderLcarsBridge({ ...config, title: view.title || config.title || source?.name }, source, securityConfig, color);
+    }
+    const commandView = { ...view, color };
+    if (type === "weather") return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsWeather(config, color), "FORECAST CONTROL");
+    if (["security", "cameras"].includes(type)) return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsSecurity(config, color), `${(config.cameras || []).length} CHANNELS`);
+    if (["engineering", "cards"].includes(type)) return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsEngineering(config, color), `${(config.panels || []).length} SYSTEMS`);
+    if (["calendar", "captains_log"].includes(type)) return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsCaptainsLog(config, color), "TEMPORAL RECORDS");
+    return this.renderLcarsUnifiedCommand(commandView, this.renderLcarsCustomMenu(config), "SYSTEM DIRECTORY");
+  }
+
+  renderLcarsFromViews() {
+    const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
+    const groups = this.hasFloorLevel() ? this.floorGroups() : [{ id: "__home__", name: this._config.title, icon: "mdi:home", areas }];
+    const floorViews = groups.map((group, index) => ({
+      ...group,
+      color: this.configuredItemColor("floor_colors", group.id, group.name, ["#cc99cc", "#ff9966", "#ffcc99", "#9999ff"][index % 4]),
+      areas: this.orderConfiguredItems("areas", group.areas, (area) => area.id, (area) => area.name)
+        .map((area) => ({ ...area, displayDevices: this.devicesForDisplay(area) }))
+        .filter((area) => area.displayDevices.length),
+    })).filter((group) => group.areas.length);
+    const views = this._config.views.filter((view) => view?.id && view?.title && view.hidden !== true);
+    if (!views.length) return '<div class="lcars-empty">NO CONFIGURED VIEWS</div>';
+    const requestedId = String(this._lcarsSelectedView || "").replace(/^view:/, "");
+    const selected = views.find((view) => view.id === requestedId) || views.find((view) => view.default) || views[0];
+    this._lcarsSelectedView = `view:${selected.id}`;
+    this._activeLcarsView = selected;
+    const selectedConfig = this.lcarsViewConfig(selected, String(selected.type || "floor").toLowerCase());
+    this._activeLcarsViewConfig = selectedConfig;
+    const selectedColor = safeColor(selected.color || selectedConfig.color, "#6f99a8");
+    const dateTime = this.lcarsDateTime();
+    const headerColor = safeColor(this._config.header_color, "#263f4b");
+    const dateTimeColor = safeColor(this._config.datetime_color, "#ff9900");
+    const content = this.renderConfiguredLcarsView(selected, floorViews);
+    return `<div class="lcars-dashboard bridge-active" style="--lcars-header:${headerColor};--lcars-header-contrast:${contrastColor(headerColor)};--lcars-datetime:${dateTimeColor}">
+      <div class="lcars-masthead"><div class="lcars-cap"></div><div class="lcars-title"><strong>${escapeHtml(this._config.title)}</strong></div><div class="lcars-clock" data-lcars-clock>${escapeHtml(dateTime.time)}</div><div class="lcars-date" data-lcars-date>${escapeHtml(dateTime.date)}</div><div class="lcars-end"></div></div>
+      <div class="lcars-body"><nav class="lcars-floor-nav" aria-label="LCARS navigation"><div class="lcars-nav-cap"></div>${views.map((view, index) => {
+        const config = this.lcarsViewConfig(view, String(view.type || "floor").toLowerCase());
+        const color = safeColor(view.color || config.color, ["#6f99a8", "#9b8f5a", "#b88768", "#8f90c2"][index % 4]);
+        return `<button class="${view.id === selected.id ? "active" : ""}" data-floor-nav="__view_${escapeHtml(view.id)}__" aria-pressed="${view.id === selected.id}" style="--nav-color:${color};--nav-contrast:${contrastColor(color)}" title="Show ${escapeHtml(view.title)}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(view.title)}</b></button>`;
+      }).join("")}<div class="lcars-nav-foot"></div></nav><main class="lcars-main">${content}<div class="lcars-footer" style="--lcars-footer-tone:${selectedColor}"><span></span><b>VERSION ${CARD_VERSION} // BUILD ${BUILD_COMMIT}</b><i></i></div></main></div>
+    </div>`;
+  }
+
   renderLcars() {
+    if (this._standaloneLcars && Array.isArray(this._config.views)) return this.renderLcarsFromViews();
     const areas = (this._data || []).filter((area) => area.id !== "__unassigned__");
     const groups = this.hasFloorLevel()
       ? this.floorGroups()
@@ -1366,7 +1488,8 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   async loadLcarsWeatherForecast() {
-    const entityId = this._config?.weather?.entity;
+    const activeType = String(this._activeLcarsView?.type || "").toLowerCase();
+    const entityId = activeType === "weather" ? this._activeLcarsViewConfig?.entity : this._config?.weather?.entity;
     if (!entityId || this._weatherForecastEntity === entityId) return;
     this._weatherForecastEntity = entityId;
     try {
@@ -1377,7 +1500,7 @@ class AreaTopologyCard extends HTMLElement {
       };
       const [daily, hourly] = await Promise.all([getForecast("daily"), getForecast("hourly")]);
       this._weatherForecast = { daily, hourly };
-      if (this._lcarsSelectedView === "weather") this.render();
+      if (this._lcarsSelectedView === "weather" || activeType === "weather") this.render();
     } catch (error) {
       console.warn("Could not load LCARS weather forecast", error);
       this._weatherForecast = { daily: [], hourly: [] };
@@ -1436,7 +1559,7 @@ class AreaTopologyCard extends HTMLElement {
       if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
       for (const host of hosts) {
         if (!host.isConnected || host.firstElementChild) continue;
-        const panel = this._config.weather?.panels?.[Number(host.dataset.lcarsWeatherPanel)];
+        const panel = (String(this._activeLcarsView?.type || "").toLowerCase() === "weather" ? this._activeLcarsViewConfig : this._config.weather)?.panels?.[Number(host.dataset.lcarsWeatherPanel)];
         if (!panel) continue;
         const { title: _title, icon: _icon, ...cardConfig } = panel;
         const card = await helpers.createCardElement(cardConfig);
@@ -1513,7 +1636,11 @@ class AreaTopologyCard extends HTMLElement {
       if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
       for (const host of hosts) {
         if (!host.isConnected || host.firstElementChild) continue;
-        const camera = this._config.security.cameras.find((entry) => entry.entity === host.dataset.lcarsCamera);
+        const activeType = String(this._activeLcarsView?.type || "").toLowerCase();
+        const securityView = (this._config.views || []).find((entry) => ["security", "cameras"].includes(String(entry?.type || "").toLowerCase()));
+        const configuredSecurity = securityView ? this.lcarsViewConfig(securityView, String(securityView.type).toLowerCase()) : this._config.security;
+        const cameras = ["security", "cameras"].includes(activeType) && Array.isArray(this._activeLcarsViewConfig?.cameras) ? this._activeLcarsViewConfig.cameras : configuredSecurity?.cameras;
+        const camera = cameras?.find((entry) => entry.entity === host.dataset.lcarsCamera) || this._config.security?.cameras?.find((entry) => entry.entity === host.dataset.lcarsCamera);
         if (!camera) continue;
         const card = await helpers.createCardElement({
           type: "picture-entity",
@@ -1564,7 +1691,8 @@ class AreaTopologyCard extends HTMLElement {
       if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
       for (const host of hosts) {
         if (!host.isConnected || host.firstElementChild) continue;
-        const panel = this._config.engineering?.panels?.[Number(host.dataset.lcarsEngineering)];
+        const activeType = String(this._activeLcarsView?.type || "").toLowerCase();
+        const panel = (["engineering", "cards"].includes(activeType) ? this._activeLcarsViewConfig : this._config.engineering)?.panels?.[Number(host.dataset.lcarsEngineering)];
         if (!panel) continue;
         const { title: _title, icon: _icon, ...cardConfig } = panel;
         const card = await helpers.createCardElement(cardConfig);
@@ -1592,7 +1720,8 @@ class AreaTopologyCard extends HTMLElement {
     try {
       const helpers = await window.loadCardHelpers?.();
       if (!helpers) throw new Error("Home Assistant card helpers are unavailable");
-      const config = this._config.captains_log;
+      const activeType = String(this._activeLcarsView?.type || "").toLowerCase();
+      const config = ["calendar", "captains_log"].includes(activeType) ? this._activeLcarsViewConfig : this._config.captains_log;
       const card = await helpers.createCardElement({
         type: "calendar",
         entities: config.entities,
@@ -2360,6 +2489,14 @@ class AreaTopologyCard extends HTMLElement {
     .bridge-active .lcars-footer span { margin-left:142px; }
     .bridge-active .lcars-footer span::before { left:-142px; width:130px; }
     .lcars-bridge .lcars-standby:not(.offline) { color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.65); }
+    .lcars-unified-grid { display:block; padding:var(--bridge-gap) 0; }
+    .lcars-unified-content { min-width:0; }
+    .lcars-unified-content>.lcars-weather>header,.lcars-unified-content>.lcars-security>header,.lcars-unified-content>.lcars-engineering>header,.lcars-unified-content>.lcars-floor>header { display:none; }
+    .lcars-unified-content .lcars-weather-grid,.lcars-unified-content .lcars-security-grid,.lcars-unified-content .lcars-engineering-grid,.lcars-unified-content .lcars-area-grid { padding:0; }
+    .lcars-unified-content .lcars-weather-grid::before,.lcars-unified-content .lcars-security-grid::before,.lcars-unified-content .lcars-engineering-grid::before,.lcars-unified-content .lcars-area-grid::before { display:none; }
+    .lcars-unified-content .lcars-weather-current,.lcars-unified-content .lcars-weather-panel,.lcars-unified-content .lcars-weather-history-panel,.lcars-unified-content .lcars-camera-panel,.lcars-unified-content .lcars-engineering-panel,.lcars-unified-content .lcars-area { border-width:7px; border-color:var(--bridge-tone); border-radius:36px; background:#050507; }
+    .lcars-unified-content .lcars-weather-panel>header,.lcars-unified-content .lcars-weather-history-panel>header,.lcars-unified-content .lcars-camera-panel>header,.lcars-unified-content .lcars-engineering-panel>header { min-height:60px; padding:0 22px; border-radius:29px 29px 0 0; color:var(--bridge-tone); background:#050507; font-size:29px; }
+    .lcars-unified-content .lcars-area-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     @keyframes spin { to { transform:rotate(360deg); } }
     @media (max-width:1200px) { .standalone-lcars .lcars-area-grid { grid-template-columns:1fr; } }
     @media (max-width:1100px) { .lcars-weather-panels,.lcars-weather-history-panels,.lcars-camera-grid,.lcars-engineering-panels { grid-template-columns:1fr; }.lcars-engineering-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }

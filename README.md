@@ -104,6 +104,23 @@ The standalone dashboard includes a numbered floor navigator on the left. Only o
 Selecting a non-toggle reading opens an LCARS-themed entity overlay with its current value and 24-hour Home Assistant history graph.
 LCARS views bundle the unchanged freeware **LCARS GTJ3** webfont by GTJLCARS.de for authentic ultra-compressed headings, controls, device labels, and property rows. The author permits free use and redistribution but does not permit renaming, modification, or resale. See the [official font page](https://www.gtjlcars.de/LCARSindex/LCARSFONTS.htm).
 
+### Unified `views` configuration
+
+Use the ordered `views:` list for new dashboards. Every entry becomes one numbered LCARS destination and uses the same BRIDGE command-frame geometry, rail, footer, typography, spacing, and colour system. The first view is selected initially unless another entry has `default: true`. The selected view is remembered when navigating into Home Assistant and returning.
+
+Supported view types are:
+
+- `bridge`, `floor`, or `areas`: discover devices from a Home Assistant floor, optionally choose `primary_area`, and optionally select/order `areas`.
+- `weather`: current conditions, forecasts, and optional Lovelace card sections.
+- `security` or `cameras`: explicitly placed camera sections.
+- `engineering` or `cards`: metric sections and ordinary Lovelace card sections.
+- `calendar`: one or more calendar entity sections.
+- `devices`: discover devices by `labels` and/or entity `properties`, independent of their floor.
+
+Every view accepts `id`, `title`, `type`, `color`, `icon`, `hidden`, `default`, and optional rail labels (`rail_top`, `rail_middle`, `rail_bottom`). View-specific settings can be written directly on the view or nested under `config:`. Use `sections:` when content needs explicit placement rather than automatic floor/area discovery. Section order is display order; set `hidden: true` to temporarily remove one without deleting its configuration.
+
+The complete reorganised example is in [`examples/lcars-home-card-v2.yaml`](examples/lcars-home-card-v2.yaml). Existing `floors`, `weather`, `security`, `engineering`, `captains_log`, `bridge`, and `menus` configurations remain supported when `views:` is omitted.
+
 ```yaml
 type: custom:lcars-home-card
 title: Sarn

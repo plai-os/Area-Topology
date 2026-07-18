@@ -1,0 +1,260 @@
+type: custom:lcars-home-card
+title: 32 Maesderw, Sarn, Powys
+header_color: "#263F4B"
+datetime_color: "#FF9900"
+
+# Global discovery and ordering. These remain the defaults used by every view.
+labels:
+  - Lamps
+  - Appliances
+  - Alexa
+  - Door Sensors
+  - Movement Sensors
+  - Cameras
+  - Plugs
+  - Climate
+  - Mobiles
+  - Computers
+  - Service
+  - Powerstations
+  - Routers
+  - Speaker Group
+  - Remotes
+areas:
+  - Lounge
+  - Bedroom
+  - Kitchen
+  - Ready Room
+  - Bathroom
+  - Garage
+  - Front Garden
+  - Rear Garden
+  - Loft
+  - Mobiles
+  - Mobile Devices
+
+# One ordered menu model. A view can discover HA areas/devices or explicitly place
+# cameras, metrics, calendars, and ordinary Lovelace cards wherever required.
+views:
+  - id: bridge
+    title: Bridge
+    type: bridge
+    default: true
+    color: "#6F99A8"
+    floor: Living Area
+    primary_area: Lounge
+    camera: camera.c110_mainstream
+    motion_sensor: binary_sensor.car_camera_motion
+    recording_sensor: binary_sensor.car_camera_recording
+    last_activity_sensor: sensor.car_camera_last_activity
+
+  - id: west_wing
+    title: West Wing
+    type: floor
+    color: "#9B8F5A"
+    floor: West Wing
+    primary_area: Bedroom
+    # Optional: explicitly select and order areas within this view.
+    areas:
+      - Bedroom
+      - Ready Room
+      - Bathroom
+
+  - id: outside
+    title: Outside
+    type: floor
+    color: "#B88768"
+    floor: Outside
+    primary_area: Front Garden
+
+  - id: roof
+    title: Roof
+    type: floor
+    color: "#8F90C2"
+    floor: Roof
+    primary_area: Loft
+
+  - id: general
+    title: General
+    type: floor
+    color: "#B58AAD"
+    floor: General
+
+  - id: weather
+    title: Weather
+    type: weather
+    color: "#66AACC"
+    entity: weather.pirateweather
+    sun_entity: sun.sun
+    temperature_sensor: sensor.outdoor_temp
+    humidity_sensor: sensor.outdoor_humidity
+    apparent_sensor: sensor.real_feel_temperature
+    aqi_sensor: sensor.air_quality_index
+    forecast_rows: 10
+    hourly_rows: 8
+    locale: en-GB
+    show_decimal: true
+    sections:
+      - type: card
+        title: 24 Hour Temperature
+        icon: mdi:chart-line
+        card:
+          type: statistics-graph
+          entities:
+            - sensor.front_sarn_temperature
+          days_to_show: 1
+          period: hour
+          chart_type: line
+          stat_types: [mean]
+      - type: card
+        title: 7 Day Temperature Range
+        icon: mdi:chart-areaspline
+        card:
+          type: statistics-graph
+          entities:
+            - sensor.front_sarn_temperature
+          days_to_show: 7
+          period: day
+          chart_type: line
+          stat_types: [mean, min, max]
+
+  - id: security
+    title: Security
+    type: security
+    color: "#B56B7A"
+    sections:
+      - id: escape_pod
+        type: camera
+        title: Escape Pod
+        entity: camera.c110_mainstream
+        camera_image: camera.c110_mainstream
+        show_state: true
+        camera_view: auto
+        fit_mode: cover
+
+  - id: engineering
+    title: Engineering
+    type: engineering
+    color: "#FF9966"
+    chart_color: "#FF9966"
+    chart_secondary_color: "#9999FF"
+    chart_tertiary_color: "#FFCC99"
+    sections:
+      - type: metric
+        title: Demand
+        name: Demand
+        icon: mdi:flash
+        entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+      - type: metric
+        name: Standing
+        icon: mdi:currency-gbp
+        entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_standing_charge
+      - type: metric
+        name: Rate
+        icon: mdi:currency-gbp
+        entity: sensor.octopus_energy_electricity_22p5024798_2200042031306_current_rate
+      - type: metric
+        name: Points
+        icon: mdi:trophy-outline
+        entity: sensor.octopus_energy_a_52705f81_octoplus_points
+      - type: card
+        title: Daily Demand
+        icon: mdi:chart-bar
+        card:
+          type: statistics-graph
+          entities:
+            - sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+          days_to_show: 7
+          period: day
+          chart_type: bar
+          stat_types: [max]
+          hide_legend: true
+      - type: card
+        title: Hourly Demand
+        icon: mdi:chart-line
+        card:
+          type: statistics-graph
+          entities:
+            - sensor.octopus_energy_electricity_22p5024798_2200042031306_current_demand
+          days_to_show: 1
+          period: hour
+          chart_type: line
+          stat_types: [mean]
+          hide_legend: true
+      - type: card
+        title: Solar Available
+        icon: mdi:solar-power
+        card:
+          type: sensor
+          entity: sensor.sarn_32_maesderw_sarn
+          graph: line
+          detail: 2
+          name: Solar Available (Sarn)
+          hours_to_show: 48
+
+  - id: captains_log
+    title: Captain's Log
+    type: calendar
+    color: "#C090B8"
+    initial_view: listWeek
+    sections:
+      - type: calendar
+        title: Calendar
+        entities:
+          - calendar.octopus_energy_a_52705f81_octoplus_saving_sessions
+          - calendar.octopus_energy_a_52705f81_greener_nights
+          - calendar.birthdays
+          - calendar.mike_jackson
+          - calendar.waste_collection_schedule_powys_county_council
+          - calendar.holidays_in_united_kingdom
+          - calendar.sarn_powys_gmail_com
+
+  - id: environmental
+    title: Environmental
+    type: devices
+    icon: mdi:leaf
+    color: "#7A9E8E"
+    labels: [Climate]
+    properties: [temperature, humidity, illuminance, climate]
+
+  - id: computer_core
+    title: Computer Core
+    type: devices
+    icon: mdi:server
+    color: "#8B7AAE"
+    labels: [Computers, Service, Routers, Powerstations]
+
+  - id: personnel
+    title: Personnel
+    type: devices
+    icon: mdi:account-group
+    color: "#B48A78"
+    labels: [Mobiles]
+
+label_colors:
+  Alexa: "#9B8F5A"
+  Lamps: "#B98465"
+  Climate: "#6F8F91"
+  Door Sensors: "#A65F61"
+  Movement Sensors: "#7D82A8"
+  Cameras: "#8D668E"
+  Plugs: "#806B62"
+  Mobiles: "#AA735F"
+  Computers: "#718892"
+  Service: "#8C9760"
+  Powerstations: "#5F8F87"
+  Routers: "#5F8C99"
+  Speaker Group: "#777B82"
+  Appliances: "#9E6179"
+  Remotes: "#A9864E"
+
+area_colors:
+  Lounge: "#5F8C99"
+  Kitchen: "#5F8C99"
+  Bedroom: "#9B8F5A"
+  Garage: "#B88768"
+  Ready Room: "#9B8F5A"
+  Bathroom: "#9B8F5A"
+  Front Garden: "#B88768"
+  Rear Garden: "#B88768"
+  Loft: "#8D83AA"
