@@ -2071,6 +2071,11 @@ class AreaTopologyCard extends HTMLElement {
   }
 
   deviceMatchesCustomMenu(device, menu) {
+    const excludedLabels = new Set((menu.exclude_labels || []).map((label) => String(label).trim().toLowerCase()));
+    const hasExcludedLabel = device.labels.some((label) => excludedLabels.has(String(label.name).trim().toLowerCase()) || excludedLabels.has(String(label.label_id).trim().toLowerCase()));
+    const excludedDevices = new Set((menu.exclude_devices || []).map((value) => String(value).trim().toLowerCase()));
+    const isExcludedDevice = [device.id, device.name].some((value) => excludedDevices.has(String(value || "").trim().toLowerCase()));
+    if (hasExcludedLabel || isExcludedDevice) return false;
     const wantedLabels = new Set((menu.labels || []).map((label) => String(label).trim().toLowerCase()));
     const labelMatch = device.labels.some((label) => wantedLabels.has(String(label.name).trim().toLowerCase()) || wantedLabels.has(String(label.label_id).trim().toLowerCase()));
     const wantedProperties = new Set((menu.properties || []).map((property) => String(property).trim().toLowerCase()));

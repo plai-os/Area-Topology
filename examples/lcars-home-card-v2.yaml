@@ -354,7 +354,13 @@ views:
         type: devices
         title: Environmental Systems
         labels: [Climate]
+        exclude_labels: [Appliances]
         properties: [temperature, humidity, illuminance, climate]
+      - id: appliances
+        type: devices
+        title: Appliances
+        icon: mdi:home-lightning-bolt-outline
+        labels: [Appliances]
 
   - id: computer_core
     title: Computer Core
