@@ -1,5 +1,6 @@
 type: custom:lcars-home-card
 title: 32 Maesderw, Sarn, Powys
+kiosk_url: https://home.sarn.online/dashboard-maesderw/star-trek?kiosk
 header_color: "#263F4B"
 datetime_color: "#FF9900"
 kiosk_height: 100vh
@@ -159,7 +160,9 @@ views:
     color: "#66AACC"
     rail:
       top:
-        entity: sensor.outdoor_temp
+        source: weather
+        attribute: temperature
+        unit: °C
         decimals: 1
         fallback: "--"
       middle:
