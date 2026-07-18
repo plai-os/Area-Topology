@@ -3,82 +3,99 @@ title: 32 Maesderw, Sarn, Powys
 header_color: "#263F4B"
 datetime_color: "#FF9900"
 
-# Global discovery and ordering. These remain the defaults used by every view.
-labels:
-  - Lamps
-  - Appliances
-  - Alexa
-  - Door Sensors
-  - Movement Sensors
-  - Cameras
-  - Plugs
-  - Climate
-  - Mobiles
-  - Computers
-  - Service
-  - Powerstations
-  - Routers
-  - Speaker Group
-  - Remotes
-areas:
-  - Lounge
-  - Bedroom
-  - Kitchen
-  - Ready Room
-  - Bathroom
-  - Garage
-  - Front Garden
-  - Rear Garden
-  - Loft
-  - Mobiles
-  - Mobile Devices
-
-# One ordered menu model. A view can discover HA areas/devices or explicitly place
-# cameras, metrics, calendars, and ordinary Lovelace cards wherever required.
+# The ordered menu is the dashboard structure. Home Assistant areas and labels are
+# selectors inside sections; they do not create or constrain the navigation tree.
 views:
   - id: bridge
     title: Bridge
-    type: bridge
+    type: dashboard
     default: true
     color: "#6F99A8"
-    floor: Living Area
-    primary_area: Lounge
-    camera: camera.c110_mainstream
+    primary_section: lounge
     motion_sensor: binary_sensor.car_camera_motion
     recording_sensor: binary_sensor.car_camera_recording
     last_activity_sensor: sensor.car_camera_last_activity
+    sections:
+      - id: lounge
+        type: area
+        title: Lounge
+        area: Lounge
+      - id: kitchen
+        type: area
+        title: Kitchen
+        area: Kitchen
+      - id: escape_pod
+        type: camera
+        title: Escape Pod
+        entity: camera.c110_mainstream
 
   - id: west_wing
     title: West Wing
-    type: floor
+    type: dashboard
     color: "#9B8F5A"
-    floor: West Wing
-    primary_area: Bedroom
-    # Optional: explicitly select and order areas within this view.
-    areas:
-      - Bedroom
-      - Ready Room
-      - Bathroom
+    primary_section: bedroom
+    sections:
+      - id: bedroom
+        type: area
+        title: Bedroom
+        area: Bedroom
+      - id: ready_room
+        type: area
+        title: Ready Room
+        area: Ready Room
+      - id: bathroom
+        type: area
+        title: Bathroom
+        area: Bathroom
 
   - id: outside
     title: Outside
-    type: floor
+    type: dashboard
     color: "#B88768"
-    floor: Outside
-    primary_area: Front Garden
+    primary_section: front
+    sections:
+      - id: front
+        type: area
+        title: Front Garden
+        area: Front Garden
+      - id: rear
+        type: area
+        title: Rear Garden
+        area: Rear Garden
+      - id: garage
+        type: area
+        title: Garage
+        area: Garage
 
   - id: roof
     title: Roof
-    type: floor
+    type: dashboard
     color: "#8F90C2"
-    floor: Roof
-    primary_area: Loft
+    primary_section: loft
+    sections:
+      - id: loft
+        type: area
+        title: Loft
+        area: Loft
 
   - id: general
     title: General
-    type: floor
+    type: dashboard
     color: "#B58AAD"
-    floor: General
+    primary_section: infrastructure
+    sections:
+      - id: infrastructure
+        type: devices
+        title: Infrastructure
+        labels: [Routers, Computers, Powerstations]
+      - id: services
+        type: devices
+        title: Services
+        labels: [Service, Speaker Group]
+      - id: mobile_devices
+        type: devices
+        title: Mobile Devices
+        labels: [Mobiles]
 
   - id: weather
     title: Weather
@@ -211,25 +228,37 @@ views:
 
   - id: environmental
     title: Environmental
-    type: devices
+    type: dashboard
     icon: mdi:leaf
     color: "#7A9E8E"
-    labels: [Climate]
-    properties: [temperature, humidity, illuminance, climate]
+    sections:
+      - id: environment
+        type: devices
+        title: Environmental Systems
+        labels: [Climate]
+        properties: [temperature, humidity, illuminance, climate]
 
   - id: computer_core
     title: Computer Core
-    type: devices
+    type: dashboard
     icon: mdi:server
     color: "#8B7AAE"
-    labels: [Computers, Service, Routers, Powerstations]
+    sections:
+      - id: computer_systems
+        type: devices
+        title: Computer Systems
+        labels: [Computers, Service, Routers, Powerstations]
 
   - id: personnel
     title: Personnel
-    type: devices
+    type: dashboard
     icon: mdi:account-group
     color: "#B48A78"
-    labels: [Mobiles]
+    sections:
+      - id: personnel_systems
+        type: devices
+        title: Personnel Systems
+        labels: [Mobiles]
     rail:
       top: MJ-32
       middle: PERSONNEL
