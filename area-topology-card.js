@@ -1476,7 +1476,7 @@ class AreaTopologyCard extends HTMLElement {
     if (Number.isFinite(explicit)) return Math.max(15, Math.min(85, explicit));
     const views = (this._config?.views || []).filter((view) => view?.id && view?.title && view.hidden !== true);
     const index = Math.max(0, views.findIndex((view) => String(view.id) === String(config.id)));
-    return views.length > 1 ? Math.round(32 + (index * 36 / (views.length - 1))) : 50;
+    return views.length > 1 ? Math.round(15 + (index * 70 / (views.length - 1))) : 50;
   }
 
   lcarsDashboardGroup(config) {
